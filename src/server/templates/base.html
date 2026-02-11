@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="fr">
+
+<head>
+    <title>{% block title %}Root page{% endblock %}</title>
+    <!-- ================== -->
+    <!-- Required meta tags -->
+    <!-- ================== -->
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+
+    <!-- ================== -->
+    <!-- Style sheets (CSS) -->
+    <!-- ================== -->
+
+    <!-- Bootstrap -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-sRIl4kxILFvY47J16cr9ZwB07vP4J8+LH7qKQnuqkuIAvNWLzeN8tE5YBujZqJLB"
+        crossorigin="anonymous">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" integrity="sha384-tViUnnbYAV00FLIhhi3v/dWt3Jxw4gZQcNoSCxCIFNJVCx7/D55/wXsrNIRANwdD"
+        crossorigin="anonymous">
+
+    <!-- Own -->
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Roboto+Flex:opsz@8..144&display=swap');
+
+        body {
+            font-family: 'Roboto Flex', sans-serif !important;
+        }
+
+        h1,
+        .h1,
+        h2,
+        h3,
+        h5,
+        .h5,
+        th,
+        b,
+        hr,
+        strong {
+            color: #3465a4;
+        }
+    </style>
+
+    <!-- ============ -->
+    <!-- Scripts (JS) -->
+    <!-- ============ -->
+    <!-- Bootstrap -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js" integrity="sha384-FKyoEForCGlyvwx9Hj09JcYn3nv7wiPVlz7YYwJrWVcXK/BmnVDxM+D2scQbITxI"
+        crossorigin="anonymous"></script>
+    <!-- Syntax highligt in code snippets -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.11.1/styles/vs.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.11.1/highlight.min.js"></script>
+    <!-- JS beautifier -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/js-beautify/1.15.4/beautify.min.js" integrity="sha512-4rLpMC5mO8uHkCL7X0q8P3GQlRTbch5/vp1E6+iwi6nFQc50TGqtM4GRo2cjUpQ8/w9X3+2nVDPNHPOAdOz+Dw=="
+        crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+
+    <!-- Nice Data Systems styles -->
+    <link rel="stylesheet" href="/static/css/styles.css">
+
+    <!-- Nice Data Systems SPA system (must be loaded here !) -->
+    <!-- <script src="/static/js/bundle.js"></script> -->
+    <!-- <script src="/static/js/bundle.js"></script> -->
+    <script src="https://raw.githubusercontent.com/nicedata/ndspalib/refs/heads/master/src/server/static/js/bundle.js"></script>
+</head>
+
+<body class="container flex-column">
+    <div class="toast-container top-0 start-50 translate-middle-x" nd-toast></div>
+    <div nd-modal-container></div>
+
+    <h1 class="text-center">Nice Data Systems Javascript SPA library</h1>
+
+    <!-- Navigation -->
+    <div class="border-bottom border-top pb-2 pt-2 mt-3">
+        <a href="/index" nd-link nd-target="main" nd-title="Home">Home</a>
+        <span class="h6">|</span>
+        <a href="/polltest" nd-link nd-target="main" nd-title="Polling">Polling</a>
+        <span class="h6">|</span>
+        <a href="/linktest" nd-link nd-target="main" nd-title="Links">Links</a>
+        <span class="h6">|</span>
+        <a href="/selecttest" nd-link nd-target="main" nd-title="Select">Select</a>
+        <span class="h6">|</span>
+        <a href="/msgtest" nd-link nd-target="main" nd-title="Messaging">Messaging</a>
+        <span class="h6">|</span>
+        <a href="/modal_dialog" nd-link nd-target="main" nd-title="Modal dialog">Modal dialog</a>
+    </div>
+
+    <main class="mt-3">
+        <h1>Application root page</h1>
+        <p>All styles and JS libraries are now loaded !</p>
+    </main>
+
+    <script>
+        nd.debug.enable();
+        // Load the index page when evrything is loaded
+        const navigate_to_home = () => {
+            document.querySelector('a[href="/index"]').click();
+        }
+
+        addEventListener("DOMContentLoaded", e => {
+            navigate_to_home();
+            removeEventListener("DOMContentLoaded", navigate_to_home);
+        });
+        /*
+        nd.event.on('nd:toast', (event, element) => {
+            console.log(event, element)
+        });
+
+
+        nd.event.off('nd:toast');
+        */
+        /*
+        console.log(nd);
+        nd.event.on('nd:fragment:before_insert', e => {
+            console.log(e);
+        });
+        nd.event.on('nd:fragment:after_insert', e => {
+            console.log(e);
+        });
+        */
+        /*
+
+        nd.event.on("nd:fragment:inserted", (e) => {
+            const d = document.getElementById('id_div_toast');
+            console.log('FAI', e.type, ' /', e.detail, d)
+            const bs_toaster = new bootstrap.Toast(d, {delay: 1000})
+            bs_toaster.show();
+        });
+        */
+        /*
+        nd.event.on("nd:fragment:before-insert", (e) => {console.log('FBI', e.type, ' / ', e.detail)});
+        nd.event.on("nd:fragment:after-insert", (e) => {console.log('FAI', e.type, ' /', e.detail)});
+        nd.event.on("nd:fetch:before", (e) => {console.log('FB', e.type, ' /', e.detail)});
+        nd.event.on("nd:fetch:after", (e) => {console.log('FA', e.type, ' /', e.detail)});
+        nd.event.on("nd:fetch:error", (e) => {console.log('FE', e.type, ' /', e.detail)});
+        */
+    </script>
+</body>
+
+</html>

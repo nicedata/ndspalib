@@ -1,0 +1,30 @@
+{
+    "python.languageServer": "Default",
+    "js/ts.implicitProjectConfig.checkJs": true,
+    "javascript.validate.enable": true,
+    "files.exclude": {
+        "releases": true,
+        "**/.git": true,
+        "**/.svn": true,
+        "**/.hg": true,
+        "**/CVS": true,
+        "**/.DS_Store": true,
+        "**/__pycache__": true,
+        "**/venv**": true,
+        "**/docs**": true,
+        "**/bundle.js": false
+    },
+    "emeraldwalk.runonsave": {
+        "message": "*** All Start ***",
+        "messageAfter": "*** All Complete ***",
+        "commands": [
+            {
+                // Run whenever any file is saved
+                "match": ".js",
+                // "cmd": "browserify -p tinyify src/server/static/js/package.js -o src/server/static/js/bundle.js"
+                "cmd": "esbuild src/server/static/js/package.js --bundle --outfile=src/server/static/js/bundle.js"
+                // "cmd": "browserify src/server/static/js/package.js -o src/server/static/js/bundle.js"
+            }
+        ]
+    }
+}

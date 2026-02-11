@@ -1,0 +1,34 @@
+{#
+{% extends "base.html" %}
+{% block title %}Links{% endblock %}
+
+{% block content %}
+#}
+
+<h1>Links</h1>
+
+
+<a nd-link href="/poll" nd-target="#target-a">Link A</a>
+<a nd-link href="/poll" nd-target=".target">Link B</a>
+<a nd-link href="/poll" nd-target="#target-c">Link C</a>
+<br>
+<p></p>
+
+<div class="mb-3">
+    <button nd-link nd-url="/poll" nd-target=".target" class="btn btn-primary">A</button>
+    <button nd-link class="btn btn-primary">B</button>
+    <button nd-link nd-url="/test" nd-target="#target-c" class="btn btn-primary">C</button>
+</div>
+
+Target A
+<div id="target-a" class="target border mb-2">...</div>
+Target B
+<div id="target-b" class="target border mb-2">...</div>
+Target C
+<div id="target-c" class="border mb-2">...</div>
+
+
+
+<script>
+</script>
+{# endblock #}

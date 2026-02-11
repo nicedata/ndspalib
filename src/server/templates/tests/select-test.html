@@ -1,0 +1,68 @@
+<h1>Select tests</h1>
+
+<h2>Dynamic updates</h2>
+<div class="row mb-3 align-items-center">
+    <div class="col-2">
+        <select class="form-select" aria-label="Default select example" nd-switch=".numbers">
+            <option>-- Select a value --</option>
+            <option value="1">One</option>
+            <option value="2">Two</option>
+            <option value="3 with love">Three</option>
+            <option value="4">Four</option>
+        </select>
+    </div>
+    <div class="col-auto">
+        <!-- Show if there is a value -->
+        <div class="col-form-label numbers form-control" nd-show-for="*">Value :</div>
+    </div>
+    <div class="col-auto">
+        <!-- Sync with source selector value -->
+        <div class="numbers border-success form-control" nd-show-for="*" nd-sync></div>
+    </div>
+    <div class="col-auto">
+        <!-- Sync with server url -->
+        <div class="numbers border-success form-control" nd-show-for="*" nd-sync nd-url="/dummy"></div>
+    </div>
+    <div class="col-auto">
+        <!-- Hide if there is a value -->
+        <div class="numbers border-danger form-control" nd-hide-for="*">No value !</div>
+    </div>
+</div>
+
+<h2>Server sent options</h2>
+<p> Initial options will be replaced by server fetched options after 2 seconds...</p>
+<div class="row mb-3">
+    <div class="col-2">
+        <select class="form-select" name="level" nd-switch=".level-dependent .testor #d5" nd-options-url="/selecttestpotions">
+            <!-- Will be replaced by server sent options -->
+            <option value="value1">V 1</option>
+            <option value="value2">V 2</option>
+            <option value="value3">V 3</option>
+        </select>
+    </div>
+    <div class="col-3">
+        <div id="d1" class="level-dependent form-control" nd-show-for="beginner">
+            Beginner !
+        </div>
+        <div id="d2" class="level-dependent form-control" nd-show-for="intermediate">
+            Intermediate !
+        </div>
+        <div id="d3" class="level-dependent form-control" nd-show-for="expert">
+            Expert !
+        </div>
+    </div>
+    <div class="col-3">
+        <div id="d4" class="testor form-control" nd-show-for="expert">
+            Testor is an expert too !
+        </div>
+    </div>
+    <div class="col-3">
+        <div id="d5" class="form-control" nd-show-for="superuser">
+            The superuser is in div with <code>id="d5"</code>
+        </div>
+    </div>
+</div>
+
+<div nd-switch>
+    This should generate a console error !
+</div>

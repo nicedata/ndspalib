@@ -1,0 +1,8 @@
+/* *,html { font-family: "Verdana"}
+code {color: red;}
+pre {color: blue;} */
+
+.toast {
+    width: 500px !important;
+    background: white !important;
+}

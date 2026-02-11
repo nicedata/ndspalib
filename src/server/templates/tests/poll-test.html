@@ -1,0 +1,28 @@
+{# extends "base.html" #}
+{# block title %}Polling{% endblock #}
+
+{# block content #}
+<h1>Polling</h1>
+
+
+<div nd-poll nd-url="/poll" nd-target=".target" nd-interval="3000"></div>
+
+<div nd-poll nd-url="/poll" nd-target="#target-c" nd-interval="5000"></div>
+
+Target self (no <code>nd-target</code> attribute, every 10 secs [default])
+<div nd-poll nd-url="/poll" class="mb-3 border p-1">...</div>
+
+No poll at all
+<div class="border p-1 mb-2"><code>This content will never be updated, event though it has an nd-poll attribute !</code></div>
+
+Test recursive
+<div nd-poll nd-url="/pollpoll" nd-interval="5000" class="mb-3">...</div>
+
+
+Target A (every 3 secs)
+<div id="target-a" class="target border mb-2 p-1">...</div>
+Target B (every 3 secs)
+<div id="target-b" class="target border mb-2 p-1">...</div>
+Target C (every 5 secs)
+<div id="target-c" class="border mb-2 p-1">...</div>
+{# endblock #}
