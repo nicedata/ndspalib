@@ -148,6 +148,11 @@ def modal_dialog():
     return render_template("tests/modal-dialog-test.html")
 
 
+@app.route("/modal_confirmation_dialog")
+def modal_confirmation_dialog():
+    return render_template("tests/modal-confirmation-dialog-test.html")
+
+
 @app.route("/test")
 def test():
     code = f"""

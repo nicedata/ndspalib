@@ -13,6 +13,7 @@ const ToastHandler = require("./modules/toast_handler.js").ToastHandler;
 
 // Components
 const ModalDialog = require("./components/modal_dialog.js").ModalDialog;
+const ModalConfirmation = require("./components/modal_confirmation.js").ModalConfirmation;
 
 const PROG_INFO = `${PROGNAME} ${VERSION}`;
 
@@ -35,6 +36,7 @@ nd.event = new EventHandler();
 // Components
 nd.components = {};
 nd.components.ModalDialog = ModalDialog;
+nd.components.ModalConfirmation = ModalConfirmation;
 
 nd.layer = {};
 nd.layer.open = async (args) => {

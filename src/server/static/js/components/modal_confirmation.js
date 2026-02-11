@@ -1,5 +1,5 @@
 /**
- * ModalDialog component.
+ * ModalConfirmation component.
  *
  * Uses: Bootstrap for styling
  *       ND SPA Utilities for handling (modal, events, ...)
@@ -13,32 +13,35 @@ const I18N = {
     fr: {
         yes: "Oui",
         no: "Non",
+        confirm: "SVP, Confirmer l'opération",
     },
     en: {
         yes: "Yes",
         no: "No",
+        confirm: "Please, confirm the operation",
     },
     de: {
         yes: "Ja",
         no: "Nein",
+        confirm: "Bitte Vorgang bestätigen",
     },
 };
 
 // Default settings
 const DEFAULTS = {
     lang: "en",
-    title: "ModalDialog.title is not defined !",
-    message: "ModalDialog.message is not defined !",
+    title: "ModalConfirmation.title is not defined !",
+    message: "ModalConfirmation.message is not defined !",
     // No Operation function
-    noop: () => {
+    NOOP: () => {
         console.log("NOOP");
     },
 };
 
 /**
- * The ModalDialog class definition.
+ * The ModalConfirmation class definition.
  */
-exports.ModalDialog = class ModalDialog {
+exports.ModalConfirmation = class ModalConfirmation {
     // Constructor
     constructor(title, message, lang) {
         // Check for ND utilities
@@ -47,6 +50,9 @@ exports.ModalDialog = class ModalDialog {
         // Initilization
         this.dialog = null;
         this.bs_dialog = null;
+        this.accept_btn = null; // The accept button
+        this.cancel_btn = null; // The cancel button
+        this.confirm_cb = null; // The confirmation checkbox
         this.title = title ? title : DEFAULTS.title;
         this.message = message ? message : DEFAULTS.message;
         // Set translations
@@ -62,13 +68,19 @@ exports.ModalDialog = class ModalDialog {
                 <div class="modal-dialog" role="document">
                     <div class="modal-content">
                         <div class="modal-header">
-                            <h5 class="modal-title"><i class="bi bi-question-circle me-2" aria-hidden="true"></i>${this.title}</h5>
+                            <h5 class="modal-title"><i class="bi bi-exclamation-circle me-2 text-danger" aria-hidden="true"></i>${this.title}</h5>
                         </div>
                         <div class="modal-body">${this.message}</div>
-                        <div class="modal-footer">
-                            <div class="col-md-12 text-center">
-                                <button type="button" class="btn btn-primary" style="width: 5rem" nd-accept>${this.lang.yes}</button>
-                                <button type="button" class="btn btn-secondary" style="width: 5rem" nd-dismiss>${this.lang.no}</button>
+                        <div class="modal-footer">  
+                            <div class="d-flex flex-row align-items-center w-100">
+                                <div class="col-7">
+                                    <!-- Confirmation checkbox -->
+                                    <input type="checkbox"><label><i class="bi bi-arrow-left ms-2 me-1"></i>${this.lang.confirm}</label>
+                                </div>
+                                <div class="col-5 text-end">
+                                    <button type="button" class="btn btn-secondary" style="width: 5rem" nd-dismiss>${this.lang.no}</button>
+                                    <button type="button" class="btn" style="width: 5rem" nd-accept disabled>${this.lang.yes}</button>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -76,8 +88,8 @@ exports.ModalDialog = class ModalDialog {
             </div>`);
 
         // Set default handlers
-        this._accept_handler = DEFAULTS.noop; // Default accept handler
-        this._cancel_handler = DEFAULTS.noop; // Default cancel handler
+        this._accept_handler = DEFAULTS.NOOP; // Default accept handler
+        this._cancel_handler = DEFAULTS.NOOP; // Default cancel handler
 
         // Accept event handler
         this._on_accept = (event) => {
@@ -98,6 +110,7 @@ exports.ModalDialog = class ModalDialog {
             this.bs_dialog.hide();
             nd.event.off(`nd:${this.id}:accept`);
             nd.event.off(`nd:${this.id}:dismiss`);
+            this.confirm_cb.removeEventListener("click", this._confirm_cb_listener); // Remove component handler
             this.dialog.remove();
         };
 
@@ -129,17 +142,31 @@ exports.ModalDialog = class ModalDialog {
         });
 
         this.bs_dialog = new bootstrap.Modal(this.dialog, { backdrop: "static" });
-        const accept_btn = this.dialog.querySelector("[nd-accept]");
-        const cancel_btn = this.dialog.querySelector("[nd-dismiss]");
 
-        accept_btn.addEventListener("click", (e) => {
+        this.accept_btn = this.dialog.querySelector("[nd-accept]"); // Get the accept button element
+        this.cancel_btn = this.dialog.querySelector("[nd-dismiss]"); // Get the cancel button element
+        this.confirm_cb = this.dialog.querySelector("input"); // Get the confirmation checkbox element
+        this.confirm_cb.addEventListener("click", this._confirm_cb_listener); // Add a 'click' event listener
+
+        this.accept_btn.addEventListener("click", (e) => {
             document.dispatchEvent(new CustomEvent(`nd:${this.id}:accept`, { detail: { id: this.id } }));
         });
 
-        cancel_btn.addEventListener("click", (e) => {
+        this.cancel_btn.addEventListener("click", (e) => {
             document.dispatchEvent(new CustomEvent(`nd:${this.id}:dismiss`, { detail: { id: this.id } }));
         });
 
         this.bs_dialog.show();
     }
+
+    // Confirmation checkbox event listener
+    _confirm_cb_listener = () => {
+        if (this.confirm_cb.checked) {
+            this.accept_btn.classList.add("btn-danger"); // Add accept button style (red)
+            this.accept_btn.disabled = false; // Enable the accept button
+            return;
+        }
+        this.accept_btn.classList.remove("btn-danger"); // remove accept button style (red)
+        this.accept_btn.disabled = true; // Disable the accept butto
+    };
 };

@@ -3,7 +3,7 @@
  */
 
 exports.PROGNAME = "NDS SPA utilities";
-exports.VERSION = "1.0.2-dev";
+exports.VERSION = "1.0.3-dev";
 exports.PREFIX = "nd";
 
 exports.ND_EVENTS = {

@@ -1,0 +1,63 @@
+<h1>Modal confirmation dialog</h1>
+<p>
+    A simple modal confirmation dialog using Bootstrap styling and ND SPA handling.
+</p>
+<div class="mb-3">
+    <button id="modal_test" class="btn btn-primary btn-sm me-2">Test it</button>
+    <code id="modal_result" class="fw-bold">Result</code>
+    <script id="usage-script">
+        const modal_test = document.getElementById('modal_test'); // The 'Test it' button
+        const modal_result = document.getElementById('modal_result'); // The result code
+
+        // Add an event listener to the 'Test it' button
+        modal_test.addEventListener('click', e => {
+            // Create a new dialog
+            const dialog = new nd.components.ModalConfirmation('Opération délicate', 'Voulez-vous <b>vraiment</b> supprimer ces informations ?', 'en');
+
+            // Update the result code tag
+            modal_result.textContent = `Dialog id ${dialog.id} running...`
+
+            // Override the default accept handler with a new one
+            dialog.set_accept_handler(() => {
+                modal_result.textContent = `${dialog.id} accepted.`;
+            });
+
+            // Override the default cancel handler with a new one
+            dialog.set_cancel_handler(() => {
+                modal_result.textContent = `${dialog.id} cancelled.`;
+            });
+
+            // Show the dialog !
+            dialog.show();
+        });
+    </script>
+</div>
+
+<h2>Usage code</h2>
+<p>
+    <code class="fs-6">&lt;script&gt;...&lt;/script&gt;</code> :
+</p>
+
+<div class="mb-3">
+    <pre class="border"><code id="usage-code"></code></pre>
+    <script>
+        const code = js_beautify(document.getElementById("usage-script").innerText, {indent_size: 4, space_in_empty_paren: true});
+        document.getElementById("usage-code").innerHTML = hljs.highlight(code, {language: "javascript", ignoreIllegals: true}).value;
+    </script>
+</div>
+
+<h2>Component source code</h2>
+<p>
+    <code>{{url_for('static', filename='js/components/modal_confirmation.js')}}</code> :
+</p>
+<div class="mb-3">
+    <pre class="border"><code id="source-code"></code></pre>
+    <script>
+        (async () => {
+            const source_code = document.getElementById('source-code');
+            let code = await nd.util.fetch_data("{{url_for('static', filename='js/components/modal_confirmation.js')}}");
+            code = js_beautify(code, {indent_size: 4, space_in_empty_paren: true});
+            source_code.innerHTML = hljs.highlight(code, {language: "javascript", ignoreIllegals: true}).value;
+        })();
+    </script>
+</div>
