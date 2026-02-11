@@ -22,7 +22,7 @@
                 // Run whenever any file is saved
                 "match": ".js",
                 // "cmd": "browserify -p tinyify src/server/static/js/package.js -o src/server/static/js/bundle.js"
-                "cmd": "esbuild src/server/static/js/package.js --bundle --outfile=dist/ndspalib.js"
+                "cmd": "esbuild src/server/static/js/package.js --bundle --outfile=release/ndspalib.js"
                 // "cmd": "browserify src/server/static/js/package.js -o src/server/static/js/bundle.js"
             }
         ]
