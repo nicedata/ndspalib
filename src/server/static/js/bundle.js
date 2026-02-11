@@ -8,7 +8,7 @@
   var require_constants = __commonJS({
     "src/server/static/js/constants.js"(exports) {
       exports.PROGNAME = "NDS SPA utilities";
-      exports.VERSION = "1.0.0-dev";
+      exports.VERSION = "1.0.1-dev";
       exports.PREFIX = "nd";
       exports.ND_EVENTS = {
         POLL_START: "nd:poll:start",
@@ -230,7 +230,7 @@
           debug ? console.log(`${class_name} debug is ON.`) : () => {
           };
           if (typeof window.nd === "undefined")
-            throw new Error("ND library not present !");
+            throw new Error("NDSPA library not present !");
           this._debug = debug;
         }
         /**
@@ -539,7 +539,7 @@
       exports.ToastHandler = class ToastHandler {
         constructor() {
           if (typeof window.nd === "undefined")
-            throw new Error("ND library not present !");
+            throw new Error("NDSPA library not present !");
           this._targets = [];
           this._delay_ms = TOAST_DELAY_MS;
           this._init();
@@ -599,6 +599,8 @@
       exports.ModalDialog = class ModalDialog {
         // Constructor
         constructor(title, message, lang) {
+          if (typeof window.nd === "undefined")
+            throw new Error("NDSPA library not present !");
           this.dialog = null;
           this.bs_dialog = null;
           this.title = title ? title : DEFAULTS.title;
@@ -623,7 +625,6 @@
                     </div>
                 </div>    
             </div>`);
-          console.log(this.html);
           this._accept_handler = DEFAULTS.noop;
           this._cancel_handler = DEFAULTS.noop;
           this._on_accept = (event) => {

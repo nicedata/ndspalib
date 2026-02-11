@@ -2,7 +2,7 @@ exports.BaseHandler = class BaseHandler {
     constructor(debug = false) {
         const class_name = this.constructor.name;
         debug ? console.log(`${class_name} debug is ON.`) : () => {};
-        if (typeof window.nd === "undefined") throw new Error("ND library not present !");
+        if (typeof window.nd === "undefined") throw new Error("NDSPA library not present !");
         this._debug = debug;
     }
 

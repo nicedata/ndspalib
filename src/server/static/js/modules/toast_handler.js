@@ -3,7 +3,7 @@ const TOAST_DELAY_MS = require("../constants.js").TOAST_DELAY_MS;
 
 exports.ToastHandler = class ToastHandler {
     constructor() {
-        if (typeof window.nd === "undefined") throw new Error("ND library not present !");
+        if (typeof window.nd === "undefined") throw new Error("NDSPA library not present !");
         this._targets = [];
         this._delay_ms = TOAST_DELAY_MS;
         this._init();

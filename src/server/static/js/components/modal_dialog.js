@@ -41,6 +41,7 @@ const DEFAULTS = {
 exports.ModalDialog = class ModalDialog {
     // Constructor
     constructor(title, message, lang) {
+        if (typeof window.nd === "undefined") throw new Error("NDSPA library not present !");
         this.dialog = null;
         this.bs_dialog = null;
         this.title = title ? title : DEFAULTS.title;
@@ -70,8 +71,6 @@ exports.ModalDialog = class ModalDialog {
                     </div>
                 </div>    
             </div>`);
-
-        console.log(this.html);
 
         // Set the default accept and cancel handlers
         this._accept_handler = DEFAULTS.noop; // Default accept handler
