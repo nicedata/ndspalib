@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="fr">
 
-{% set debug=False %}
+{% set debug=True %}
 
 <head>
     <title>{% block title %}Root page{% endblock %}</title>
@@ -62,9 +62,10 @@
     <!-- Nice Data Systems SPA system (must be loaded here !) -->
     <!-- <script src="/static/js/bundle.js"></script> -->
     {% if debug %}
-    <script src="/static/js/bundle.js"></script>
+    <!-- Symbolic link ! -->
+    <script src="/static/ndspalib.js"></script>
     {% else %}
-    <script src="https://cdn.jsdelivr.net/gh/nicedata/ndspalib@refs/heads/main/src/server/static/js/bundle.js"></script>
+    <script src="https://cdn.jsdelivr.net/gh/nicedata/ndspalib@main/release/ndspalib.js"></script>
     {% endif %}
 </head>
 
