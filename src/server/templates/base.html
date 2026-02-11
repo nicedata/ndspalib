@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="fr">
 
-{% set debug=True %}
+{% set debug=False %}
 
 <head>
     <title>{% block title %}Root page{% endblock %}</title>
@@ -65,7 +65,8 @@
     <!-- Symbolic link ! -->
     <script src="/static/ndspalib.js"></script>
     {% else %}
-    <script src="https://cdn.jsdelivr.net/gh/nicedata/ndspalib@main/release/ndspalib.js"></script>
+    <script src="https://cdn.jsdelivr.net/gh/nicedata/ndspalib@latest/release/ndspalib.js"></script>
+    <!-- <script src="https://cdn.jsdelivr.net/gh/nicedata/ndspalib@refs/heads/main/release/ndspalib.js"></script> -->
     {% endif %}
 </head>
 

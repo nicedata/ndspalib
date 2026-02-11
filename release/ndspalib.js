@@ -8,7 +8,7 @@
   var require_constants = __commonJS({
     "src/server/static/js/constants.js"(exports) {
       exports.PROGNAME = "NDS SPA utilities";
-      exports.VERSION = "1.0.3-dev";
+      exports.VERSION = "1.0.4-dev";
       exports.PREFIX = "nd";
       exports.ND_EVENTS = {
         POLL_START: "nd:poll:start",
