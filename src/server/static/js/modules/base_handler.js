@@ -1,8 +1,9 @@
+const ERR_NO_NDSPA = require("../constants.js").ERR_NO_NDSPA;
+
 exports.BaseHandler = class BaseHandler {
     constructor(debug = false) {
-        const class_name = this.constructor.name;
-        debug ? console.log(`${class_name} debug is ON.`) : () => {};
-        if (typeof window.nd === "undefined") throw new Error("NDSPA library not present !");
+        debug ? console.log(`${this.constructor.name} debug is ON.`) : () => {};
+        if (typeof window.nd === "undefined") throw new Error(ERR_NO_NDSPA);
         this._debug = debug;
     }
 

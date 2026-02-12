@@ -3,8 +3,11 @@
  */
 
 exports.PROGNAME = "NDS SPA utilities";
-exports.VERSION = "1.0.4-dev";
+exports.VERSION = "1.0.5-dev";
 exports.PREFIX = "nd";
+
+exports.ERR_NO_NDSPA = "NDSPA library not present !";
+exports.TARGET_NONE = ":none:";
 
 exports.ND_EVENTS = {
     POLL_START: "nd:poll:start",

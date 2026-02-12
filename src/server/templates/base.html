@@ -1,8 +1,6 @@
 <!DOCTYPE html>
 <html lang="fr">
 
-{% set debug=False %}
-
 <head>
     <title>{% block title %}Root page{% endblock %}</title>
     <!-- ================== -->
@@ -59,14 +57,13 @@
     <!-- Nice Data Systems styles -->
     <link rel="stylesheet" href="/static/css/styles.css">
 
-    <!-- Nice Data Systems SPA system (must be loaded here !) -->
-    <!-- <script src="/static/js/bundle.js"></script> -->
-    {% if debug %}
-    <!-- Symbolic link ! -->
-    <script src="/static/ndspalib.js"></script>
-    {% else %}
+    <!-- Nice Data Systems SPA Library (must be loaded here !) -->
+    {% if context.production_mode %}
+    <!-- Use the JSDelivr repository -->
     <script src="https://cdn.jsdelivr.net/gh/nicedata/ndspalib@latest/release/ndspalib.js"></script>
-    <!-- <script src="https://cdn.jsdelivr.net/gh/nicedata/ndspalib@refs/heads/main/release/ndspalib.js"></script> -->
+    {% else %}
+    <!-- Use the local library (symbolic link) -->
+    <script src="/static/ndspalib.js"></script>
     {% endif %}
 </head>
 

@@ -8,8 +8,10 @@
   var require_constants = __commonJS({
     "src/server/static/js/constants.js"(exports) {
       exports.PROGNAME = "NDS SPA utilities";
-      exports.VERSION = "1.0.4-dev";
+      exports.VERSION = "1.0.5-dev";
       exports.PREFIX = "nd";
+      exports.ERR_NO_NDSPA = "NDSPA library not present !";
+      exports.TARGET_NONE = ":none:";
       exports.ND_EVENTS = {
         POLL_START: "nd:poll:start",
         POLL_END: "nd:poll:end",
@@ -28,18 +30,18 @@
   // src/server/static/js/modules/debug.js
   var require_debug = __commonJS({
     "src/server/static/js/modules/debug.js"(exports) {
-      var PROGNAME = require_constants().PROGNAME;
+      var PROGNAME2 = require_constants().PROGNAME;
       exports.Debug = class Debug {
         constructor() {
           this._debug = true;
         }
         enable() {
           this._debug = true;
-          console.log(`${PROGNAME}: debugging is enabled.`);
+          console.log(`${PROGNAME2}: debugging is enabled.`);
         }
         disable() {
           this._debug = false;
-          console.log(`${PROGNAME}: debugging is disabled.`);
+          console.log(`${PROGNAME2}: debugging is disabled.`);
         }
         active() {
           return this._debug;
@@ -52,7 +54,7 @@
   var require_util = __commonJS({
     "src/server/static/js/modules/util.js"(exports) {
       var ND_EVENTS = require_constants().ND_EVENTS;
-      var VERSION = require_constants().VERSION;
+      var VERSION2 = require_constants().VERSION;
       exports.Util = class Util {
         constructor() {
         }
@@ -102,7 +104,7 @@
         async fetch_data(url, as_json = false) {
           let status = null;
           const request = new Request(url);
-          request.headers.append("X-Nd-Version", `"${VERSION}"`);
+          request.headers.append("X-Nd-Version", `"${VERSION2}"`);
           request.headers.append("X-Nd-Url", `"${url}"`);
           document.dispatchEvent(new CustomEvent(ND_EVENTS.FETCH_BEFORE, { detail: { url, data: null, status } }));
           try {
@@ -145,6 +147,9 @@
     "src/server/static/js/modules/event_handler.js"(exports) {
       exports.EventHandler = class EventHandler {
         constructor(debug = false) {
+          const class_name = this.constructor.name;
+          debug ? console.log(`${class_name} debug is ON.`) : () => {
+          };
           this._debug = debug;
           this.listeners = [];
         }
@@ -224,13 +229,13 @@
   // src/server/static/js/modules/base_handler.js
   var require_base_handler = __commonJS({
     "src/server/static/js/modules/base_handler.js"(exports) {
+      var ERR_NO_NDSPA = require_constants().ERR_NO_NDSPA;
       exports.BaseHandler = class BaseHandler {
         constructor(debug = false) {
-          const class_name = this.constructor.name;
-          debug ? console.log(`${class_name} debug is ON.`) : () => {
+          debug ? console.log(`${this.constructor.name} debug is ON.`) : () => {
           };
           if (typeof window.nd === "undefined")
-            throw new Error("NDSPA library not present !");
+            throw new Error(ERR_NO_NDSPA);
           this._debug = debug;
         }
         /**
@@ -452,6 +457,7 @@
   // src/server/static/js/modules/link_handler.js
   var require_link_handler = __commonJS({
     "src/server/static/js/modules/link_handler.js"(exports) {
+      var TARGET_NONE = require_constants().TARGET_NONE;
       BaseHandler = require_base_handler().BaseHandler;
       exports.LinkHandler = class LinkHandler extends BaseHandler {
         constructor(debug = false) {
@@ -490,8 +496,13 @@
           nd.util.fetch_data(url).then((data) => {
             if (data) {
               targets.forEach((t) => {
-                const fragment = nd.util.create_fragment(data);
-                nd.util.insert_fragment(t, fragment, false, true);
+                const tag = t.tagName.toLowerCase();
+                if (tag === "input") {
+                  t.value = data;
+                } else {
+                  const fragment = nd.util.create_fragment(data);
+                  nd.util.insert_fragment(t, fragment, false, true);
+                }
               });
             }
           });
@@ -512,7 +523,7 @@
               } else
                 throw new Error(`No <nd-url> defined on: ${element.innerHTML}`);
             }
-            if (!targets.length && selector && selector.toLowerCase() !== "none") {
+            if (!targets.length && selector && selector.toLowerCase() !== TARGET_NONE) {
               if (nd.debug.active()) {
                 console.warn("No <nd-target> defined on: %o", element);
               } else
@@ -536,10 +547,11 @@
     "src/server/static/js/modules/toast_handler.js"(exports) {
       var ND_EVENTS = require_constants().ND_EVENTS;
       var TOAST_DELAY_MS = require_constants().TOAST_DELAY_MS;
+      var ERR_NO_NDSPA = require_constants().ERR_NO_NDSPA;
       exports.ToastHandler = class ToastHandler {
         constructor() {
           if (typeof window.nd === "undefined")
-            throw new Error("NDSPA library not present !");
+            throw new Error(ERR_NO_NDSPA);
           this._targets = [];
           this._delay_ms = TOAST_DELAY_MS;
           this._init();
@@ -823,100 +835,94 @@
   });
 
   // src/server/static/js/main.js
-  var require_main = __commonJS({
-    "src/server/static/js/main.js"() {
-      var PROGNAME = require_constants().PROGNAME;
-      var VERSION = require_constants().VERSION;
-      var Debug = require_debug().Debug;
-      var Util = require_util().Util;
-      var EventHandler = require_event_handler().EventHandler;
-      var SwitchHandler = require_switch_handler().SwitchHandler;
-      var PollHandler = require_poll_handler().PollHandler;
-      var LinkHandler = require_link_handler().LinkHandler;
-      var ToastHandler = require_toast_handler().ToastHandler;
-      var ModalDialog = require_modal_dialog().ModalDialog;
-      var ModalConfirmation = require_modal_confirmation().ModalConfirmation;
-      var PROG_INFO = `${PROGNAME} ${VERSION}`;
-      console.log(`${PROG_INFO} initializing...`);
-      if (typeof bootstrap === "undefined")
-        throw new Error("Bootstrap library not present !");
-      var bs_version = bootstrap.Tooltip.VERSION;
-      [bs_major, _, _] = bs_version.split(".");
-      if (bs_major < 5)
-        throw new Error(`${PROGNAME} needs Bootstrap 5.x.x library. Current Bootstrap version is ${bs_version}.`);
-      nd = window.nd ? window.nd : {};
-      nd.version = VERSION;
-      nd.debug = new Debug();
-      nd.util = new Util();
-      nd.event = new EventHandler();
-      nd.components = {};
-      nd.components.ModalDialog = ModalDialog;
-      nd.components.ModalConfirmation = ModalConfirmation;
-      nd.layer = {};
-      nd.layer.open = async (args) => {
-        const container = document.querySelector("[nd-modal-container]");
-        if (!container)
-          throw new Error("No nd-modal-container element is present !");
-        const uuid = args.id;
-        const fragment = nd.util.create_fragment(args.content);
-        nd.util.insert_fragment(container, fragment, true, true);
-        const dialog = document.querySelector(`[data-nduuid="${uuid}"]`);
-        return dialog;
-      };
-      var { fetch: originalFetch } = window;
-      window.fetch = async (...args) => {
-        let [resource, config] = args;
-        const response = await originalFetch(resource, config);
-        let events = [];
-        let title = null;
-        let sse = null;
-        response.headers.forEach((v, k) => {
-          const sse2 = k.toLowerCase();
-          let match = false;
-          switch (sse2) {
-            case "x-nd-event":
-              events = JSON.parse(v);
-              match = true;
-            case "x-nd-title":
-              document.title = v;
-              match = true;
-          }
-          if (match && nd.debug.active())
-            console.log(`Received server message '${sse2}'.`);
-        });
-        events.forEach((event) => {
-          document.dispatchEvent(new CustomEvent(event.type, { detail: event.detail }));
-        });
-        return response;
-      };
-      nd.refresh = (fragment) => {
-        const HANDLERS = [nd.handlers.poll, nd.handlers.link, nd.handlers.switch, nd.handlers.toast];
-        nd.handlers.poll.process(fragment);
-        nd.handlers.link.process(fragment);
-        nd.handlers.switch.process(fragment);
-        nd.handlers.poll.postprocess();
-        nd.handlers.link.postprocess();
-        nd.handlers.switch.postprocess();
-      };
-      var on_dom_loaded = () => {
-        nd.handlers = {
-          poll: new PollHandler(false),
-          link: new LinkHandler(false),
-          switch: new SwitchHandler(true),
-          toast: new ToastHandler()
-        };
-        nd.refresh(document);
-        console.log(`${PROG_INFO} ready !`);
-        removeEventListener("DOMContentLoaded", on_dom_loaded);
-      };
-      navigation.addEventListener("navigate", (event) => {
-        console.log(`Prevented navigation to '${event.destination.url}'.`);
-        event.preventDefault();
-      });
-      addEventListener("DOMContentLoaded", on_dom_loaded);
-    }
+  var PROGNAME = require_constants().PROGNAME;
+  var VERSION = require_constants().VERSION;
+  var Debug = require_debug().Debug;
+  var Util = require_util().Util;
+  var EventHandler = require_event_handler().EventHandler;
+  var SwitchHandler = require_switch_handler().SwitchHandler;
+  var PollHandler = require_poll_handler().PollHandler;
+  var LinkHandler = require_link_handler().LinkHandler;
+  var ToastHandler = require_toast_handler().ToastHandler;
+  var ModalDialog = require_modal_dialog().ModalDialog;
+  var ModalConfirmation = require_modal_confirmation().ModalConfirmation;
+  var PROG_INFO = `${PROGNAME} ${VERSION}`;
+  console.log(`${PROG_INFO} initializing...`);
+  if (typeof bootstrap === "undefined")
+    throw new Error("Bootstrap library not present !");
+  var bs_version = bootstrap.Tooltip.VERSION;
+  [bs_major, _, _] = bs_version.split(".");
+  if (bs_major < 5)
+    throw new Error(`${PROGNAME} needs Bootstrap 5.x.x library. Current Bootstrap version is ${bs_version}.`);
+  nd = window.nd ? window.nd : {};
+  nd.version = VERSION;
+  nd.debug = new Debug();
+  nd.util = new Util();
+  nd.event = new EventHandler(false);
+  nd.components = {};
+  nd.components.ModalDialog = ModalDialog;
+  nd.components.ModalConfirmation = ModalConfirmation;
+  nd.layer = {};
+  nd.layer.open = async (args) => {
+    const container = document.querySelector("[nd-modal-container]");
+    if (!container)
+      throw new Error("No nd-modal-container element is present !");
+    const uuid = args.id;
+    const fragment = nd.util.create_fragment(args.content);
+    nd.util.insert_fragment(container, fragment, true, true);
+    const dialog = document.querySelector(`[data-nduuid="${uuid}"]`);
+    return dialog;
+  };
+  var { fetch: originalFetch } = window;
+  window.fetch = async (...args) => {
+    let [resource, config] = args;
+    const response = await originalFetch(resource, config);
+    let events = [];
+    let title = null;
+    let sse = null;
+    response.headers.forEach((v, k) => {
+      const sse2 = k.toLowerCase();
+      let match = false;
+      switch (sse2) {
+        case "x-nd-event":
+          events = JSON.parse(v);
+          match = true;
+        case "x-nd-title":
+          document.title = v;
+          match = true;
+      }
+      if (match && nd.debug.active())
+        console.log(`Received server message '${sse2}'.`);
+    });
+    events.forEach((event) => {
+      console.log(event);
+      document.dispatchEvent(new CustomEvent(event.type, { detail: event.detail }));
+    });
+    return response;
+  };
+  nd.refresh = (fragment) => {
+    const HANDLERS = [nd.handlers.poll, nd.handlers.link, nd.handlers.switch, nd.handlers.toast];
+    nd.handlers.poll.process(fragment);
+    nd.handlers.link.process(fragment);
+    nd.handlers.switch.process(fragment);
+    nd.handlers.poll.postprocess();
+    nd.handlers.link.postprocess();
+    nd.handlers.switch.postprocess();
+  };
+  var on_dom_loaded = () => {
+    nd.handlers = {
+      poll: new PollHandler(false),
+      link: new LinkHandler(false),
+      switch: new SwitchHandler(false),
+      toast: new ToastHandler()
+    };
+    nd.refresh(document);
+    console.log(`${PROG_INFO} ready !`);
+    removeEventListener("DOMContentLoaded", on_dom_loaded);
+  };
+  navigation.addEventListener("navigate", (event) => {
+    console.log(`Prevented navigation to '${event.destination.url}'.`);
+    event.preventDefault();
   });
-
-  // src/server/static/js/package.js
-  require_main();
+  addEventListener("DOMContentLoaded", on_dom_loaded);
 })();

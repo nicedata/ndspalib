@@ -1,9 +1,11 @@
 const ND_EVENTS = require("../constants.js").ND_EVENTS;
 const TOAST_DELAY_MS = require("../constants.js").TOAST_DELAY_MS;
+const ERR_NO_NDSPA = require("../constants.js").ERR_NO_NDSPA;
 
 exports.ToastHandler = class ToastHandler {
     constructor() {
-        if (typeof window.nd === "undefined") throw new Error("NDSPA library not present !");
+        if (typeof window.nd === "undefined") throw new Error(ERR_NO_NDSPA);
+
         this._targets = [];
         this._delay_ms = TOAST_DELAY_MS;
         this._init();

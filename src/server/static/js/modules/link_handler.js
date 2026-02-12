@@ -14,6 +14,7 @@
  *    nd-target :   css selector to identify the target(s). If ommitted, the element istelf is the target.
  */
 
+const TARGET_NONE = require("../constants.js").TARGET_NONE;
 BaseHandler = require("./base_handler.js").BaseHandler;
 
 exports.LinkHandler = class LinkHandler extends BaseHandler {
@@ -59,9 +60,14 @@ exports.LinkHandler = class LinkHandler extends BaseHandler {
         nd.util.fetch_data(url).then((data) => {
             if (data) {
                 targets.forEach((t) => {
-                    const fragment = nd.util.create_fragment(data);
-                    // Insert or replace fragment
-                    nd.util.insert_fragment(t, fragment, false, true);
+                    const tag = t.tagName.toLowerCase();
+                    if (tag === "input") {
+                        t.value = data;
+                    } else {
+                        const fragment = nd.util.create_fragment(data);
+                        // Insert or replace fragment
+                        nd.util.insert_fragment(t, fragment, false, true);
+                    }
                 });
             }
         });
@@ -88,7 +94,7 @@ exports.LinkHandler = class LinkHandler extends BaseHandler {
             }
 
             // Check targets
-            if (!targets.length && selector && selector.toLowerCase() !== "none") {
+            if (!targets.length && selector && selector.toLowerCase() !== TARGET_NONE) {
                 if (nd.debug.active()) {
                     console.warn("No <nd-target> defined on: %o", element);
                 } else throw new Error(`No <nd-target> defined on: ${element.innerHTML}`);

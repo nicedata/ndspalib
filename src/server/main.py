@@ -3,7 +3,9 @@ import json
 import time
 from typing import Dict, List
 
-from flask import Flask, Request, Response, make_response, render_template, request
+from flask import Flask, Request, Response, render_template, request
+
+PRODUCTION_MODE = False
 
 
 class NdMiddleware:
@@ -15,8 +17,10 @@ class NdMiddleware:
         self._test = "Nice Data Systems SPA Middleware"
         self._toasts: List[Dict] = []
         self._title: str = ""
+
         with app.app_context():
             print("MW", "First call")
+
         app.wsgi_app = self
 
         @app.before_request
@@ -37,10 +41,9 @@ class NdMiddleware:
         self._title = title
 
     def __call__(self, environ, start_response):
-        print("MW CALL toasts:", len(self._toasts))
 
         def custom_start_response(status: str, headers: List, exc_info=None):
-            print("CW CALL", len(self._toasts))
+            print("CW CALL, toast count:", len(self._toasts))
             headers.append(("X-Custom-Header", self._test))
             if self._toasts:
                 headers.append(("x-nd-event", json.dumps(self._toasts)))
@@ -59,7 +62,7 @@ mw = NdMiddleware(app)
 
 @app.route("/")
 def home():
-    return render_template("base.html")
+    return render_template("base.html", context={"production_mode": PRODUCTION_MODE})
 
 
 @app.route("/index")
@@ -70,29 +73,21 @@ def index():
 
 @app.route("/msgtest")
 def messaging_test():
-    _toast("This is page load toast message", datetime.datetime.now().strftime("%d.%m.%Y %H:%M:%S"))
+    mw.title("Messaging")
+    # _toast("This is page load toast message", datetime.datetime.now().strftime("%d.%m.%Y %H:%M:%S"))
     return render_template("tests/messaging-test.html")
 
 
 def _toast(header: str, body: str, category: str = "primary"):
     toast = render_template("partials/toast.html", context={"category": category, "header": header, "body": body})
-    response = make_response()
-    response.headers["x-nd-event"] = json.dumps({"type": "nd:toast", "detail": " ".join(toast.split())})
     mw.add_toast({"type": "nd:toast", "detail": " ".join(toast.split())})
-    # g.toast.append({"type": "nd:toast", "detail": " ".join(toast.split())})
 
 
 @app.route("/toast")
 def toast_test():
-    # toast = render_template("partials/toast.html", context={"category": "primary", "header": "This is a toast message", "body": datetime.datetime.now().strftime("%d.%m.%Y %H:%M:%S")})
-    # print("A", len(toast))
-    # toast = " ".join(toast.split())
-    # print("B", len(toast))
-
-    # response = make_response(toast)
-    # response.headers["X-Nd-Event"] = json.dumps({"type": "nd:toast", "detail": {}})
-    _toast("This is toast message A", datetime.datetime.now().strftime("%d.%m.%Y %H:%M:%S"))
-    return datetime.datetime.now().strftime("%d.%m.%Y %H:%M:%S")  #  _toast("This is a toast message", datetime.datetime.now().strftime("%d.%m.%Y %H:%M:%S"), "danger")
+    now = datetime.datetime.now().strftime("%d.%m.%Y %H:%M:%S")
+    _toast("This is toast message A", now)
+    return f"Last toast stamp : {now}"
 
 
 @app.route("/polltest")

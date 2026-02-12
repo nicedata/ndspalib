@@ -31,7 +31,7 @@ nd = window.nd ? window.nd : {};
 nd.version = VERSION;
 nd.debug = new Debug();
 nd.util = new Util();
-nd.event = new EventHandler();
+nd.event = new EventHandler(false);
 
 // Components
 nd.components = {};
@@ -79,6 +79,7 @@ window.fetch = async (...args) => {
 
     // If there are events, dispatch them !
     events.forEach((event) => {
+        console.log(event);
         document.dispatchEvent(new CustomEvent(event.type, { detail: event.detail }));
     });
 
@@ -107,7 +108,7 @@ const on_dom_loaded = () => {
     nd.handlers = {
         poll: new PollHandler(false),
         link: new LinkHandler(false),
-        switch: new SwitchHandler(true),
+        switch: new SwitchHandler(false),
         toast: new ToastHandler(),
     };
     nd.refresh(document);

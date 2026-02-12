@@ -1,5 +1,7 @@
 exports.EventHandler = class EventHandler {
     constructor(debug = false) {
+        const class_name = this.constructor.name;
+        debug ? console.log(`${class_name} debug is ON.`) : () => {};
         this._debug = debug;
         this.listeners = []; // List of form [(event, element, listener), ...]
     }

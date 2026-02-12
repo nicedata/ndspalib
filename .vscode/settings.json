@@ -12,7 +12,8 @@
         "**/__pycache__": true,
         "**/venv**": true,
         "**/docs**": true,
-        "**/bundle.js": false
+        "**/ndspalib.js": true,
+        "**/release": true
     },
     "emeraldwalk.runonsave": {
         "message": "*** All Start ***",
@@ -22,7 +23,7 @@
                 // Run whenever any file is saved
                 "match": ".js",
                 // "cmd": "browserify -p tinyify src/server/static/js/package.js -o src/server/static/js/bundle.js"
-                "cmd": "esbuild src/server/static/js/package.js --bundle --outfile=release/ndspalib.js"
+                "cmd": "esbuild src/server/static/js/main.js --bundle --outfile=release/ndspalib.js"
                 // "cmd": "browserify src/server/static/js/package.js -o src/server/static/js/bundle.js"
             }
         ]
