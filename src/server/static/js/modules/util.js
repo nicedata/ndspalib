@@ -2,7 +2,9 @@ const ND_EVENTS = require("../constants.js").ND_EVENTS;
 const VERSION = require("../constants.js").VERSION;
 
 exports.Util = class Util {
-    constructor() {}
+    constructor(debug = false) {
+        this._debug = debug;
+    }
 
     /**
      * noop - function that does nothing.
@@ -85,7 +87,7 @@ exports.Util = class Util {
      * sleep_ms - sleep during a specific period (ms).
      */
     async sleep_ms(ms) {
-        console.log(`Sleeping for ${ms}ms`);
+        this._debug ? console.log(`Sleeping for ${ms}ms`) : this.noop();
         await new Promise((resolve) => setTimeout(resolve, ms));
     }
 
@@ -96,4 +98,18 @@ exports.Util = class Util {
         if (typeof str !== "string") return str;
         return str.replace(/\n+/g, " ").replace(/\r+/g, " ").replace(/  +/g, " ");
     }
+
+    navigate_to = (url) => {
+        let result = false;
+        document.querySelectorAll("[nd-link]").forEach((link) => {
+            const nd_url = link.getAttribute("nd-url");
+            const href = link.getAttribute("href");
+            if (href === url || nd_url === url) {
+                link.click();
+                result = true;
+                return;
+            }
+        });
+        return result;
+    };
 };

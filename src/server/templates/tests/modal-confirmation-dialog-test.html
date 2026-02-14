@@ -6,8 +6,8 @@
     <button id="modal_test" class="btn btn-primary btn-sm me-2">Test it</button>
     <code id="modal_result" class="fw-bold">Result</code>
     <script id="usage-script">
-        const modal_test = document.getElementById('modal_test'); // The 'Test it' button
-        const modal_result = document.getElementById('modal_result'); // The result code
+        var modal_test = document.getElementById('modal_test'); // The 'Test it' button
+        var modal_result = document.getElementById('modal_result'); // The result code
 
         // Add an event listener to the 'Test it' button
         modal_test.addEventListener('click', e => {
@@ -34,14 +34,10 @@
 </div>
 
 <h2>Usage code</h2>
-<p>
-    <code class="fs-6">&lt;script&gt;...&lt;/script&gt;</code> :
-</p>
-
 <div class="mb-3">
-    <pre class="border"><code id="usage-code"></code></pre>
+    <pre class="border p-2"><code id="usage-code"></code></pre>
     <script>
-        const code = js_beautify(document.getElementById("usage-script").innerText, {indent_size: 4, space_in_empty_paren: true});
+        var code = js_beautify(document.getElementById("usage-script").innerText, {indent_size: 4, space_in_empty_paren: true});
         document.getElementById("usage-code").innerHTML = hljs.highlight(code, {language: "javascript", ignoreIllegals: true}).value;
     </script>
 </div>
@@ -51,7 +47,7 @@
     <code>{{url_for('static', filename='js/components/modal_confirmation.js')}}</code> :
 </p>
 <div class="mb-3">
-    <pre class="border"><code id="source-code"></code></pre>
+    <pre class="border p-2"><code id="source-code"></code></pre>
     <script>
         (async () => {
             const source_code = document.getElementById('source-code');

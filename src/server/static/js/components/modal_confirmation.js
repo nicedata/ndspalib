@@ -5,6 +5,8 @@
  *       ND SPA Utilities for handling (modal, events, ...)
  */
 
+const { BaseModal } = require("./base_modal.js");
+
 // Supported languages (add your own !)
 const LANGS = ["de", "fr", "en"];
 
@@ -30,37 +32,24 @@ const I18N = {
 // Default settings
 const DEFAULTS = {
     lang: "en",
-    title: "ModalConfirmation.title is not defined !",
-    message: "ModalConfirmation.message is not defined !",
-    // No Operation function
-    NOOP: () => {
-        console.log("NOOP");
-    },
+    title: "ModalConfirmation 'title' is not defined !",
+    message: "ModalConfirmation 'message' is not defined !",
 };
 
 /**
  * The ModalConfirmation class definition.
  */
-exports.ModalConfirmation = class ModalConfirmation {
+exports.ModalConfirmation = class ModalConfirmation extends BaseModal {
     // Constructor
     constructor(title, message, lang) {
-        // Check for ND utilities
-        if (typeof window.nd === "undefined") throw new Error("NDSPA library not present !");
+        super(title, message, lang);
 
-        // Initilization
-        this.dialog = null;
-        this.bs_dialog = null;
-        this.accept_btn = null; // The accept button
-        this.cancel_btn = null; // The cancel button
         this.confirm_cb = null; // The confirmation checkbox
         this.title = title ? title : DEFAULTS.title;
         this.message = message ? message : DEFAULTS.message;
         // Set translations
         lang = LANGS.includes(lang) ? lang.toLowerCase() : DEFAULTS.lang; // Switch to DEFAULT_LANG
         this.lang = I18N[lang];
-
-        // Give this instance an ID (UUID) !
-        this.id = crypto.randomUUID();
 
         // Bootstrap styled HTML code (compressed to make some space)
         this.html = nd.util.compress(`
@@ -86,77 +75,18 @@ exports.ModalConfirmation = class ModalConfirmation {
                     </div>
                 </div>    
             </div>`);
-
-        // Set default handlers
-        this._accept_handler = DEFAULTS.NOOP; // Default accept handler
-        this._cancel_handler = DEFAULTS.NOOP; // Default cancel handler
-
-        // Accept event handler
-        this._on_accept = (event) => {
-            // Run the 'accept' handler
-            this._accept_handler();
-            this._remove_event_handlers();
-        };
-
-        // Cancel event handler
-        this._on_cancel = (event) => {
-            // Run the 'dismiss' handler
-            this._cancel_handler();
-            this._remove_event_handlers();
-        };
-
-        // Remove event handlers (cleanup)
-        this._remove_event_handlers = () => {
-            this.bs_dialog.hide();
-            nd.event.off(`nd:${this.id}:accept`);
-            nd.event.off(`nd:${this.id}:dismiss`);
-            this.confirm_cb.removeEventListener("click", this._confirm_cb_listener); // Remove component handler
-            this.dialog.remove();
-        };
-
-        // Finally, add SPA event handlers
-        nd.event.on(`nd:${this.id}:accept`, this._on_accept);
-        nd.event.on(`nd:${this.id}:dismiss`, this._on_cancel);
     }
 
-    // Set another accept handler
-    set_accept_handler(func = DEFAULTS.noop) {
-        // The supplied arg. must be a function !
-        if (typeof func === "function") this._accept_handler = func;
-    }
-
-    // Set another cancel handler
-    set_cancel_handler(func = DEFAULTS.noop) {
-        // The supplied arg. must be a function !
-        if (typeof func === "function") this._cancel_handler = func;
-    }
+    clean_addons = () => {
+        this.confirm_cb.removeEventListener("click", this._confirm_cb_listener); // Remove component handler
+    };
 
     // Show the dialog
     async show() {
-        this.dialog = await nd.layer.open({
-            mode: "modal", // We want a modal !
-            content: this.html, // HTML content
-            id: this.id, // Set the current context (timestamp)
-            dismissable: "button", // Use only buttons to dismiss the dialog !
-            history: false, // Do not track url changes
+        super.show().then(() => {
+            this.confirm_cb = this.dialog.querySelector("input"); // Get the confirmation checkbox element
+            this.confirm_cb.addEventListener("click", this._confirm_cb_listener); // Add a 'click' event listener
         });
-
-        this.bs_dialog = new bootstrap.Modal(this.dialog, { backdrop: "static" });
-
-        this.accept_btn = this.dialog.querySelector("[nd-accept]"); // Get the accept button element
-        this.cancel_btn = this.dialog.querySelector("[nd-dismiss]"); // Get the cancel button element
-        this.confirm_cb = this.dialog.querySelector("input"); // Get the confirmation checkbox element
-        this.confirm_cb.addEventListener("click", this._confirm_cb_listener); // Add a 'click' event listener
-
-        this.accept_btn.addEventListener("click", (e) => {
-            document.dispatchEvent(new CustomEvent(`nd:${this.id}:accept`, { detail: { id: this.id } }));
-        });
-
-        this.cancel_btn.addEventListener("click", (e) => {
-            document.dispatchEvent(new CustomEvent(`nd:${this.id}:dismiss`, { detail: { id: this.id } }));
-        });
-
-        this.bs_dialog.show();
     }
 
     // Confirmation checkbox event listener
@@ -167,6 +97,6 @@ exports.ModalConfirmation = class ModalConfirmation {
             return;
         }
         this.accept_btn.classList.remove("btn-danger"); // remove accept button style (red)
-        this.accept_btn.disabled = true; // Disable the accept butto
+        this.accept_btn.disabled = true; // Disable the accept buttons
     };
 };

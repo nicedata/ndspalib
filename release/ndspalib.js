@@ -8,7 +8,7 @@
   var require_constants = __commonJS({
     "src/server/static/js/constants.js"(exports) {
       exports.PROGNAME = "NDS SPA utilities";
-      exports.VERSION = "1.0.5-dev";
+      exports.VERSION = "1.0.6-dev";
       exports.PREFIX = "nd";
       exports.ERR_NO_NDSPA = "NDSPA library not present !";
       exports.TARGET_NONE = ":none:";
@@ -20,10 +20,14 @@
         FETCH_BEFORE: "nd:fetch:before",
         FETCH_AFTER: "nd:fetch:after",
         FETCH_ERROR: "nd:fetch:error",
-        TOAST: "nd:toast"
+        TOAST: "nd:toast",
+        MODAL: "nd:modal",
+        CONFIRM: "nd:confirm"
       };
       exports.TOAST_DELAY_MS = 3e3;
       exports.POLL_DEFAULT_INTERVAL_MS = 1e4;
+      exports.noop = () => {
+      };
     }
   });
 
@@ -56,7 +60,8 @@
       var ND_EVENTS = require_constants().ND_EVENTS;
       var VERSION2 = require_constants().VERSION;
       exports.Util = class Util {
-        constructor() {
+        constructor(debug = false) {
+          this._debug = debug;
         }
         /**
          * noop - function that does nothing.
@@ -127,7 +132,7 @@
          * sleep_ms - sleep during a specific period (ms).
          */
         async sleep_ms(ms) {
-          console.log(`Sleeping for ${ms}ms`);
+          this._debug ? console.log(`Sleeping for ${ms}ms`) : this.noop();
           await new Promise((resolve) => setTimeout(resolve, ms));
         }
         /**
@@ -138,6 +143,19 @@
             return str;
           return str.replace(/\n+/g, " ").replace(/\r+/g, " ").replace(/  +/g, " ");
         }
+        navigate_to = (url) => {
+          let result = false;
+          document.querySelectorAll("[nd-link]").forEach((link) => {
+            const nd_url = link.getAttribute("nd-url");
+            const href = link.getAttribute("href");
+            if (href === url || nd_url === url) {
+              link.click();
+              result = true;
+              return;
+            }
+          });
+          return result;
+        };
       };
     }
   });
@@ -542,40 +560,163 @@
     }
   });
 
+  // src/server/static/js/components/toast.js
+  var require_toast = __commonJS({
+    "src/server/static/js/components/toast.js"(exports) {
+      var { ERR_NO_NDSPA, TOAST_DELAY_MS, noop } = require_constants();
+      exports.Toast = class Toast {
+        constructor(container = null, category = "", header = "", body = "", redirect_url = null, debug = false) {
+          this.id = crypto.randomUUID();
+          this._container = container;
+          this._delay_ms = TOAST_DELAY_MS;
+          this._redirect_url = redirect_url;
+          this._debug = debug;
+          this.html = nd.util.compress(`
+            <div data-nduuid="${this.id}" class="toast mt-2" role="alert" aria-live="assertive" aria-atomic="true">
+                <div class="toast-header">
+                    <strong id="id_header_text" class="me-auto text-${category}">${header}</strong>
+                    <button type="button" class="btn-close" data-bs-dismiss="toast" aria-label="Close"></button>
+                </div>
+                <div id="id_div_toast_body" class="toast-body">${body}</div>
+            </div>`);
+        }
+        show = () => {
+          const fragment = nd.util.create_fragment(this.html);
+          nd.util.insert_fragment(this._container, fragment, true);
+          const toast_element = this._container.querySelector(`[data-nduuid="${this.id}"]`);
+          toast_element.classList.add("show");
+          setTimeout(() => {
+            toast_element.classList.remove("show");
+            toast_element.remove();
+            if (this._redirect_url) {
+              this._debug ? console.log(`${this.constructor.name} : will redirect to '${this._redirect_url}'.`) : noop();
+              const ok = nd.util.navigate_to(this._redirect_url);
+              if (!ok)
+                this._debug ? console.error(`${this.constructor.name} : wedirection to '${this._redirect_url}' fails !`) : noop();
+            } else {
+              this._debug ? console.log(`${this.constructor.name} : no redirection url was specified.`) : noop();
+            }
+          }, this._delay_ms);
+        };
+      };
+    }
+  });
+
   // src/server/static/js/modules/toast_handler.js
   var require_toast_handler = __commonJS({
     "src/server/static/js/modules/toast_handler.js"(exports) {
-      var ND_EVENTS = require_constants().ND_EVENTS;
-      var TOAST_DELAY_MS = require_constants().TOAST_DELAY_MS;
-      var ERR_NO_NDSPA = require_constants().ERR_NO_NDSPA;
-      exports.ToastHandler = class ToastHandler {
-        constructor() {
+      var { ND_EVENTS } = require_constants();
+      var { Toast: Toast2 } = require_toast();
+      var { BaseHandler: BaseHandler2 } = require_base_handler();
+      var container_selector = "nd-toast-container";
+      exports.ToastHandler = class ToastHandler extends BaseHandler2 {
+        constructor(debug = false) {
+          super(debug);
+          this._debug = debug;
+          this._container = document.querySelector(`[${container_selector}]`);
+          if (!this._container)
+            throw new Error(`No '${container_selector}' element is present !`);
+          document.addEventListener(ND_EVENTS.TOAST, this._toast_event_handler);
+        }
+        // Baseclass override
+        process = (fragment) => {
+        };
+        // Baseclass override
+        postprocess = () => {
+        };
+        _toast_event_handler = (event) => {
+          const detail = JSON.parse(event.detail);
+          new Toast2(this._container, detail.category, detail.header, detail.body, detail.redirect_url, this._debug).show();
+        };
+      };
+    }
+  });
+
+  // src/server/static/js/components/base_modal.js
+  var require_base_modal = __commonJS({
+    "src/server/static/js/components/base_modal.js"(exports) {
+      exports.dismiss_btn;
+      var { ERR_NO_NDSPA, noop } = require_constants();
+      exports.BaseModal = class BaseModal {
+        constructor(title, message, lang, accept_url, dismiss_url, debug = false) {
           if (typeof window.nd === "undefined")
             throw new Error(ERR_NO_NDSPA);
-          this._targets = [];
-          this._delay_ms = TOAST_DELAY_MS;
-          this._init();
+          this.id = crypto.randomUUID();
+          this._debug = debug;
+          this.accept_btn = null;
+          this.dismiss_btn = null;
+          this.accept_url = accept_url;
+          this.dismiss_url = dismiss_url;
+          this._state = "init";
+          this.title = title;
+          this.message = message;
+          this.lang = lang;
+          this.dialog = null;
+          this._bootstrap_dialog = null;
+          this._accept_handler = noop;
+          this._dismiss_handler = noop;
+          nd.event.on(`nd:${this.id}:accept`, this._on_accept);
+          nd.event.on(`nd:${this.id}:dismiss`, this._on_dismiss);
         }
-        reload() {
-          this._init();
-        }
-        _toast_event_handler = (event) => {
-          const fragment = nd.util.create_fragment(event.detail);
-          this._targets.forEach((target) => {
-            nd.util.insert_fragment(target, fragment, true);
-            const toast_element = target.lastChild;
-            toast_element.classList.add("show");
-            setTimeout(() => {
-              toast_element.classList.remove("show");
-              toast_element.remove();
-            }, this._delay_ms);
-          });
+        // Accept event handler
+        _on_accept = (event) => {
+          this._state = "accepted";
+          this._accept_handler();
+          this._remove_event_handlers();
         };
-        _init() {
-          document.querySelectorAll("[nd-toast]").forEach((element) => {
-            this._targets.push(element);
+        // Dismiss event handler
+        _on_dismiss = (event) => {
+          this._state = "dismissed";
+          this._dismiss_handler();
+          this._remove_event_handlers();
+        };
+        _remove_event_handlers = () => {
+          this._bootstrap_dialog.hide();
+          nd.event.off(`nd:${this.id}:accept`);
+          nd.event.off(`nd:${this.id}:dismiss`);
+          this.clean_addons();
+          this.dialog.remove();
+          let redirect_to = "";
+          switch (this._state) {
+            case "accepted":
+              redirect_to = this.accept_url;
+              break;
+            case "dismissed":
+              redirect_to = this.dismiss_url;
+              break;
+          }
+          console.log("U", redirect_to);
+        };
+        clean_addons = () => {
+        };
+        // Set another accept handler
+        set_accept_handler(func = DEFAULTS.noop) {
+          if (typeof func === "function")
+            this._accept_handler = func;
+        }
+        // Set another dismiss handler
+        set_dismiss_handler(func = DEFAULTS.noop) {
+          if (typeof func === "function")
+            this._dismiss_handler = func;
+        }
+        async show() {
+          this.dialog = await nd.layer.open({
+            content: this.html,
+            // HTML content
+            id: this.id
+            // Set the current context (timestamp)
           });
-          document.addEventListener(ND_EVENTS.TOAST, this._toast_event_handler);
+          this.accept_btn = this.dialog.querySelector("[nd-accept]");
+          this.dismiss_btn = this.dialog.querySelector("[nd-dismiss]");
+          this.accept_btn.addEventListener("click", (e) => {
+            document.dispatchEvent(new CustomEvent(`nd:${this.id}:accept`, { detail: { id: this.id } }));
+          });
+          this.dismiss_btn.addEventListener("click", (e) => {
+            document.dispatchEvent(new CustomEvent(`nd:${this.id}:dismiss`, { detail: { id: this.id } }));
+          });
+          this._bootstrap_dialog = new bootstrap.Modal(this.dialog, { backdrop: "static" });
+          this._bootstrap_dialog.show();
+          this._state = "running";
         }
       };
     }
@@ -584,6 +725,7 @@
   // src/server/static/js/components/modal_dialog.js
   var require_modal_dialog = __commonJS({
     "src/server/static/js/components/modal_dialog.js"(exports) {
+      var { BaseModal } = require_base_modal();
       var LANGS = ["de", "fr", "en"];
       var I18N = {
         fr: {
@@ -599,33 +741,23 @@
           no: "Nein"
         }
       };
-      var DEFAULTS = {
+      var DEFAULTS2 = {
         lang: "en",
-        title: "ModalDialog.title is not defined !",
-        message: "ModalDialog.message is not defined !",
-        // No Operation function
-        noop: () => {
-          console.log("NOOP");
-        }
+        title: "ModalDialog 'title' is not defined !",
+        message: "ModalDialog 'message' is not defined !"
       };
-      exports.ModalDialog = class ModalDialog {
+      exports.ModalDialog = class ModalDialog extends BaseModal {
         // Constructor
-        constructor(title, message, lang) {
-          if (typeof window.nd === "undefined")
-            throw new Error("NDSPA library not present !");
-          this.dialog = null;
-          this.bs_dialog = null;
-          this.title = title ? title : DEFAULTS.title;
-          this.message = message ? message : DEFAULTS.message;
-          lang = LANGS.includes(lang) ? lang.toLowerCase() : DEFAULTS.lang;
+        constructor(title = DEFAULTS2.title, message = DEFAULTS2.message, lang = DEFAULTS2.lang, accept_url = "", dismiss_url = "") {
+          super(title, message, lang, accept_url, dismiss_url);
+          lang = LANGS.includes(lang) ? lang.toLowerCase() : DEFAULTS2.lang;
           this.lang = I18N[lang];
-          this.id = crypto.randomUUID();
           this.html = nd.util.compress(`
             <div class="modal" data-nduuid="${this.id}" tabindex="-1" role="dialog" aria-labelledby="Modal dialog" aria-hidden="true">
                 <div class="modal-dialog" role="document">
                     <div class="modal-content">
                         <div class="modal-header">
-                            <h5 class="modal-title"><i class="bi bi-question-circle me-2" aria-hidden="true"></i>${this.title}</h5>
+                            <h5 class="modal-title"><!--<i class="bi bi-question-circle me-2" aria-hidden="true"></i>-->${this.title}</h5>
                         </div>
                         <div class="modal-body">${this.message}</div>
                         <div class="modal-footer">
@@ -637,60 +769,42 @@
                     </div>
                 </div>    
             </div>`);
-          this._accept_handler = DEFAULTS.noop;
-          this._cancel_handler = DEFAULTS.noop;
-          this._on_accept = (event) => {
-            this._accept_handler();
-            this._remove_event_handlers();
-          };
-          this._on_cancel = (event) => {
-            this._cancel_handler();
-            this._remove_event_handlers();
-          };
-          this._remove_event_handlers = () => {
-            this.bs_dialog.hide();
-            nd.event.off(`nd:${this.id}:accept`);
-            nd.event.off(`nd:${this.id}:dismiss`);
-            this.dialog.remove();
-          };
-          nd.event.on(`nd:${this.id}:accept`, this._on_accept);
-          nd.event.on(`nd:${this.id}:dismiss`, this._on_cancel);
-        }
-        // Set another accept handler
-        set_accept_handler(func = DEFAULTS.noop) {
-          if (typeof func === "function")
-            this._accept_handler = func;
-        }
-        // Set another cancel handler
-        set_cancel_handler(func = DEFAULTS.noop) {
-          if (typeof func === "function")
-            this._cancel_handler = func;
         }
         // Show the dialog
         async show() {
-          this.dialog = await nd.layer.open({
-            mode: "modal",
-            // We want a modal !
-            content: this.html,
-            // HTML content
-            id: this.id,
-            // Set the current context (timestamp)
-            dismissable: "button",
-            // Use only buttons to dismiss the dialog !
-            history: false
-            // Do not track url changes
+          super.show().then(() => {
           });
-          this.bs_dialog = new bootstrap.Modal(this.dialog, { backdrop: "static" });
-          const accept_btn = this.dialog.querySelector("[nd-accept]");
-          const cancel_btn = this.dialog.querySelector("[nd-dismiss]");
-          accept_btn.addEventListener("click", (e) => {
-            document.dispatchEvent(new CustomEvent(`nd:${this.id}:accept`, { detail: { id: this.id } }));
-          });
-          cancel_btn.addEventListener("click", (e) => {
-            document.dispatchEvent(new CustomEvent(`nd:${this.id}:dismiss`, { detail: { id: this.id } }));
-          });
-          this.bs_dialog.show();
         }
+      };
+    }
+  });
+
+  // src/server/static/js/modules/modal_handler.js
+  var require_modal_handler = __commonJS({
+    "src/server/static/js/modules/modal_handler.js"(exports) {
+      var { ND_EVENTS } = require_constants();
+      var { ModalDialog: ModalDialog2 } = require_modal_dialog();
+      var { BaseHandler: BaseHandler2 } = require_base_handler();
+      var container_selector = "nd-modal-container";
+      exports.ModalHandler = class ModalHandler extends BaseHandler2 {
+        constructor(debug = false) {
+          super(debug);
+          this._debug = debug;
+          const container = document.querySelector(`[${container_selector}]`);
+          if (!container)
+            throw new Error(`No '${container_selector}' element is present !`);
+          document.addEventListener(ND_EVENTS.MODAL, this._modal_event_handler);
+        }
+        // Baseclass override
+        process = (fragment) => {
+        };
+        // Baseclass override
+        postprocess = () => {
+        };
+        _modal_event_handler = (event) => {
+          const detail = JSON.parse(event.detail);
+          new ModalDialog2(detail.header, detail.body, detail.lang, detail.accept_url, detail.dismiss_url).show();
+        };
       };
     }
   });
@@ -698,6 +812,7 @@
   // src/server/static/js/components/modal_confirmation.js
   var require_modal_confirmation = __commonJS({
     "src/server/static/js/components/modal_confirmation.js"(exports) {
+      var { BaseModal } = require_base_modal();
       var LANGS = ["de", "fr", "en"];
       var I18N = {
         fr: {
@@ -716,30 +831,20 @@
           confirm: "Bitte Vorgang best\xE4tigen"
         }
       };
-      var DEFAULTS = {
+      var DEFAULTS2 = {
         lang: "en",
-        title: "ModalConfirmation.title is not defined !",
-        message: "ModalConfirmation.message is not defined !",
-        // No Operation function
-        NOOP: () => {
-          console.log("NOOP");
-        }
+        title: "ModalConfirmation 'title' is not defined !",
+        message: "ModalConfirmation 'message' is not defined !"
       };
-      exports.ModalConfirmation = class ModalConfirmation {
+      exports.ModalConfirmation = class ModalConfirmation extends BaseModal {
         // Constructor
         constructor(title, message, lang) {
-          if (typeof window.nd === "undefined")
-            throw new Error("NDSPA library not present !");
-          this.dialog = null;
-          this.bs_dialog = null;
-          this.accept_btn = null;
-          this.cancel_btn = null;
+          super(title, message, lang);
           this.confirm_cb = null;
-          this.title = title ? title : DEFAULTS.title;
-          this.message = message ? message : DEFAULTS.message;
-          lang = LANGS.includes(lang) ? lang.toLowerCase() : DEFAULTS.lang;
+          this.title = title ? title : DEFAULTS2.title;
+          this.message = message ? message : DEFAULTS2.message;
+          lang = LANGS.includes(lang) ? lang.toLowerCase() : DEFAULTS2.lang;
           this.lang = I18N[lang];
-          this.id = crypto.randomUUID();
           this.html = nd.util.compress(`
             <div class="modal" data-nduuid="${this.id}" tabindex="-1" role="dialog" aria-labelledby="Modal dialog" aria-hidden="true">
                 <div class="modal-dialog" role="document">
@@ -763,62 +868,16 @@
                     </div>
                 </div>    
             </div>`);
-          this._accept_handler = DEFAULTS.NOOP;
-          this._cancel_handler = DEFAULTS.NOOP;
-          this._on_accept = (event) => {
-            this._accept_handler();
-            this._remove_event_handlers();
-          };
-          this._on_cancel = (event) => {
-            this._cancel_handler();
-            this._remove_event_handlers();
-          };
-          this._remove_event_handlers = () => {
-            this.bs_dialog.hide();
-            nd.event.off(`nd:${this.id}:accept`);
-            nd.event.off(`nd:${this.id}:dismiss`);
-            this.confirm_cb.removeEventListener("click", this._confirm_cb_listener);
-            this.dialog.remove();
-          };
-          nd.event.on(`nd:${this.id}:accept`, this._on_accept);
-          nd.event.on(`nd:${this.id}:dismiss`, this._on_cancel);
         }
-        // Set another accept handler
-        set_accept_handler(func = DEFAULTS.noop) {
-          if (typeof func === "function")
-            this._accept_handler = func;
-        }
-        // Set another cancel handler
-        set_cancel_handler(func = DEFAULTS.noop) {
-          if (typeof func === "function")
-            this._cancel_handler = func;
-        }
+        clean_addons = () => {
+          this.confirm_cb.removeEventListener("click", this._confirm_cb_listener);
+        };
         // Show the dialog
         async show() {
-          this.dialog = await nd.layer.open({
-            mode: "modal",
-            // We want a modal !
-            content: this.html,
-            // HTML content
-            id: this.id,
-            // Set the current context (timestamp)
-            dismissable: "button",
-            // Use only buttons to dismiss the dialog !
-            history: false
-            // Do not track url changes
+          super.show().then(() => {
+            this.confirm_cb = this.dialog.querySelector("input");
+            this.confirm_cb.addEventListener("click", this._confirm_cb_listener);
           });
-          this.bs_dialog = new bootstrap.Modal(this.dialog, { backdrop: "static" });
-          this.accept_btn = this.dialog.querySelector("[nd-accept]");
-          this.cancel_btn = this.dialog.querySelector("[nd-dismiss]");
-          this.confirm_cb = this.dialog.querySelector("input");
-          this.confirm_cb.addEventListener("click", this._confirm_cb_listener);
-          this.accept_btn.addEventListener("click", (e) => {
-            document.dispatchEvent(new CustomEvent(`nd:${this.id}:accept`, { detail: { id: this.id } }));
-          });
-          this.cancel_btn.addEventListener("click", (e) => {
-            document.dispatchEvent(new CustomEvent(`nd:${this.id}:dismiss`, { detail: { id: this.id } }));
-          });
-          this.bs_dialog.show();
         }
         // Confirmation checkbox event listener
         _confirm_cb_listener = () => {
@@ -843,9 +902,11 @@
   var SwitchHandler = require_switch_handler().SwitchHandler;
   var PollHandler = require_poll_handler().PollHandler;
   var LinkHandler = require_link_handler().LinkHandler;
-  var ToastHandler = require_toast_handler().ToastHandler;
+  var { ToastHandler } = require_toast_handler();
+  var { ModalHandler } = require_modal_handler();
   var ModalDialog = require_modal_dialog().ModalDialog;
   var ModalConfirmation = require_modal_confirmation().ModalConfirmation;
+  var Toast = require_toast().Toast;
   var PROG_INFO = `${PROGNAME} ${VERSION}`;
   console.log(`${PROG_INFO} initializing...`);
   if (typeof bootstrap === "undefined")
@@ -862,6 +923,7 @@
   nd.components = {};
   nd.components.ModalDialog = ModalDialog;
   nd.components.ModalConfirmation = ModalConfirmation;
+  nd.components.Toast = Toast;
   nd.layer = {};
   nd.layer.open = async (args) => {
     const container = document.querySelector("[nd-modal-container]");
@@ -887,34 +949,40 @@
         case "x-nd-event":
           events = JSON.parse(v);
           match = true;
+          break;
         case "x-nd-title":
           document.title = v;
           match = true;
+          break;
       }
       if (match && nd.debug.active())
         console.log(`Received server message '${sse2}'.`);
     });
     events.forEach((event) => {
-      console.log(event);
       document.dispatchEvent(new CustomEvent(event.type, { detail: event.detail }));
     });
     return response;
   };
   nd.refresh = (fragment) => {
-    const HANDLERS = [nd.handlers.poll, nd.handlers.link, nd.handlers.switch, nd.handlers.toast];
+    const HANDLERS = [nd.handlers.poll, nd.handlers.link, nd.handlers.switch, nd.handlers.toast, nd.handlers.modal];
     nd.handlers.poll.process(fragment);
     nd.handlers.link.process(fragment);
     nd.handlers.switch.process(fragment);
+    nd.handlers.toast.process(fragment);
+    nd.handlers.modal.process(fragment);
     nd.handlers.poll.postprocess();
     nd.handlers.link.postprocess();
     nd.handlers.switch.postprocess();
+    nd.handlers.toast.postprocess();
+    nd.handlers.modal.postprocess();
   };
   var on_dom_loaded = () => {
     nd.handlers = {
       poll: new PollHandler(false),
       link: new LinkHandler(false),
       switch: new SwitchHandler(false),
-      toast: new ToastHandler()
+      toast: new ToastHandler(false),
+      modal: new ModalHandler(false)
     };
     nd.refresh(document);
     console.log(`${PROG_INFO} ready !`);

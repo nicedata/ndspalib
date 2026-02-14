@@ -68,7 +68,8 @@
 </head>
 
 <body class="container flex-column">
-    <div class="toast-container top-0 start-50 translate-middle-x" nd-toast></div>
+
+    <div class="toast-container top-0 start-50 translate-middle-x" nd-toast-container></div>
     <div nd-modal-container></div>
 
     <h1 class="text-center">Nice Data Systems Javascript SPA library</h1>
@@ -77,17 +78,19 @@
     <div class="border-bottom border-top pb-2 pt-2 mt-3">
         <a href="/index" nd-link nd-target="main" nd-title="Home">Home</a>
         <span class="h6">|</span>
-        <a href="/polltest" nd-link nd-target="main" nd-title="Polling">Polling</a>
+        <a href="/polltest" nd-url="/polltest" nd-link nd-target="main" nd-title="Polling">Polling</a>
         <span class="h6">|</span>
         <a href="/linktest" nd-link nd-target="main" nd-title="Links">Links</a>
         <span class="h6">|</span>
         <a href="/selecttest" nd-link nd-target="main" nd-title="Select">Select</a>
         <span class="h6">|</span>
-        <a href="/msgtest" nd-link nd-target="main" nd-title="Messaging">Messaging</a>
+        <a href="/toasttest" nd-link nd-target="main" nd-title="Messaging">Toasting</a>
         <span class="h6">|</span>
         <a href="/modal_dialog" nd-link nd-target="main" nd-title="Modal dialog">Modal dialog</a>
         <span class="h6">|</span>
         <a href="/modal_confirmation_dialog" nd-link nd-target="main" nd-title="Modal confirmation dialog">Modal confirmation dialog</a>
+        <span class="h6">|</span>
+        <a href="/sse_index" nd-link nd-target="main" nd-title="Server events">Server events</a>
     </div>
 
     <main class="mt-3">
@@ -106,39 +109,6 @@
             navigate_to_home();
             removeEventListener("DOMContentLoaded", navigate_to_home);
         });
-        /*
-        nd.event.on('nd:toast', (event, element) => {
-            console.log(event, element)
-        });
-
-
-        nd.event.off('nd:toast');
-        */
-        /*
-        console.log(nd);
-        nd.event.on('nd:fragment:before_insert', e => {
-            console.log(e);
-        });
-        nd.event.on('nd:fragment:after_insert', e => {
-            console.log(e);
-        });
-        */
-        /*
-
-        nd.event.on("nd:fragment:inserted", (e) => {
-            const d = document.getElementById('id_div_toast');
-            console.log('FAI', e.type, ' /', e.detail, d)
-            const bs_toaster = new bootstrap.Toast(d, {delay: 1000})
-            bs_toaster.show();
-        });
-        */
-        /*
-        nd.event.on("nd:fragment:before-insert", (e) => {console.log('FBI', e.type, ' / ', e.detail)});
-        nd.event.on("nd:fragment:after-insert", (e) => {console.log('FAI', e.type, ' /', e.detail)});
-        nd.event.on("nd:fetch:before", (e) => {console.log('FB', e.type, ' /', e.detail)});
-        nd.event.on("nd:fetch:after", (e) => {console.log('FA', e.type, ' /', e.detail)});
-        nd.event.on("nd:fetch:error", (e) => {console.log('FE', e.type, ' /', e.detail)});
-        */
     </script>
 </body>
 

@@ -3,7 +3,7 @@
  */
 
 exports.PROGNAME = "NDS SPA utilities";
-exports.VERSION = "1.0.5-dev";
+exports.VERSION = "1.0.6-dev";
 exports.PREFIX = "nd";
 
 exports.ERR_NO_NDSPA = "NDSPA library not present !";
@@ -18,19 +18,10 @@ exports.ND_EVENTS = {
     FETCH_AFTER: "nd:fetch:after",
     FETCH_ERROR: "nd:fetch:error",
     TOAST: "nd:toast",
+    MODAL: "nd:modal",
+    CONFIRM: "nd:confirm",
 };
 
 exports.TOAST_DELAY_MS = 3000;
 exports.POLL_DEFAULT_INTERVAL_MS = 10000;
-
-// const ND_SELECTORS = {
-//     poll: `${PREFIX}-poll`,
-//     target: `${PREFIX}-target`,
-//     interval: `${PREFIX}-interval`,
-//     switch: `${PREFIX}-switch`,
-//     options: `${PREFIX}-options`,
-//     showfor: `${PREFIX}-show-for`,
-//     hidefor: `${PREFIX}-hide-for`,
-//     sync: `${PREFIX}-sync`,
-//     url: `${PREFIX}-url`,
-// };
+exports.noop = () => {}; // A function that does nothing !

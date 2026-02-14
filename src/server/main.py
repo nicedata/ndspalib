@@ -5,6 +5,9 @@ from typing import Dict, List
 
 from flask import Flask, Request, Response, render_template, request
 
+from toast import ToastCategory, Toast
+from modal import ModalDialog
+
 PRODUCTION_MODE = False
 
 
@@ -14,9 +17,8 @@ class NdMiddleware:
         self._wsgi_app = app.wsgi_app
         self._request: Request
         self._response: Response
-        self._test = "Nice Data Systems SPA Middleware"
         self._toasts: List[Dict] = []
-        self._title: str = ""
+        self._title: str | None = None
 
         with app.app_context():
             print("MW", "First call")
@@ -31,9 +33,6 @@ class NdMiddleware:
         def _(response: Response):
             return response
 
-    def test(self, message: str) -> None:
-        self._test = message
-
     def add_toast(self, toast: Dict) -> None:
         self._toasts.append(toast)
 
@@ -43,8 +42,6 @@ class NdMiddleware:
     def __call__(self, environ, start_response):
 
         def custom_start_response(status: str, headers: List, exc_info=None):
-            print("CW CALL, toast count:", len(self._toasts))
-            headers.append(("X-Custom-Header", self._test))
             if self._toasts:
                 headers.append(("x-nd-event", json.dumps(self._toasts)))
                 self._toasts.clear()
@@ -68,31 +65,65 @@ def home():
 @app.route("/index")
 def index():
     mw.title("Index")
-    return "<h1>Igor Tests</h1>"
+    return "<h1>ND SPA library tests home</h1>"
 
 
-@app.route("/msgtest")
+# =======================================================================
+# SSE Tests (begin)
+
+
+@app.route("/sse_index")
+def sse_index():
+    mw.title("SSE home")
+    return render_template("tests/sse-test.html")
+
+
+@app.route("/sse")
+@app.route("/sse/<arg>")
+def sse(arg="No arg"):
+    arg = arg.strip().lower()
+
+    match arg:
+        case "toast":
+            _toast(Toast(ToastCategory.INFO, "Toast message", "Toast body", ""))
+        case "modal":
+            modal = ModalDialog("Dialogue modal simple", "Ceci est un message envoyé par le serveur !<br>Vous allez être redirigé vers <b>/index</b>", "fr", "/index", "")
+            print(modal)
+            _modal(modal)
+        case _:
+            print(f"SSE: No match ( {arg}).")
+
+    return arg
+
+
+# SSE Tests (end)
+# =======================================================================
+
+
+@app.route("/toasttest")
 def messaging_test():
-    mw.title("Messaging")
-    # _toast("This is page load toast message", datetime.datetime.now().strftime("%d.%m.%Y %H:%M:%S"))
-    return render_template("tests/messaging-test.html")
+    mw.title("Toasting")
+    return render_template("tests/toasting-test.html")
 
 
-def _toast(header: str, body: str, category: str = "primary"):
-    toast = render_template("partials/toast.html", context={"category": category, "header": header, "body": body})
-    mw.add_toast({"type": "nd:toast", "detail": " ".join(toast.split())})
+def _toast(toast: Toast):
+    mw.add_toast({"type": "nd:toast", "detail": toast.serialize()})
+
+
+def _modal(modal: ModalDialog):
+    mw.add_toast({"type": "nd:modal", "detail": modal.serialize()})
 
 
 @app.route("/toast")
 def toast_test():
     now = datetime.datetime.now().strftime("%d.%m.%Y %H:%M:%S")
-    _toast("This is toast message A", now)
+    toast = Toast(ToastCategory.DANGER, "Redirection !", "You will be redirected to <b>/index</b> !", "/index")
+    _toast(toast)
     return f"Last toast stamp : {now}"
 
 
 @app.route("/polltest")
 def poll_test():
-    _toast("Polling tests", datetime.datetime.now().strftime("%d.%m.%Y %H:%M:%S"))
     mw.title("Polling")
     return render_template("tests/poll-test.html")
 
@@ -140,11 +171,13 @@ def pollpoll():
 
 @app.route("/modal_dialog")
 def modal_dialog():
+    mw.title("Modal dialog")
     return render_template("tests/modal-dialog-test.html")
 
 
 @app.route("/modal_confirmation_dialog")
 def modal_confirmation_dialog():
+    mw.title("Modal confirmation dialog")
     return render_template("tests/modal-confirmation-dialog-test.html")
 
 

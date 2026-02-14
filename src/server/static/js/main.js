@@ -9,11 +9,13 @@ const EventHandler = require("./modules/event_handler.js").EventHandler;
 const SwitchHandler = require("./modules/switch_handler.js").SwitchHandler;
 const PollHandler = require("./modules/poll_handler.js").PollHandler;
 const LinkHandler = require("./modules/link_handler.js").LinkHandler;
-const ToastHandler = require("./modules/toast_handler.js").ToastHandler;
+const { ToastHandler } = require("./modules/toast_handler.js");
+const { ModalHandler } = require("./modules/modal_handler.js");
 
 // Components
 const ModalDialog = require("./components/modal_dialog.js").ModalDialog;
 const ModalConfirmation = require("./components/modal_confirmation.js").ModalConfirmation;
+const Toast = require("./components/toast.js").Toast;
 
 const PROG_INFO = `${PROGNAME} ${VERSION}`;
 
@@ -37,6 +39,7 @@ nd.event = new EventHandler(false);
 nd.components = {};
 nd.components.ModalDialog = ModalDialog;
 nd.components.ModalConfirmation = ModalConfirmation;
+nd.components.Toast = Toast;
 
 nd.layer = {};
 nd.layer.open = async (args) => {
@@ -70,16 +73,17 @@ window.fetch = async (...args) => {
             case "x-nd-event":
                 events = JSON.parse(v);
                 match = true;
+                break;
             case "x-nd-title":
                 document.title = v;
                 match = true;
+                break;
         }
         if (match && nd.debug.active()) console.log(`Received server message '${sse}'.`);
     });
 
     // If there are events, dispatch them !
     events.forEach((event) => {
-        console.log(event);
         document.dispatchEvent(new CustomEvent(event.type, { detail: event.detail }));
     });
 
@@ -88,14 +92,18 @@ window.fetch = async (...args) => {
 };
 
 nd.refresh = (fragment) => {
-    const HANDLERS = [nd.handlers.poll, nd.handlers.link, nd.handlers.switch, nd.handlers.toast];
+    const HANDLERS = [nd.handlers.poll, nd.handlers.link, nd.handlers.switch, nd.handlers.toast, nd.handlers.modal];
     nd.handlers.poll.process(fragment);
     nd.handlers.link.process(fragment);
     nd.handlers.switch.process(fragment);
+    nd.handlers.toast.process(fragment);
+    nd.handlers.modal.process(fragment);
 
     nd.handlers.poll.postprocess();
     nd.handlers.link.postprocess();
     nd.handlers.switch.postprocess();
+    nd.handlers.toast.postprocess();
+    nd.handlers.modal.postprocess();
 };
 
 const on_before_unload = (e) => {
@@ -109,14 +117,15 @@ const on_dom_loaded = () => {
         poll: new PollHandler(false),
         link: new LinkHandler(false),
         switch: new SwitchHandler(false),
-        toast: new ToastHandler(),
+        toast: new ToastHandler(false),
+        modal: new ModalHandler(false),
     };
     nd.refresh(document);
     console.log(`${PROG_INFO} ready !`);
     removeEventListener("DOMContentLoaded", on_dom_loaded);
 };
 
-// Prevent navigation since this is an SPA !
+// Prevent navigation since this is a Single Page Aplication !
 navigation.addEventListener("navigate", (event) => {
     console.log(`Prevented navigation to '${event.destination.url}'.`);
     event.preventDefault();

@@ -1,0 +1,33 @@
+<h1>Toasts via server side events</h1>
+<p class="fw-bold text-primary">Synopsis</p>
+<p>
+    When a button is clicked, a request to url <code>/toast</code> is sent. <br>
+    The server responds with an <code>x-nd-event</code> in the response header along with a time
+    stamp string (like "<code>Last toast stamp : 14.02.2026 13:52:11</code>") in the response. <br>
+    If a <code>redirect_url</code> sits in the toast response, a redirect is tried.
+
+</p>
+<p>
+    The <code>x-nd-event</code> <b>detail</b> is transformed into a toast message, and the <b>response body</b> is used to update the target content.
+</p>
+<p class="fw-bold text-primary">Usage</p>
+<p class="border p-2">
+    <code>&lt;button id="b1" class="btn btn-primary w-100" nd-link nd-url="/toast" nd-target="#target">Toast button&lt;/button&gt;</code>
+</p>
+<p class="fw-bold text-primary">Test it</p>
+<div class="row mb-3">
+    <div class="col-2">
+        <button id="b1" class="btn btn-primary w-100" nd-link nd-url="/toast" nd-target="#target">Toast button</button>
+    </div>
+    <div class="col-2">
+        <a id="id1" class="btn btn-primary w-100" nd-link nd-url="/toast" nd-target="#target">Toast link</a>
+    </div>
+    <div class="col-5">
+        <div class="row">
+            <label for="target" class="col-sm-auto col-form-label">Server data :</label>
+            <div class="col-sm-8">
+                <input id="target" type="text" class="form-control" readonly>
+            </div>
+        </div>
+    </div>
+</div>
