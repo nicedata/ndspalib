@@ -41,12 +41,13 @@ const DEFAULTS = {
  */
 exports.ModalConfirmation = class ModalConfirmation extends BaseModal {
     // Constructor
-    constructor(title, message, lang) {
-        super(title, message, lang);
+    constructor(title, message, lang, accept_url, dismiss_url) {
+        super(title, message, lang, accept_url, dismiss_url);
 
         this.confirm_cb = null; // The confirmation checkbox
         this.title = title ? title : DEFAULTS.title;
         this.message = message ? message : DEFAULTS.message;
+
         // Set translations
         lang = LANGS.includes(lang) ? lang.toLowerCase() : DEFAULTS.lang; // Switch to DEFAULT_LANG
         this.lang = I18N[lang];
@@ -57,7 +58,7 @@ exports.ModalConfirmation = class ModalConfirmation extends BaseModal {
                 <div class="modal-dialog" role="document">
                     <div class="modal-content">
                         <div class="modal-header">
-                            <h5 class="modal-title"><i class="bi bi-exclamation-circle me-2 text-danger" aria-hidden="true"></i>${this.title}</h5>
+                            <h5 class="modal-title"><!-- <i class="bi bi-exclamation-circle me-2 text-danger" aria-hidden="true"> --></i>${this.title}</h5>
                         </div>
                         <div class="modal-body">${this.message}</div>
                         <div class="modal-footer">  

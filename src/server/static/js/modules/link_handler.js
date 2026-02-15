@@ -14,8 +14,8 @@
  *    nd-target :   css selector to identify the target(s). If ommitted, the element istelf is the target.
  */
 
-const TARGET_NONE = require("../constants.js").TARGET_NONE;
-BaseHandler = require("./base_handler.js").BaseHandler;
+const { TARGET_NONE } = require("../constants.js");
+const { BaseHandler } = require("./base_handler.js");
 
 exports.LinkHandler = class LinkHandler extends BaseHandler {
     constructor(debug = false) {

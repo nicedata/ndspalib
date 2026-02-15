@@ -32,7 +32,7 @@
  *       nd-hide-for : Hide if a specific value is received (wildcard * accepted)
  */
 
-BaseHandler = require("./base_handler.js").BaseHandler;
+const { BaseHandler } = require("./base_handler.js");
 
 exports.SwitchHandler = class SwitchHandler extends BaseHandler {
     constructor(debug) {
@@ -56,7 +56,7 @@ exports.SwitchHandler = class SwitchHandler extends BaseHandler {
             if (element.tagName !== "SELECT") {
                 if (nd.debug.active()) {
                     console.warn("<nd-switch> only applies to 'select' tags !", element);
-                } else throw new Error(`X<nd-switch> only applies to 'select' tags ! ${element.innerHTML}`);
+                } else throw new Error(`<nd-switch> only applies to 'select' tags ! ${element.innerHTML}`);
             }
 
             if (nd_options) {

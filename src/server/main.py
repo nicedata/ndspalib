@@ -42,7 +42,7 @@ class NdMiddleware:
     def __call__(self, environ, start_response):
 
         def custom_start_response(status: str, headers: List, exc_info=None):
-            if self._toasts:
+            for t in self._toasts:
                 headers.append(("x-nd-event", json.dumps(self._toasts)))
                 self._toasts.clear()
             if self._title:
@@ -85,7 +85,7 @@ def sse(arg="No arg"):
 
     match arg:
         case "toast":
-            _toast(Toast(ToastCategory.INFO, "Toast message", "Toast body", ""))
+            _toast(Toast(ToastCategory.DEFAULT, "Toast message 1", "Toast body 1", ""))
         case "modal":
             modal = ModalDialog("Dialogue modal simple", "Ceci est un message envoyé par le serveur !<br>Vous allez être redirigé vers <b>/index</b>", "fr", "/index", "")
             print(modal)

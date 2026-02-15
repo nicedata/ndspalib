@@ -2,11 +2,19 @@
  * Constants
  */
 
-exports.PROGNAME = "NDS SPA utilities";
-exports.VERSION = "1.0.6-dev";
-exports.PREFIX = "nd";
+const INFOS = {
+    PROGNAME: "NDS SPA utilities",
+    VERSION: "1.0.7-dev",
+    AUTHOR: "Martin Mohnhaupt <martin.mohnhaupt@etik.com>",
+    LICENCE: "MIT License, https://mit-license.org/",
+    INSPIREDBY: {
+        HTMX: "HTMX : https://htmx.org/",
+        UNPOLY: "UNPOLY : https://unpoly.com/",
+    },
+};
 
-exports.ERR_NO_NDSPA = "NDSPA library not present !";
+exports.INFOS = INFOS;
+exports.ERR_NO_NDSPA = `${INFOS.PROGNAME} library not present !`;
 exports.TARGET_NONE = ":none:";
 
 exports.ND_EVENTS = {

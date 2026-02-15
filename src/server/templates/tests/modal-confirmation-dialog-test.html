@@ -12,7 +12,7 @@
         // Add an event listener to the 'Test it' button
         modal_test.addEventListener('click', e => {
             // Create a new dialog
-            const dialog = new nd.components.ModalConfirmation('Opération délicate', 'Voulez-vous <b>vraiment</b> supprimer ces informations ?', 'en');
+            const dialog = new nd.components.ModalConfirmation('Opération délicate', 'Voulez-vous <b>vraiment</b> supprimer ces informations ?', 'en', '/accept', '/dismiss');
 
             // Update the result code tag
             modal_result.textContent = `Dialog id ${dialog.id} running...`
@@ -23,7 +23,7 @@
             });
 
             // Override the default cancel handler with a new one
-            dialog.set_cancel_handler(() => {
+            dialog.set_dismiss_handler(() => {
                 modal_result.textContent = `${dialog.id} cancelled.`;
             });
 

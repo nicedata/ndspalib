@@ -1,6 +1,4 @@
-const { ERR_NO_NDSPA, TOAST_DELAY_MS, noop } = require("../constants.js");
-
-const container_selector = "nd-toast-container";
+const { TOAST_DELAY_MS, noop } = require("../constants.js");
 
 exports.Toast = class Toast {
     constructor(container = null, category = "", header = "", body = "", redirect_url = null, debug = false) {
@@ -13,7 +11,7 @@ exports.Toast = class Toast {
         this.html = nd.util.compress(`
             <div data-nduuid="${this.id}" class="toast mt-2" role="alert" aria-live="assertive" aria-atomic="true">
                 <div class="toast-header">
-                    <strong id="id_header_text" class="me-auto text-${category}">${header}</strong>
+                    <strong id="id_header_text" class="me-auto text-${category}"><i class="bi bi-exclamation-square me-2"></i>${header}</strong>
                     <button type="button" class="btn-close" data-bs-dismiss="toast" aria-label="Close"></button>
                 </div>
                 <div id="id_div_toast_body" class="toast-body">${body}</div>

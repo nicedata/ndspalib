@@ -1,4 +1,4 @@
-this.dismiss_btn; /**
+/**
  * Modal dialog base class
  */
 const { ERR_NO_NDSPA, noop } = require("../constants.js");
@@ -53,7 +53,7 @@ exports.BaseModal = class BaseModal {
         this.clean_addons();
         this.dialog.remove();
 
-        let redirect_to = "";
+        let redirect_to = null;
         switch (this._state) {
             case "accepted":
                 redirect_to = this.accept_url;
@@ -62,19 +62,20 @@ exports.BaseModal = class BaseModal {
                 redirect_to = this.dismiss_url;
                 break;
         }
-        console.log("U", redirect_to);
+        redirect_to ? nd.util.navigate_to(redirect_to) : () => {};
     };
 
+    // Remove specific handlers (overridden in sub classes)
     clean_addons = () => {};
 
     // Set another accept handler
-    set_accept_handler(func = DEFAULTS.noop) {
+    set_accept_handler(func = noop) {
         // The supplied arg. must be a function !
         if (typeof func === "function") this._accept_handler = func;
     }
 
     // Set another dismiss handler
-    set_dismiss_handler(func = DEFAULTS.noop) {
+    set_dismiss_handler(func = noop) {
         // The supplied arg. must be a function !
         if (typeof func === "function") this._dismiss_handler = func;
     }

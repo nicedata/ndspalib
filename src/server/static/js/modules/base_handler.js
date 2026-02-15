@@ -1,4 +1,4 @@
-const ERR_NO_NDSPA = require("../constants.js").ERR_NO_NDSPA;
+const { ERR_NO_NDSPA } = require("../constants.js");
 
 exports.BaseHandler = class BaseHandler {
     constructor(debug = false) {

@@ -1,4 +1,4 @@
-const PROGNAME = require("../constants.js").PROGNAME;
+const { PROGNAME, VERSION } = require("../constants.js");
 
 exports.Debug = class Debug {
     constructor() {
@@ -7,12 +7,12 @@ exports.Debug = class Debug {
 
     enable() {
         this._debug = true;
-        console.log(`${PROGNAME}: debugging is enabled.`);
+        console.log(`Debugging is enabled.`);
     }
 
     disable() {
         this._debug = false;
-        console.log(`${PROGNAME}: debugging is disabled.`);
+        console.log(`Debugging is disabled.`);
     }
 
     active() {

@@ -15,8 +15,8 @@
  *    nd-target :   css selector to identify the target(s). If ommitted, the element iself is the target.
  */
 
-const POLL_DEFAULT_INTERVAL_MS = require("../constants.js").POLL_DEFAULT_INTERVAL_MS;
-BaseHandler = require("./base_handler.js").BaseHandler;
+const { POLL_DEFAULT_INTERVAL_MS } = require("../constants.js");
+const { BaseHandler } = require("./base_handler.js");
 
 exports.PollHandler = class PollHandler extends BaseHandler {
     constructor(debug = false) {
