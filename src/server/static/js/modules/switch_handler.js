@@ -18,7 +18,7 @@
  *                        This is a CSS selector.
  *       nd-options-url : Url from where to get the select options.
  *
- *    On the <options element:
+ *    On the <options> element:
  *
  *       nd-value : use a complex value like a json dictionary (TODO)
  *
@@ -35,14 +35,13 @@
 const { BaseHandler } = require("./base_handler.js");
 
 exports.SwitchHandler = class SwitchHandler extends BaseHandler {
-    constructor(debug) {
-        super(debug);
+    constructor() {
+        super();
     }
 
     process(fragment) {
         // If there are no nd-switches, DO NOTHING
         if (document.querySelectorAll("[nd-switch]").length == 0) return;
-
         this._process(fragment);
     }
 
@@ -51,16 +50,18 @@ exports.SwitchHandler = class SwitchHandler extends BaseHandler {
     _process(fragment) {
         fragment.querySelectorAll("[nd-switch]").forEach((element) => {
             const nd_switch = element.getAttribute("nd-switch");
-            const nd_options = element.getAttribute("nd-options-url");
+            const nd_options_url = element.getAttribute("nd-options-url");
+
+            this._logger.info(`Processing switch element`, element);
 
             if (element.tagName !== "SELECT") {
-                if (nd.debug.active()) {
-                    console.warn("<nd-switch> only applies to 'select' tags !", element);
-                } else throw new Error(`<nd-switch> only applies to 'select' tags ! ${element.innerHTML}`);
+                this._logger.error(`<nd-switch> only applies to 'select' tags. Error element:`, element);
+                return;
             }
 
-            if (nd_options) {
-                nd.util.fetch_data(nd_options).then((data) => {
+            if (nd_options_url) {
+                this._logger.info(`Getting select option from url '${nd_options_url}'.`);
+                nd.util.fetch_data(nd_options_url).then((data) => {
                     const fragment = nd.util.create_fragment(data);
                     nd.util.insert_fragment(element, fragment);
                 });
@@ -69,7 +70,9 @@ exports.SwitchHandler = class SwitchHandler extends BaseHandler {
             const targets = Array();
             nd_switch.split(" ").forEach((s) => {
                 if (s) {
+                    this._logger.info(`Processing switch element with class or id '${s}'`);
                     document.querySelectorAll(s).forEach((t) => {
+                        this._logger.info(`Found target identified by '${s}' (class or id) :`, t);
                         targets.push(t);
                     });
                 }
@@ -127,7 +130,6 @@ exports.SwitchHandler = class SwitchHandler extends BaseHandler {
             if (show_targets.length) e.hidden = !show_targets.includes(value);
 
             // Specific hides
-
             if (hide_targets.length) e.hidden = hide_targets.includes(value);
         });
     }

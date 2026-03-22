@@ -4,7 +4,7 @@
 
 const INFOS = {
     PROGNAME: "NDS SPA utilities",
-    VERSION: "1.0.7-dev",
+    VERSION: "1.0.8-dev",
     AUTHOR: "Martin Mohnhaupt <martin.mohnhaupt@etik.com>",
     LICENCE: "MIT License, https://mit-license.org/",
     INSPIREDBY: {
@@ -14,7 +14,6 @@ const INFOS = {
 };
 
 exports.INFOS = INFOS;
-exports.ERR_NO_NDSPA = `${INFOS.PROGNAME} library not present !`;
 exports.TARGET_NONE = ":none:";
 
 exports.ND_EVENTS = {
@@ -25,11 +24,44 @@ exports.ND_EVENTS = {
     FETCH_BEFORE: "nd:fetch:before",
     FETCH_AFTER: "nd:fetch:after",
     FETCH_ERROR: "nd:fetch:error",
+    ALERT: "nd:alert",
     TOAST: "nd:toast",
-    MODAL: "nd:modal",
+    DIALOG: "nd:dialog",
     CONFIRM: "nd:confirm",
 };
+
+exports.TOAST_CONTAINER_ATTRIBUTE = "nd-toast-container";
+exports.DIALOG_CONTAINER_ATTRIBUTE = "nd-dialog-container";
 
 exports.TOAST_DELAY_MS = 3000;
 exports.POLL_DEFAULT_INTERVAL_MS = 10000;
 exports.noop = () => {}; // A function that does nothing !
+
+exports.STYLING = {
+    BOOTSTRAP: {
+        CLASSES: {
+            TOAST_CONTAINER: "toast-container top-0 start-50 translate-middle-x",
+            MODAL_CONTAINER: "",
+            ALERT_CONTAINER: "top-0 start-50 translate-middle-x position-absolute mt-1 w-50",
+            ALERT: {
+                DIV: "alert alert-primary alert-dismissible mb-1",
+                BUTTON: "btn-close",
+            },
+        },
+    },
+    TAILWIND: {
+        CLASSES: {
+            TOAST_CONTAINER: "",
+            MODAL_CONTAINER: "",
+            ALERT_CONTAINER: "",
+        },
+        ALERT: {},
+    },
+    VANILLA: {
+        CLASSES: {
+            TOAST_CONTAINER: "",
+            MODAL_CONTAINER: "",
+            ALERT_CONTAINER: "",
+        },
+    },
+};

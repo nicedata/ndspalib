@@ -1,20 +1,24 @@
 /**
  * Include needed modules
  */
-const { INFOS } = require("./constants.js");
+const { INFOS, DIALOG_CONTAINER_ATTRIBUTE } = require("./constants.js");
 const { Debug } = require("./modules/debug.js");
+const { Logger } = require("./modules/logger.js");
 const { Util } = require("./modules/util.js");
-const { EventHandler } = require("./modules/event_handler.js");
+const { Events } = require("./modules/events.js");
 const { SwitchHandler } = require("./modules/switch_handler.js");
 const { PollHandler } = require("./modules/poll_handler.js");
 const { LinkHandler } = require("./modules/link_handler.js");
 const { ToastHandler } = require("./modules/toast_handler.js");
-const { ModalHandler } = require("./modules/modal_handler.js");
+const { AlertHandler } = require("./modules/alert_handler.js");
+const { DialogHandler } = require("./modules/dialog_handler.js");
+const { ConfirmationHandler } = require("./modules/confirmation_handler.js");
 
 // Components
-const { ModalDialog } = require("./components/modal_dialog.js");
-const { ModalConfirmation } = require("./components/modal_confirmation.js");
+const { Dialog } = require("./components/dialog.js");
+const { Confirmation } = require("./components/confirmation.js");
 const { Toast } = require("./components/toast.js");
+const { Alert } = require("./components/alert.js");
 
 const PROG_INFO = `${INFOS.PROGNAME} ${INFOS.VERSION}`;
 
@@ -24,28 +28,32 @@ const bs_version = bootstrap.Tooltip.VERSION;
 [bs_major, _, _] = bs_version.split(".");
 if (bs_major < 5) throw new Error(`${PROGNAME} needs Bootstrap 5.x.x library. Current Bootstrap version is ${bs_version}.`);
 
-console.log(`${PROG_INFO} : initializing...`);
+const debug = new Debug(); // Create a new Debug() singleton
+const logger = new Logger("Main"); // Create a logger for this module (Main)
+
+logger.info(`${PROG_INFO} : initializing...`);
 
 // Create the nd object in the 'window' namespace
 window.nd = {
     // Core
     info: INFOS,
-    debug: new Debug(),
-    util: new Util(false),
-    event: new EventHandler(false),
+    debug: debug,
+    util: new Util(),
+    events: new Events(true),
     // Components
     components: {
-        ModalDialog: ModalDialog,
-        ModalConfirmation: ModalConfirmation,
+        Dialog: Dialog,
+        Confirmation: Confirmation,
         Toast: Toast,
+        Alert: Alert,
     },
     // Handlers (will be initialized when DOM is loaded)
     handlers: null,
     // Layer
     layer: {
         open: async (args) => {
-            const container = document.querySelector("[nd-modal-container]");
-            if (!container) throw new Error("No nd-modal-container element is present !");
+            const container = document.querySelector(`[${DIALOG_CONTAINER_ATTRIBUTE}]`);
+            if (!container) throw new Error(`No ${DIALOG_CONTAINER_ATTRIBUTE} element is present !`);
             const uuid = args.id;
             const fragment = nd.util.create_fragment(args.content);
             nd.util.insert_fragment(container, fragment, true, true);
@@ -66,19 +74,21 @@ window.nd = {
     },
     create_handlers: () => {
         nd.handlers = {
-            poll: new PollHandler(false),
-            link: new LinkHandler(false),
-            switch: new SwitchHandler(false),
-            toast: new ToastHandler(false),
-            modal: new ModalHandler(false),
+            poll: new PollHandler(),
+            link: new LinkHandler(),
+            switch: new SwitchHandler(),
+            toast: new ToastHandler(),
+            dialog: new DialogHandler(),
+            confirmation: new ConfirmationHandler(),
+            alert: new AlertHandler(),
         };
     },
     on_dom_ready: () => {
-        console.log(`Creating handlers...`);
+        logger.info(`Creating handlers...`);
         nd.create_handlers();
-        console.log(`Refreshing the document...`);
+        logger.info(`Refreshing the document...`);
         nd.refresh(document);
-        console.log(`${PROG_INFO} : ready !`);
+        logger.info(`${PROG_INFO} : ready !`);
     },
 };
 
@@ -98,21 +108,25 @@ window.fetch = async (...args) => {
     response.headers.forEach((v, k) => {
         const sse = k.toLowerCase();
         let match = false;
+        let content = null;
         switch (sse) {
             case "x-nd-event":
                 events = JSON.parse(v);
+                content = v;
                 match = true;
                 break;
             case "x-nd-title":
                 document.title = v;
                 match = true;
+                content = v;
                 break;
         }
-        if (match && nd.debug.active()) console.log(`Received server message '${sse}'.`);
+        if (match) logger.info(`Received server message '${sse}'. Content: '${content}'.`);
     });
 
     // Dispatch received events !
     events.forEach((event) => {
+        logger.info(`Dispatching event '${event.type}'. Detail: '${JSON.stringify(event.detail)}'.`);
         document.dispatchEvent(new CustomEvent(event.type, { detail: event.detail }));
     });
 
@@ -133,9 +147,9 @@ const on_dom_loaded = () => {
 
 // Prevent navigation since this is a Single Page Aplication !
 navigation.addEventListener("navigate", (event) => {
-    console.log(`Prevented navigation to '${event.destination.url}'.`);
     event.preventDefault();
+    logger.info(`Prevented navigation to '${event.destination.url}'.`);
 });
 
-addEventListener("beforeunload", on_before_unload);
+// addEventListener("beforeunload", on_before_unload);
 addEventListener("DOMContentLoaded", on_dom_loaded);

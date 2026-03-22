@@ -22,8 +22,8 @@
             {
                 // Run whenever any file is saved
                 "match": ".js",
-                "cmd": "esbuild src/server/static/js/main.js --bundle --minify --outfile=release/ndspalib.js"
-                // "cmd": "esbuild src/server/static/js/main.js --bundle --outfile=release/ndspalib.js"
+                // "cmd": "esbuild src/server/static/js/main.js --bundle --minify --outfile=release/ndspalib.js"
+                "cmd": "esbuild src/server/static/js/main.js --bundle --outfile=release/ndspalib.js"
             }
         ]
     }

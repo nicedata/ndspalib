@@ -1,11 +1,11 @@
 /**
- * ModalConfirmation component.
+ * Confirmation component.
  *
  * Uses: Bootstrap for styling
  *       ND SPA Utilities for handling (modal, events, ...)
  */
 
-const { BaseModal } = require("./base_modal.js");
+const { BaseDialog } = require("./base_dialog.js");
 
 // Supported languages (add your own !)
 const LANGS = ["de", "fr", "en"];
@@ -32,14 +32,14 @@ const I18N = {
 // Default settings
 const DEFAULTS = {
     lang: "en",
-    title: "ModalConfirmation 'title' is not defined !",
-    message: "ModalConfirmation 'message' is not defined !",
+    title: "Confirmation 'title' is not defined !",
+    message: "Confirmation 'message' is not defined !",
 };
 
 /**
- * The ModalConfirmation class definition.
+ * The  Confirmation class definition.
  */
-exports.ModalConfirmation = class ModalConfirmation extends BaseModal {
+exports.Confirmation = class Confirmation extends BaseDialog {
     // Constructor
     constructor(title, message, lang, accept_url, dismiss_url) {
         super(title, message, lang, accept_url, dismiss_url);
@@ -78,7 +78,7 @@ exports.ModalConfirmation = class ModalConfirmation extends BaseModal {
             </div>`);
     }
 
-    clean_addons = () => {
+    cleanup = () => {
         this.confirm_cb.removeEventListener("click", this._confirm_cb_listener); // Remove component handler
     };
 
@@ -95,9 +95,9 @@ exports.ModalConfirmation = class ModalConfirmation extends BaseModal {
         if (this.confirm_cb.checked) {
             this.accept_btn.classList.add("btn-danger"); // Add accept button style (red)
             this.accept_btn.disabled = false; // Enable the accept button
-            return;
+        } else {
+            this.accept_btn.classList.remove("btn-danger"); // remove accept button style (red)
+            this.accept_btn.disabled = true; // Disable the accept buttons
         }
-        this.accept_btn.classList.remove("btn-danger"); // remove accept button style (red)
-        this.accept_btn.disabled = true; // Disable the accept buttons
     };
 };

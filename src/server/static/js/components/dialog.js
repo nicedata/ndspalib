@@ -5,7 +5,7 @@
  *       ND SPA Utilities for handling (modal, events, ...)
  */
 
-const { BaseModal } = require("./base_modal.js");
+const { BaseDialog } = require("./base_dialog.js");
 
 // Supported languages (add your own !)
 const LANGS = ["de", "fr", "en"];
@@ -29,14 +29,14 @@ const I18N = {
 // Default settings
 const DEFAULTS = {
     lang: "en",
-    title: "ModalDialog 'title' is not defined !",
-    message: "ModalDialog 'message' is not defined !",
+    title: "Dialog 'title' is not defined !",
+    message: "Dialog 'message' is not defined !",
 };
 
 /**
- * The ModalDialog class definition.
+ * The Dialog class definition.
  */
-exports.ModalDialog = class ModalDialog extends BaseModal {
+exports.Dialog = class Dialog extends BaseDialog {
     // Constructor
     constructor(title = DEFAULTS.title, message = DEFAULTS.message, lang = DEFAULTS.lang, accept_url = "", dismiss_url = "") {
         super(title, message, lang, accept_url, dismiss_url);

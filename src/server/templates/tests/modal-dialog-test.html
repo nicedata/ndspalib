@@ -12,7 +12,7 @@
         // Add an event listener to the 'Test it' button
         modal_test.addEventListener('click', e => {
             // Create a new dialog
-            const dialog = new nd.components.ModalDialog('Opération délicate', 'Voulez-vous <b>vraiment</b> supprimer ces informations ?', 'fr', '/accept', '/dimiss');
+            const dialog = new nd.components.Dialog('Opération délicate', 'Voulez-vous <b>vraiment</b> supprimer ces informations ?', 'fr', '/accept', '/dimiss');
 
             // Update the result code tag
             modal_result.textContent = `Dialog id ${dialog.id} running...`
@@ -45,14 +45,14 @@
 
 <h2>Component source code</h2>
 <p>
-    <code>{{url_for('static', filename='js/components/modal_dialog.js')}}</code> :
+    <code>{{url_for('static', filename='js/components/dialog.js')}}</code> :
 </p>
 <div class="mb-3">
     <pre class="border p-2"><code id="source-code"></code></pre>
     <script>
         (async () => {
             const source_code = document.getElementById('source-code');
-            let code = await nd.util.fetch_data("{{url_for('static', filename='js/components/modal_dialog.js')}}");
+            let code = await nd.util.fetch_data("{{url_for('static', filename='js/components/dialog.js')}}");
             code = js_beautify(code, {indent_size: 4, space_in_empty_paren: true});
             source_code.innerHTML = hljs.highlight(code, {language: "javascript", ignoreIllegals: true}).value;
         })();

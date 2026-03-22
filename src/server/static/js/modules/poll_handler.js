@@ -19,9 +19,10 @@ const { POLL_DEFAULT_INTERVAL_MS } = require("../constants.js");
 const { BaseHandler } = require("./base_handler.js");
 
 exports.PollHandler = class PollHandler extends BaseHandler {
-    constructor(debug = false) {
-        super(debug);
+    constructor() {
+        super();
         this._timers = [];
+        this._logger.info("Class instance created.");
     }
 
     /**
@@ -46,7 +47,6 @@ exports.PollHandler = class PollHandler extends BaseHandler {
             if (document.querySelectorAll(`[data-nduuid="${timer.uuid}"]`).length == 0) {
                 clearTimeout(timer.id);
                 timers_to_clear.push(timer);
-                if (this._debug) console.log(`Cleared timeout ${timer.id} for ${timer.uuid}.`);
             }
         });
 
@@ -54,20 +54,8 @@ exports.PollHandler = class PollHandler extends BaseHandler {
         timers_to_clear.forEach((timer) => {
             const index = this._timers.indexOf(timer);
             this._timers.splice(index, 1);
-            if (this._debug) console.log(`Removed timer ${timer.id} for ${timer.uuid}.`);
+            this._logger.info(`Cleared and removed timer ${timer.id} for ${timer.uuid}.`);
         });
-        this._debug ? console.log(`Poll timers count: ${this._timers.length}`) : () => {};
-    }
-
-    /**
-     * Clear the polling timers
-     */
-    _clear_timers() {
-        this._timers.forEach((e) => {
-            clearTimeout(e.id);
-            if (this._debug) console.log(`Removed poll timeout ${e.id} for ${e.uuid}`);
-        });
-        this._timers = [];
     }
 
     /**
@@ -82,13 +70,11 @@ exports.PollHandler = class PollHandler extends BaseHandler {
 
             // Add a UUID dataset to this element.
             // This is done to handle unused timers.
-            const uuid = this.set_uuid(element);
+            const uuid = nd.util.set_uuid(element);
 
             // Check url
             if (!url) {
-                if (this._debug) {
-                    console.warn("No <nd-url> defined on", element);
-                } else throw new Error(`No <nd-url> defined on '${element.innerHTML}'`);
+                this._logger.error(`No <nd-url> defined on element`, Object(element));
             }
 
             // Check interval
@@ -107,7 +93,6 @@ exports.PollHandler = class PollHandler extends BaseHandler {
      * Polling function
      */
     _poll(uuid, url, targets, interval_ms) {
-        if (this._debug) console.log("Poller count before:", this._timers.length);
         const timeout_id = setTimeout(() => {
             // Clear the current timeout
             clearTimeout(timeout_id);
@@ -116,6 +101,7 @@ exports.PollHandler = class PollHandler extends BaseHandler {
             const result = this._timers.find(({ id, uuid }) => id === timeout_id);
             const index = this._timers.indexOf(result);
             this._timers.splice(index, 1);
+            this._logger.info(`Removed timer ${result.id} for ${result.uuid}. Active timers : ${this._timers.length}`);
 
             // Get the data and update the targets if the document is not hidden (save bandwidth)
             if (!document.hidden) {
@@ -133,6 +119,6 @@ exports.PollHandler = class PollHandler extends BaseHandler {
 
         // Add this tmeout ID to the timers list
         this._timers.push({ id: timeout_id, uuid: uuid });
-        if (this._debug) console.log("Poller count after:", this._timers.length);
+        this._logger.info(`Added timer ${timeout_id} (${interval_ms}ms) for ${uuid}. Active timers : ${this._timers.length}`);
     }
 };

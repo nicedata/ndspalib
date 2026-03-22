@@ -70,7 +70,9 @@
 <body class="container flex-column">
 
     <div class="toast-container top-0 start-50 translate-middle-x" nd-toast-container></div>
-    <div nd-modal-container></div>
+    <div nd-dialog-container></div>
+    <div class="top-0 start-50 translate-middle-x position-absolute mt-1 w-50" nd-alert-container></div>
+
 
     <h1 class="text-center">Nice Data Systems Javascript SPA library</h1>
 
@@ -98,8 +100,10 @@
         <p>All styles and JS libraries are now loaded !</p>
     </main>
 
+
     <script>
         nd.debug.enable();
+        nd.debug.filter(['xMain', 'Util', 'Logger', 'Events', 'Confirmation', 'SwitchHandler', 'LinkHandler', 'PollHandler', 'Toast', 'Dialog', 'Alert']);
         // Load the index page when evrything is loaded
         const navigate_to_home = () => {
             document.querySelector('a[href="/index"]').click();

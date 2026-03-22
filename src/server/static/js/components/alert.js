@@ -1,28 +1,28 @@
 const { TOAST_DELAY_MS } = require("../constants.js");
 const { Logger } = require("../modules/logger.js");
-
-exports.Toast = class Toast {
-    constructor(container = null, category = "", header = "", body = "", redirect_url = null) {
+exports.Alert = class Alert {
+    constructor(container = null, category = "", message = "", redirect_url = null, debug = false) {
         this._logger = new Logger(this.constructor.name);
-        this.id = crypto.randomUUID(); // Give this instance an ID (UUID) !
-        this._container = container; // Set toast container element
-        this._delay_ms = TOAST_DELAY_MS; // Toast display lifetime
+        this._name = "Alert";
+        this._id = crypto.randomUUID(); // Give this instance an ID (UUID) !
+        this._container = container; // Set alert container element
+        this._delay_ms = TOAST_DELAY_MS; // Alert display lifetime
         this._redirect_url = redirect_url;
-        this.toast_element = null;
+        this._debug = debug;
+
+        this.alert_element = null;
+        this._timeout_id = null;
 
         this.html = nd.util.compress(`
-            <div data-nduuid="${this.id}" class="toast mt-2" role="alert" aria-live="assertive" aria-atomic="true">
-                <div class="toast-header">
-                    <strong id="id_header_text" class="me-auto text-${category}"><i class="bi bi-exclamation-square me-2"></i>${header}</strong>
-                    <button type="button" class="btn-close" data-bs-dismiss="toast" aria-label="Close"></button>
-                </div>
-                <div id="id_div_toast_body" class="toast-body">${body}</div>
+            <div data-nduuid="${this._id}" class="alert alert-primary alert-dismissible mb-1" role="alert">
+                ${message}
+                <button type="button" class="btn-close" aria-label="Close"></button>
             </div>`);
     }
 
     destroy = (with_redirect = true) => {
-        this.toast_element.classList.remove("show");
-        this.toast_element.remove();
+        this.alert_element.classList.remove("show");
+        this.alert_element.remove();
 
         if (!with_redirect) return;
 
@@ -39,10 +39,9 @@ exports.Toast = class Toast {
         const fragment = nd.util.create_fragment(this.html);
         // Append to the toast container
         nd.util.insert_fragment(this._container, fragment, true);
-        this.toast_element = this._container.querySelector(`[data-nduuid="${this.id}"]`);
-        const btn_close = this.toast_element.querySelector("button");
-
-        this.toast_element.classList.add("show");
+        this.alert_element = this._container.querySelector(`[data-nduuid="${this._id}"]`);
+        const btn_close = this.alert_element.querySelector("button");
+        this.alert_element.classList.add("show");
 
         // Remove after a given delay
         const timeout_id = setTimeout(() => {

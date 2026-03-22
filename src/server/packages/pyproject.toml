@@ -1,0 +1,19 @@
+[project]
+name = "flask_spa"
+version = "0.1.0"
+description = "Components to build Flask single page applications"
+authors = [{ name = "Martin Mohnhaupt", email = "martin.mohnhaupt@etik.com" }]
+maintainers = [
+    { name = "Martin Mohnhaupt", email = "martin.mohnhaupt@etik.com" },
+]
+license = "MIT"
+readme = "README.md"
+requires-python = ">=3.13"
+dependencies = ["flask>=3.1.2"]
+
+[build-system]
+requires = ["setuptools>=42", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[tool.ruff]
+line-length = 230

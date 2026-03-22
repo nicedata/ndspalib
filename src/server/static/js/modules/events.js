@@ -1,12 +1,14 @@
 /**
+ * Class Events
  *
+ * Manage event listeners
  */
-exports.EventHandler = class EventHandler {
-    constructor(debug = false) {
-        const class_name = this.constructor.name;
-        debug ? console.log(`${class_name} debug is ON.`) : () => {};
-        this._debug = debug;
-        this.listeners = []; // List of form [(event, element, listener), ...]
+const { Logger } = require("./logger.js");
+exports.Events = class Events {
+    constructor() {
+        this._logger = new Logger(this.constructor.name);
+        // List of active event listeners (array of [event, element, listener] arrays)
+        this._listeners = [];
     }
 
     /**
@@ -23,19 +25,20 @@ exports.EventHandler = class EventHandler {
         switch (args.length) {
             case 1: // Form 1
                 event = args.pop();
-                this.listeners.push([event, selector, listener]);
+                this._listeners.push([event, selector, listener]);
                 document.addEventListener(event, listener);
+                this._logger.info(`Calling function on(), first form. Selector: ${selector}, event:${event}, listener:${listener}`);
                 break;
             case 2: // Form 2
                 [selector, event] = [args.pop(), args.pop()];
                 document.querySelectorAll(selector).forEach((element) => {
-                    this.listeners.push([event, element, listener]);
+                    this._listeners.push([event, element, listener]);
                     element.addEventListener(event, listener);
+                    this._logger.info(`Calling function on(), second form. Selector: ${selector}, event:${event}, listener:${listener}`);
                 });
                 break;
             default:
         }
-        this._debug ? console.log(`${this.constructor.name}.on, selector: ${selector}, event:${event}, listener:${listener}`) : () => {};
     }
 
     /**
@@ -51,22 +54,24 @@ exports.EventHandler = class EventHandler {
 
         switch (args.length) {
             case 0:
-                this.listeners.forEach((item, index) => {
+                this._listeners.forEach((item, index) => {
                     const [event, element, listener] = item;
                     if (event === event) {
+                        this._logger.info(`Calling function off(), first form. Selector: ${selector}, event:${event}, listener:${listener}`);
                         document.removeEventListener(event, listener);
-                        this.listeners.splice(index, 1);
+                        this._listeners.splice(index, 1);
                     }
                 });
                 break;
             case 1:
                 selector = args.pop();
                 Array.from(document.querySelectorAll(selector)).forEach((target) => {
-                    this.listeners.forEach((item, index) => {
+                    this._listeners.forEach((item, index) => {
                         const [event, element, listener] = item;
                         if (event === event && element === target) {
+                            this._logger.info(`Calling function off(), second form. Selector: ${selector}, event:${event}, listener:${listener}`);
                             element.removeEventListener(event, listener);
-                            this.listeners.splice(index, 1);
+                            this._listeners.splice(index, 1);
                         }
                     });
                 });
@@ -74,6 +79,18 @@ exports.EventHandler = class EventHandler {
             default:
                 return;
         }
-        this._debug ? console.log(`${this.constructor.name}.off, selector: ${selector}, event:${event}, listener:${listener}`) : () => {};
+    }
+
+    /**
+     * Remove ALL event listeners
+     *
+     */
+    flush() {
+        this._listeners.forEach((item, _) => {
+            const [event, element, listener] = item;
+            element.removeEventListener(event, listener);
+            this._logger.info(`Calling function flush(). Selector: ${selector}, event:${event}, listener:${listener}`);
+        });
+        this._listeners = [];
     }
 };
