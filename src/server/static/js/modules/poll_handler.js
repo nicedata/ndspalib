@@ -22,7 +22,6 @@ exports.PollHandler = class PollHandler extends BaseHandler {
     constructor() {
         super();
         this._timers = [];
-        this._logger.info("Class instance created.");
     }
 
     /**
@@ -105,7 +104,7 @@ exports.PollHandler = class PollHandler extends BaseHandler {
 
             // Get the data and update the targets if the document is not hidden (save bandwidth)
             if (!document.hidden) {
-                nd.util.fetch_data(url).then((data) => {
+                nd.fetcher.fetch_data(url).then((data) => {
                     targets.forEach((t) => {
                         const fragment = nd.util.create_fragment(data);
                         nd.util.insert_fragment(t, fragment, false, true);

@@ -61,7 +61,7 @@ exports.SwitchHandler = class SwitchHandler extends BaseHandler {
 
             if (nd_options_url) {
                 this._logger.info(`Getting select option from url '${nd_options_url}'.`);
-                nd.util.fetch_data(nd_options_url).then((data) => {
+                nd.fetcher.fetch_data(nd_options_url).then((data) => {
                     const fragment = nd.util.create_fragment(data);
                     nd.util.insert_fragment(element, fragment);
                 });
@@ -105,7 +105,7 @@ exports.SwitchHandler = class SwitchHandler extends BaseHandler {
             if (has_nd_sync) {
                 if (has_nd_url && value) {
                     const url = `${nd_url}/${value}`;
-                    nd.util.fetch_data(url).then((data) => {
+                    nd.fetcher.fetch_data(url).then((data) => {
                         const fragment = nd.util.create_fragment(data);
                         nd.util.insert_fragment(e, fragment);
                     });

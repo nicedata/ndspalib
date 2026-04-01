@@ -4,7 +4,7 @@
 
 const INFOS = {
     PROGNAME: "NDS SPA utilities",
-    VERSION: "1.0.8-dev",
+    VERSION: "1.0.9-dev",
     AUTHOR: "Martin Mohnhaupt <martin.mohnhaupt@etik.com>",
     LICENCE: "MIT License, https://mit-license.org/",
     INSPIREDBY: {
@@ -14,6 +14,7 @@ const INFOS = {
 };
 
 exports.INFOS = INFOS;
+exports.VERSION = INFOS.VERSION;
 exports.TARGET_NONE = ":none:";
 
 exports.ND_EVENTS = {
@@ -28,10 +29,12 @@ exports.ND_EVENTS = {
     TOAST: "nd:toast",
     DIALOG: "nd:dialog",
     CONFIRM: "nd:confirm",
+    DOWNLOAD: "nd:download",
 };
 
 exports.TOAST_CONTAINER_ATTRIBUTE = "nd-toast-container";
 exports.DIALOG_CONTAINER_ATTRIBUTE = "nd-dialog-container";
+exports.ALERT_CONTAINER_ATTRIBUTE = "nd-alert-container";
 
 exports.TOAST_DELAY_MS = 3000;
 exports.POLL_DEFAULT_INTERVAL_MS = 10000;

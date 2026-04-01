@@ -64,6 +64,7 @@
     {% else %}
     <!-- Use the local library (symbolic link) -->
     <script src="/static/ndspalib.js"></script>
+    <script>console.log('Development mode')</script>
     {% endif %}
 </head>
 
@@ -103,7 +104,7 @@
 
     <script>
         nd.debug.enable();
-        nd.debug.filter(['xMain', 'Util', 'Logger', 'Events', 'Confirmation', 'SwitchHandler', 'LinkHandler', 'PollHandler', 'Toast', 'Dialog', 'Alert']);
+        nd.debug.filter(['xMain', 'Util', 'Logger', 'Events', 'Confirmation', 'SwitchHandler', 'LinkHandler', 'PollHandler', 'Toast', 'Dialog', 'Alert', 'Fetcher']);
         // Load the index page when evrything is loaded
         const navigate_to_home = () => {
             document.querySelector('a[href="/index"]').click();

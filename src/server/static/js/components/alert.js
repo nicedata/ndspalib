@@ -1,14 +1,12 @@
 const { TOAST_DELAY_MS } = require("../constants.js");
 const { Logger } = require("../modules/logger.js");
 exports.Alert = class Alert {
-    constructor(container = null, category = "", message = "", redirect_url = null, debug = false) {
+    constructor(container = null, category = "", message = "", redirect_url = null) {
         this._logger = new Logger(this.constructor.name);
-        this._name = "Alert";
         this._id = crypto.randomUUID(); // Give this instance an ID (UUID) !
         this._container = container; // Set alert container element
         this._delay_ms = TOAST_DELAY_MS; // Alert display lifetime
         this._redirect_url = redirect_url;
-        this._debug = debug;
 
         this.alert_element = null;
         this._timeout_id = null;

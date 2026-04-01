@@ -9,7 +9,7 @@
     "src/server/static/js/constants.js"(exports) {
       var INFOS2 = {
         PROGNAME: "NDS SPA utilities",
-        VERSION: "1.0.8-dev",
+        VERSION: "1.0.9-dev",
         AUTHOR: "Martin Mohnhaupt <martin.mohnhaupt@etik.com>",
         LICENCE: "MIT License, https://mit-license.org/",
         INSPIREDBY: {
@@ -18,6 +18,7 @@
         }
       };
       exports.INFOS = INFOS2;
+      exports.VERSION = INFOS2.VERSION;
       exports.TARGET_NONE = ":none:";
       exports.ND_EVENTS = {
         POLL_START: "nd:poll:start",
@@ -30,10 +31,12 @@
         ALERT: "nd:alert",
         TOAST: "nd:toast",
         DIALOG: "nd:dialog",
-        CONFIRM: "nd:confirm"
+        CONFIRM: "nd:confirm",
+        DOWNLOAD: "nd:download"
       };
       exports.TOAST_CONTAINER_ATTRIBUTE = "nd-toast-container";
       exports.DIALOG_CONTAINER_ATTRIBUTE = "nd-dialog-container";
+      exports.ALERT_CONTAINER_ATTRIBUTE = "nd-alert-container";
       exports.TOAST_DELAY_MS = 3e3;
       exports.POLL_DEFAULT_INTERVAL_MS = 1e4;
       exports.noop = () => {
@@ -77,7 +80,7 @@
           if (!!Debug2._instance) {
             return Debug2._instance;
           }
-          this._debug = false;
+          this._debug = true;
           this._classname = "Debug";
           this._filter = [];
           Debug2._instance = this;
@@ -208,32 +211,6 @@
           };
           document.dispatchEvent(new CustomEvent(ND_EVENTS.FRAGMENT_AFTER_INSERT, { detail: { target, data: fragment, append } }));
           return result;
-        }
-        /**
-         * fetch_data - fetch data from server as text (default) or json.
-         */
-        async fetch_data(url, as_json = false) {
-          this._logger.info(`Function fetch_data() called. Url: '${url}'. Mode: ${as_json ? "json" : "text"}.`);
-          let status = null;
-          const request = new Request(url);
-          request.headers.append("X-Nd-Version", `"${VERSION}"`);
-          request.headers.append("X-Nd-Url", `"${url}"`);
-          document.dispatchEvent(new CustomEvent(ND_EVENTS.FETCH_BEFORE, { detail: { url, data: null, status } }));
-          try {
-            const response = await fetch(request);
-            status = response.status;
-            if (!response.ok) {
-              document.dispatchEvent(new CustomEvent(ND_EVENTS.FETCH_ERROR, { detail: { url, data: null, status } }));
-              throw new Error(`Response status: ${response.status}`);
-            }
-            const result = as_json ? await response.json() : await response.text();
-            document.dispatchEvent(new CustomEvent(ND_EVENTS.FETCH_AFTER, { detail: { url, data: result, status } }));
-            return result;
-          } catch (error) {
-            document.dispatchEvent(new CustomEvent(ND_EVENTS.FETCH_ERROR, { detail: { url, data: error.message, status } }));
-            this._logger.error(`Error on url '${url}':  ${error.message}`);
-            return null;
-          }
         }
         /**
          * sleep_ms - sleep during a specific period (ms).
@@ -409,7 +386,7 @@
             }
             if (nd_options_url) {
               this._logger.info(`Getting select option from url '${nd_options_url}'.`);
-              nd.util.fetch_data(nd_options_url).then((data) => {
+              nd.fetcher.fetch_data(nd_options_url).then((data) => {
                 const fragment2 = nd.util.create_fragment(data);
                 nd.util.insert_fragment(element, fragment2);
               });
@@ -445,7 +422,7 @@
             if (has_nd_sync) {
               if (has_nd_url && value) {
                 const url = `${nd_url}/${value}`;
-                nd.util.fetch_data(url).then((data) => {
+                nd.fetcher.fetch_data(url).then((data) => {
                   const fragment = nd.util.create_fragment(data);
                   nd.util.insert_fragment(e, fragment);
                 });
@@ -480,7 +457,6 @@
         constructor() {
           super();
           this._timers = [];
-          this._logger.info("Class instance created.");
         }
         /**
          * Process a given fragment.
@@ -541,7 +517,7 @@
             this._timers.splice(index, 1);
             this._logger.info(`Removed timer ${result.id} for ${result.uuid}. Active timers : ${this._timers.length}`);
             if (!document.hidden) {
-              nd.util.fetch_data(url).then((data) => {
+              nd.fetcher.fetch_data(url).then((data) => {
                 targets.forEach((t) => {
                   const fragment = nd.util.create_fragment(data);
                   nd.util.insert_fragment(t, fragment, false, true);
@@ -566,7 +542,6 @@
         constructor() {
           super();
           this._handlers = [];
-          this._logger.info("Class instance created.");
         }
         /**
          * Process a given fragment.
@@ -618,7 +593,7 @@
         }
         _click_handler(event, url, targets) {
           event.preventDefault();
-          nd.util.fetch_data(url).then((data) => {
+          nd.fetcher.fetch_data(url).then((data) => {
             if (data) {
               targets.forEach((t) => {
                 if (t.tagName === "INPUT") {
@@ -726,14 +701,12 @@
       var { TOAST_DELAY_MS } = require_constants();
       var { Logger: Logger2 } = require_logger();
       exports.Alert = class Alert {
-        constructor(container = null, category = "", message = "", redirect_url = null, debug2 = false) {
+        constructor(container = null, category = "", message = "", redirect_url = null) {
           this._logger = new Logger2(this.constructor.name);
-          this._name = "Alert";
           this._id = crypto.randomUUID();
           this._container = container;
           this._delay_ms = TOAST_DELAY_MS;
           this._redirect_url = redirect_url;
-          this._debug = debug2;
           this.alert_element = null;
           this._timeout_id = null;
           this.html = nd.util.compress(`
@@ -778,18 +751,17 @@
   // src/server/static/js/modules/alert_handler.js
   var require_alert_handler = __commonJS({
     "src/server/static/js/modules/alert_handler.js"(exports) {
-      var { ND_EVENTS } = require_constants();
+      var { ND_EVENTS, ALERT_CONTAINER_ATTRIBUTE } = require_constants();
       var { Alert: Alert2 } = require_alert();
       var { BaseHandler } = require_base_handler();
-      var _container_selector = "nd-alert-container";
-      var _class_name = "AlertHandler";
       exports.AlertHandler = class AlertHandler extends BaseHandler {
-        constructor(debug2 = false) {
-          super(debug2, _class_name);
-          this._debug = debug2;
-          this._container = document.querySelector(`[${_container_selector}]`);
-          if (!this._container)
-            throw new Error(`No '${_container_selector}' element is present !`);
+        constructor() {
+          super();
+          this._container = document.querySelector(`[${ALERT_CONTAINER_ATTRIBUTE}]`);
+          if (!this._container) {
+            this._logger.error(`No '${ALERT_CONTAINER_ATTRIBUTE}' element is present !`);
+            return;
+          }
           document.addEventListener(ND_EVENTS.ALERT, this._alert_event_handler);
         }
         // Baseclass override
@@ -1089,6 +1061,164 @@
     }
   });
 
+  // src/server/static/js/components/download.js
+  var require_download = __commonJS({
+    "src/server/static/js/components/download.js"(exports) {
+      var { Logger: Logger2 } = require_logger();
+      exports.Download = class Download {
+        // id: '6ad835f2-a1f5-494c-b587-dd348624be2d', data: Blob, mimetype: 'application/pdf', filename: 'book.pdf'
+        constructor(blob, out_filename, preview = false) {
+          this._logger = new Logger2(this.constructor.name);
+          this._blob = blob;
+          this._id = crypto.randomUUID();
+          this._href = URL.createObjectURL(blob);
+          this._out_filename = out_filename;
+          this._preview = preview;
+          this._element = null;
+          this.html = this._preview ? "" : nd.util.compress(`<a data-nduuid="${this._id}" style="display: none" href="${this._href}", download="${this._out_filename}"a></a>`);
+          this._logger.info(this);
+        }
+        show = () => {
+          if (this._preview) {
+            window.open(URL.createObjectURL(this._blob), "_blank");
+            URL.revokeObjectURL(this._href);
+            return;
+          }
+          const fragment = nd.util.create_fragment(this.html);
+          nd.util.insert_fragment(document.body, fragment, true, false);
+          this._element = document.querySelector(`[data-nduuid="${this._id}"]`);
+          this._logger.info("Showing element", this._element);
+          this._element.click();
+          setTimeout(() => {
+            this._logger.info("Removing element", this._element);
+            URL.revokeObjectURL(this._href);
+            this._element.remove();
+          }, 1e3);
+        };
+      };
+    }
+  });
+
+  // src/server/static/js/modules/download_handler.js
+  var require_download_handler = __commonJS({
+    "src/server/static/js/modules/download_handler.js"(exports) {
+      var { ND_EVENTS } = require_constants();
+      var { Download } = require_download();
+      var { BaseHandler } = require_base_handler();
+      exports.DownloadHandler = class DownloadHandler extends BaseHandler {
+        constructor() {
+          super();
+          document.addEventListener(ND_EVENTS.DOWNLOAD, this._download_event_handler);
+        }
+        // Baseclass override
+        process = (fragment) => {
+        };
+        // Baseclass override
+        postprocess = () => {
+        };
+        _download_event_handler = (event) => {
+          const detail = event.detail;
+          this._logger.info(event);
+          const component = new Download(detail.data, detail.filename, detail.preview);
+          component.show();
+        };
+      };
+    }
+  });
+
+  // src/server/static/js/modules/fetcher.js
+  var require_fetcher = __commonJS({
+    "src/server/static/js/modules/fetcher.js"(exports) {
+      var { ND_EVENTS, VERSION } = require_constants();
+      var { Download } = require_constants();
+      var { Logger: Logger2 } = require_logger();
+      exports.Fetcher = class Fetcher2 {
+        constructor() {
+          if (!!Fetcher2._instance) {
+            return Fetcher2._instance;
+          }
+          this._logger = new Logger2("Fetcher");
+          Fetcher2._instance = this;
+          this._events = [];
+        }
+        _process_headers = (headers) => {
+          let headers_dump = "";
+          headers.forEach((v, k) => {
+            headers_dump += `'${k}'->'${v}', `;
+            const sse = k.toLowerCase();
+            let match = false;
+            let content = null;
+            switch (sse) {
+              case "x-nd-event":
+                this._events = JSON.parse(v);
+                content = v;
+                match = true;
+                break;
+              case "x-nd-title":
+                document.title = v;
+                match = true;
+                content = v;
+                break;
+            }
+            if (match)
+              this._logger.info(`Received server message '${sse}'. Content: '${content}'.`);
+          });
+          this._logger.info(`Headers : ${headers_dump}`);
+        };
+        // Dispatch received events !
+        _process_events = (payload) => {
+          this._logger.info(`Processing events...`);
+          this._events.forEach((event) => {
+            this._logger.info(`Event: `, event);
+            const type = event.type;
+            switch (type) {
+              case "nd:download":
+                event.detail.data = payload;
+                break;
+              default:
+                break;
+            }
+            this._logger.info(`Dispatching event '${type}'. Detail: '${JSON.stringify(event.detail)}'.`);
+            document.dispatchEvent(new CustomEvent(type, { detail: event.detail }));
+          });
+          return payload;
+        };
+        /**
+         * fetch_data - fetch data from server as text (default) or json.
+         */
+        async fetch_data(url) {
+          this._logger.info(`Function fetch_data() called. Url: '${url}'.`);
+          this._events = [];
+          let status = null;
+          let data = null;
+          const request = new Request(url);
+          request.headers.append("X-Nd-Version", `"${VERSION}"`);
+          request.headers.append("X-Nd-Url", `"${url}"`);
+          document.dispatchEvent(new CustomEvent(ND_EVENTS.FETCH_BEFORE, { detail: { url, data: null, status } }));
+          try {
+            const response = await fetch(request);
+            this._logger.info(`Response status: ${response.status}`);
+            if (!response.ok) {
+              document.dispatchEvent(new CustomEvent(ND_EVENTS.FETCH_ERROR, { detail: { url, data: null, status: response.status } }));
+              this._logger.error(`Response status: ${response.status}`);
+              return null;
+            }
+            this._process_headers(response.headers);
+            const payload = await response.blob();
+            this._logger.info(`Result is of type '${payload.type}'.`);
+            const data2 = await this._process_events(payload).text();
+            document.dispatchEvent(new CustomEvent(ND_EVENTS.FETCH_AFTER, { detail: { url, data: data2, status } }));
+            return data2;
+          } catch (error) {
+            document.dispatchEvent(new CustomEvent(ND_EVENTS.FETCH_ERROR, { detail: { url, data: error.message, status } }));
+            this._logger.error(`Error on url '${url}':  ${error.message}`);
+            return null;
+          }
+        }
+      };
+    }
+  });
+
   // src/server/static/js/main.js
   var { INFOS, DIALOG_CONTAINER_ATTRIBUTE } = require_constants();
   var { Debug } = require_debug();
@@ -1102,6 +1232,8 @@
   var { AlertHandler } = require_alert_handler();
   var { DialogHandler } = require_dialog_handler();
   var { ConfirmationHandler } = require_confirmation_handler();
+  var { DownloadHandler } = require_download_handler();
+  var { Fetcher } = require_fetcher();
   var { Dialog } = require_dialog();
   var { Confirmation } = require_confirmation();
   var { Toast } = require_toast();
@@ -1121,7 +1253,8 @@
     info: INFOS,
     debug,
     util: new Util(),
-    events: new Events(true),
+    events: new Events(),
+    fetcher: new Fetcher(),
     // Components
     components: {
       Dialog,
@@ -1160,7 +1293,8 @@
         toast: new ToastHandler(),
         dialog: new DialogHandler(),
         confirmation: new ConfirmationHandler(),
-        alert: new AlertHandler()
+        alert: new AlertHandler(),
+        download: new DownloadHandler()
       };
     },
     on_dom_ready: () => {
@@ -1172,7 +1306,7 @@
     }
   };
   var { fetch: originalFetch } = window;
-  window.fetch = async (...args) => {
+  window.Sfetch = async (...args) => {
     const [resource, config] = args;
     const response = await originalFetch(resource, config);
     let events = [];
@@ -1191,6 +1325,9 @@
           match = true;
           content = v;
           break;
+        case "x-nd-stream":
+          match = true;
+          content = v;
       }
       if (match)
         logger.info(`Received server message '${sse}'. Content: '${content}'.`);
@@ -1199,6 +1336,7 @@
       logger.info(`Dispatching event '${event.type}'. Detail: '${JSON.stringify(event.detail)}'.`);
       document.dispatchEvent(new CustomEvent(event.type, { detail: event.detail }));
     });
+    console.log("R1", response);
     return response;
   };
   var on_dom_loaded = () => {
@@ -1206,8 +1344,11 @@
     removeEventListener("DOMContentLoaded", on_dom_loaded);
   };
   navigation.addEventListener("navigate", (event) => {
-    event.preventDefault();
-    logger.info(`Prevented navigation to '${event.destination.url}'.`);
+    const is_download = event.sourceElement.hasAttribute("download");
+    if (!is_download) {
+      event.preventDefault();
+      logger.info(`Prevented navigation to '${event.destination.url}'.`);
+    }
   });
   addEventListener("DOMContentLoaded", on_dom_loaded);
 })();

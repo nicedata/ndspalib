@@ -1,14 +1,14 @@
 import datetime
+from pathlib import Path
 import time
 
 from flask import render_template
-from packages.src.spa.spa_flask import SpaFlask
-from packages.src.spa.components import Severity
+from packages.src.flask_spa import FlaskSpa
+from packages.src.flask_spa.components import ConfirmDialog, Severity
 
 PRODUCTION_MODE = False
 
-
-app = SpaFlask(__name__)
+app = FlaskSpa(__name__)
 
 
 @app.route("/")
@@ -18,7 +18,7 @@ def home():
 
 @app.route("/index")
 def index():
-    app.set_title("Index")
+    app.title("Index")
     return "<h1>ND SPA library tests home</h1>"
 
 
@@ -28,7 +28,7 @@ def index():
 
 @app.route("/sse_index")
 def sse_index():
-    app.set_title("SSE home")
+    app.title("SSE home")
     return render_template("tests/sse-test.html")
 
 
@@ -40,15 +40,23 @@ def sse(arg="No arg"):
 
     match arg:
         case "toast":
-            app.toast(Severity.DEFAULT, "Default", f"Toast sent from server at {now}", "")
+            app.toast(Severity.DEFAULT, "Defaut", f"Toast sent from server at {now}", "")
         case "modal":
             app.dialog("Dialogue modal simple", "Ceci est un message envoyé par le serveur !<br>Vous allez être redirigé vers <b>/index</b>", "fr", "/index", "")
         case "alert":
             app.alert(Severity.SUCCESS, "You will be redirected to <strong>/index</strong> !", "/no_index")
         case "confirm":
-            app.confirm("Dialogue modal simple", "Ceci est un message envoyé par le serveur !<br>Vous allez être redirigé vers <b>/index</b>", "fr", "/index", "")
+            component = ConfirmDialog("Dialogue modal simple", "Ceci est un message envoyé par le serveur !<br>Vous allez être redirigé vers <b>/index</b>", "fr", "/index", "")
+            app.send(component)
+        case "preview":
+            app.alert(Severity.DEFAULT, f"Triggering a PDF preview ({now}).")
+            app.dowload(Path("GuideOpenSource.pdf"), "book.pdf", True)
+        case "download":
+            app.toast(Severity.DEFAULT, "Send ODS", "GGGGGGGGGGGG")
+            app.alert(Severity.DEFAULT, f"Sending an ODS file ({now}).")
+            app.dowload(Path("Travaux-2026.ods"), "Travaux-2026.ods", False)
         case _:
-            print(f"SSE: No match (arg war '{arg}').")
+            print(f"SSE: '{arg}' -> no match.")
 
     return arg
 
@@ -59,7 +67,7 @@ def sse(arg="No arg"):
 
 @app.route("/toasttest")
 def messaging_test():
-    app.set_title("Toasting")
+    app.title("Toasting")
     return render_template("tests/toasting-test.html")
 
 
@@ -72,19 +80,19 @@ def toast_test():
 
 @app.route("/polltest")
 def poll_test():
-    app.set_title("Polling")
+    app.title("Polling")
     return render_template("tests/poll-test.html")
 
 
 @app.route("/linktest")
 def link_test():
-    app.set_title("Links")
+    app.title("Links")
     return render_template("tests/link-test.html")
 
 
 @app.route("/selecttest")
 def select_test():
-    app.set_title("Select")
+    app.title("Select")
     return render_template("tests/select-test.html")
 
 
@@ -119,13 +127,13 @@ def pollpoll():
 
 @app.route("/modal_dialog")
 def modal_dialog():
-    app.set_title("Modal dialog")
+    app.title("Modal dialog")
     return render_template("tests/modal-dialog-test.html")
 
 
 @app.route("/modal_confirmation_dialog")
 def modal_confirmation_dialog():
-    app.set_title("Modal confirmation dialog")
+    app.title("Modal confirmation dialog")
     return render_template("tests/modal-confirmation-dialog-test.html")
 
 

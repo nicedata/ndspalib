@@ -51,7 +51,7 @@
     <script>
         (async () => {
             const source_code = document.getElementById('source-code');
-            let code = await nd.util.fetch_data("{{url_for('static', filename='js/components/confirmation.js')}}");
+            let code = await nd.fetcher.fetch_data("{{url_for('static', filename='js/components/confirmation.js')}}");
             code = js_beautify(code, {indent_size: 4, space_in_empty_paren: true});
             source_code.innerHTML = hljs.highlight(code, {language: "javascript", ignoreIllegals: true}).value;
         })();

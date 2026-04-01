@@ -21,7 +21,6 @@ exports.LinkHandler = class LinkHandler extends BaseHandler {
     constructor() {
         super();
         this._handlers = []; // List of handlers (uuid)
-        this._logger.info("Class instance created.");
     }
 
     /**
@@ -92,7 +91,7 @@ exports.LinkHandler = class LinkHandler extends BaseHandler {
 
     _click_handler(event, url, targets) {
         event.preventDefault(); // Trap the default (click) handler
-        nd.util.fetch_data(url).then((data) => {
+        nd.fetcher.fetch_data(url).then((data) => {
             if (data) {
                 targets.forEach((t) => {
                     if (t.tagName === "INPUT") {

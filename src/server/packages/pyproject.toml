@@ -1,6 +1,6 @@
 [project]
-name = "flask_spa"
-version = "0.1.0"
+name = "flask-spa"
+version = "0.1.2"
 description = "Components to build Flask single page applications"
 authors = [{ name = "Martin Mohnhaupt", email = "martin.mohnhaupt@etik.com" }]
 maintainers = [

@@ -79,33 +79,6 @@ exports.Util = class Util {
     }
 
     /**
-     * fetch_data - fetch data from server as text (default) or json.
-     */
-    async fetch_data(url, as_json = false) {
-        this._logger.info(`Function fetch_data() called. Url: '${url}'. Mode: ${as_json ? "json" : "text"}.`);
-        let status = null;
-        const request = new Request(url);
-        request.headers.append("X-Nd-Version", `"${VERSION}"`);
-        request.headers.append("X-Nd-Url", `"${url}"`);
-        document.dispatchEvent(new CustomEvent(ND_EVENTS.FETCH_BEFORE, { detail: { url: url, data: null, status: status } }));
-        try {
-            const response = await fetch(request);
-            status = response.status;
-            if (!response.ok) {
-                document.dispatchEvent(new CustomEvent(ND_EVENTS.FETCH_ERROR, { detail: { url: url, data: null, status: status } }));
-                throw new Error(`Response status: ${response.status}`);
-            }
-            const result = as_json ? await response.json() : await response.text();
-            document.dispatchEvent(new CustomEvent(ND_EVENTS.FETCH_AFTER, { detail: { url: url, data: result, status: status } }));
-            return result;
-        } catch (error) {
-            document.dispatchEvent(new CustomEvent(ND_EVENTS.FETCH_ERROR, { detail: { url: url, data: error.message, status: status } }));
-            this._logger.error(`Error on url '${url}':  ${error.message}`);
-            return null;
-        }
-    }
-
-    /**
      * sleep_ms - sleep during a specific period (ms).
      */
     async sleep_ms(ms) {

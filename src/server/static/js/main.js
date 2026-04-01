@@ -13,6 +13,8 @@ const { ToastHandler } = require("./modules/toast_handler.js");
 const { AlertHandler } = require("./modules/alert_handler.js");
 const { DialogHandler } = require("./modules/dialog_handler.js");
 const { ConfirmationHandler } = require("./modules/confirmation_handler.js");
+const { DownloadHandler } = require("./modules/download_handler.js");
+const { Fetcher } = require("./modules/fetcher.js");
 
 // Components
 const { Dialog } = require("./components/dialog.js");
@@ -28,8 +30,9 @@ const bs_version = bootstrap.Tooltip.VERSION;
 [bs_major, _, _] = bs_version.split(".");
 if (bs_major < 5) throw new Error(`${PROGNAME} needs Bootstrap 5.x.x library. Current Bootstrap version is ${bs_version}.`);
 
-const debug = new Debug(); // Create a new Debug() singleton
+const debug = new Debug(); // Create a new Debug singleton
 const logger = new Logger("Main"); // Create a logger for this module (Main)
+// const fetcher = new Fetcher(); // Create a new Fetcher singleton
 
 logger.info(`${PROG_INFO} : initializing...`);
 
@@ -39,7 +42,8 @@ window.nd = {
     info: INFOS,
     debug: debug,
     util: new Util(),
-    events: new Events(true),
+    events: new Events(),
+    fetcher: new Fetcher(),
     // Components
     components: {
         Dialog: Dialog,
@@ -81,6 +85,7 @@ window.nd = {
             dialog: new DialogHandler(),
             confirmation: new ConfirmationHandler(),
             alert: new AlertHandler(),
+            download: new DownloadHandler(),
         };
     },
     on_dom_ready: () => {
@@ -97,16 +102,17 @@ window.nd = {
  */
 const { fetch: originalFetch } = window;
 
-window.fetch = async (...args) => {
+window.Sfetch = async (...args) => {
     const [resource, config] = args;
+
     // request interceptor here
     const response = await originalFetch(resource, config);
     let events = [];
 
-    // Process the response headers
-    // Check for the SSE identifier
+    // Process the response headers - check for SSE identifiers
     response.headers.forEach((v, k) => {
         const sse = k.toLowerCase();
+        // this._logger.info(`${k} -> ${v}`);
         let match = false;
         let content = null;
         switch (sse) {
@@ -120,6 +126,9 @@ window.fetch = async (...args) => {
                 match = true;
                 content = v;
                 break;
+            case "x-nd-stream":
+                match = true;
+                content = v;
         }
         if (match) logger.info(`Received server message '${sse}'. Content: '${content}'.`);
     });
@@ -131,6 +140,7 @@ window.fetch = async (...args) => {
     });
 
     // Return the response body
+    console.log("R1", response);
     return response;
 };
 
@@ -147,8 +157,11 @@ const on_dom_loaded = () => {
 
 // Prevent navigation since this is a Single Page Aplication !
 navigation.addEventListener("navigate", (event) => {
-    event.preventDefault();
-    logger.info(`Prevented navigation to '${event.destination.url}'.`);
+    const is_download = event.sourceElement.hasAttribute("download");
+    if (!is_download) {
+        event.preventDefault();
+        logger.info(`Prevented navigation to '${event.destination.url}'.`);
+    }
 });
 
 // addEventListener("beforeunload", on_before_unload);

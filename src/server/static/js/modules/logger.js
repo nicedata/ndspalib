@@ -7,7 +7,6 @@ exports.Logger = class Logger {
         this._debug = new Debug();
         if (!this._debug.is_active()) return;
         if (this._debug.is_filtered(class_name)) return;
-        // if (this._debug.is_filtered(this._source)) return;
         console.info(`INFO | ${class_name} | Creating a logger for ${this._source}`);
     }
 

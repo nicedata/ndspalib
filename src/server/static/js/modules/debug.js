@@ -3,7 +3,7 @@ exports.Debug = class Debug {
         if (!!Debug._instance) {
             return Debug._instance;
         }
-        this._debug = false;
+        this._debug = true;
         this._classname = "Debug";
         this._filter = [];
         Debug._instance = this;
