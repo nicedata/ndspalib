@@ -4,7 +4,7 @@
 
 const INFOS = {
     PROGNAME: "NDS SPA utilities",
-    VERSION: "1.0.10-dev",
+    VERSION: "1.0.11-dev",
     AUTHOR: "Martin Mohnhaupt <martin.mohnhaupt@etik.com>",
     LICENCE: "MIT License, https://mit-license.org/",
     INSPIREDBY: {
@@ -51,28 +51,20 @@ exports.noop = () => {}; // A function that does nothing !
 exports.STYLING = {
     BOOTSTRAP: {
         CLASSES: {
-            TOAST_CONTAINER: "toast-container top-0 start-50 translate-middle-x",
-            MODAL_CONTAINER: "",
-            ALERT_CONTAINER: "top-0 start-50 translate-middle-x position-absolute mt-1 w-50",
-            ALERT: {
-                DIV: "alert alert-primary alert-dismissible mb-1",
-                BUTTON: "btn-close",
-            },
+            ND_NOTIFICATION_CONTAINER: "nd-notification-container",
+            ND_DIALOG_CONTAINER: "",
         },
     },
     TAILWIND: {
         CLASSES: {
-            TOAST_CONTAINER: "",
-            MODAL_CONTAINER: "",
-            ALERT_CONTAINER: "",
+            ND_NOTIFICATION_CONTAINER: "",
+            ND_DIALOG_CONTAINER: "",
         },
-        ALERT: {},
     },
     VANILLA: {
         CLASSES: {
-            TOAST_CONTAINER: "",
-            MODAL_CONTAINER: "",
-            ALERT_CONTAINER: "",
+            ND_NOTIFICATION_CONTAINER: "",
+            ND_DIALOG_CONTAINER: "",
         },
     },
 };

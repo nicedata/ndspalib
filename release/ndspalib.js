@@ -9,7 +9,7 @@
     "src/server/static/js/constants.js"(exports2) {
       var INFOS2 = {
         PROGNAME: "NDS SPA utilities",
-        VERSION: "1.0.10-dev",
+        VERSION: "1.0.11-dev",
         AUTHOR: "Martin Mohnhaupt <martin.mohnhaupt@etik.com>",
         LICENCE: "MIT License, https://mit-license.org/",
         INSPIREDBY: {
@@ -52,28 +52,20 @@
       exports2.STYLING = {
         BOOTSTRAP: {
           CLASSES: {
-            TOAST_CONTAINER: "toast-container top-0 start-50 translate-middle-x",
-            MODAL_CONTAINER: "",
-            ALERT_CONTAINER: "top-0 start-50 translate-middle-x position-absolute mt-1 w-50",
-            ALERT: {
-              DIV: "alert alert-primary alert-dismissible mb-1",
-              BUTTON: "btn-close"
-            }
+            ND_NOTIFICATION_CONTAINER: "nd-notification-container",
+            ND_DIALOG_CONTAINER: ""
           }
         },
         TAILWIND: {
           CLASSES: {
-            TOAST_CONTAINER: "",
-            MODAL_CONTAINER: "",
-            ALERT_CONTAINER: ""
-          },
-          ALERT: {}
+            ND_NOTIFICATION_CONTAINER: "",
+            ND_DIALOG_CONTAINER: ""
+          }
         },
         VANILLA: {
           CLASSES: {
-            TOAST_CONTAINER: "",
-            MODAL_CONTAINER: "",
-            ALERT_CONTAINER: ""
+            ND_NOTIFICATION_CONTAINER: "",
+            ND_DIALOG_CONTAINER: ""
           }
         }
       };
@@ -164,17 +156,28 @@
           this.logger = new Logger2("Util");
         }
         // Source - https://stackoverflow.com/questions/42406520/populate-an-html-form-from-a-formdata-object
+        // Source - https://stackoverflow.com/questions/42406520/populate-an-html-form-from-a-formdata-object/79932100#79932100
         serialize_form(form) {
-          const data2 = new FormData(form);
-          return new URLSearchParams(data2).toString();
+          const result = [];
+          form.querySelectorAll("[name]").forEach((e) => {
+            switch (e.type) {
+              case "checkbox":
+                result.push(`${e.name}=${e.checked}`);
+                break;
+              default:
+                result.push(`${e.name}=${e.value}`);
+                break;
+            }
+          });
+          return result.join("&");
         }
-        deserialize_form(form, formdata) {
-          const entries = new URLSearchParams(formdata).entries();
+        deserialize_form(form, serialized_form_data) {
+          const entries = new URLSearchParams(serialized_form_data).entries();
           for (const [key, val] of entries) {
             const input = form.elements[key];
             switch (input.type) {
               case "checkbox":
-                input.checked = !!val;
+                input.checked = !val;
                 break;
               default:
                 input.value = val;
@@ -1686,87 +1689,136 @@
       var { Logger: Logger2 } = require_logger();
       exports2.Form = class Form2 {
         static ACTIONS = ["nd-accept", "nd-apply", "nd-dismiss", "nd-revert", "nd-clear"];
-        // static REQUIRED_ACTIONS = ["nd-accept", "nd-dismiss"];
         static REQUIRED_ACTIONS = ["nd-accept"];
         constructor(form) {
           this.logger = new Logger2("Form");
           this.form = form;
-          this.fields = form.querySelectorAll("[name]");
-          this.formdata = new FormData(this.form);
           this.form_str = nd.util.serialize_form(this.form);
           this.is_dirty = false;
           this.confirm_dialog = null;
+          this.accept_url = null;
+          this.dismiss_url = null;
+          this.event_listeners = [];
+          nd.util.set_uuid(this.form);
+          this.confirm_dialog = this.get_confirm_dialog(this.form);
           Form2.ACTIONS.forEach((action2) => {
             const element = form.querySelector(`[${action2}]`);
             switch (action2) {
               case "nd-accept":
-                element ? element.addEventListener("click", this.accept) : () => {
-                };
+                if (element) {
+                  element.addEventListener("click", this.accept);
+                  this.event_listeners.push({ element, event: "click", handler: this.accept });
+                  this.accept_url = element.getAttribute("nd-url") || null;
+                }
                 break;
               case "nd-apply":
-                element ? element.addEventListener("click", this.apply) : () => {
-                };
+                if (element) {
+                  element.addEventListener("click", this.apply);
+                  this.event_listeners.push({ element, event: "click", handler: this.apply });
+                }
                 break;
               case "nd-dismiss":
-                element ? element.addEventListener("click", this.dismiss) : () => {
-                };
+                if (element) {
+                  element.addEventListener("click", this.dismiss);
+                  this.event_listeners.push({ element, event: "click", handler: this.dismiss });
+                  this.dismiss_url = element.getAttribute("nd-url") || null;
+                }
                 break;
               case "nd-revert":
-                element ? element.addEventListener("click", this.revert) : () => {
-                };
+                if (element) {
+                  element.addEventListener("click", this.revert);
+                  this.event_listeners.push({ element, event: "click", handler: this.revert });
+                }
                 break;
               case "nd-clear":
-                element ? element.addEventListener("click", this.clear) : () => {
-                };
+                if (element) {
+                  element.addEventListener("click", this.clear);
+                  this.event_listeners.push({ element, event: "click", handler: this.clear });
+                }
                 break;
             }
           });
-          const nd_confirm = form.getAttribute("nd-confirm");
-          if (nd_confirm) {
-            const args = nd.util.as_json(nd_confirm);
-            this.confirm_dialog = nd.factory.create("two-button", args);
-          }
-          nd.util.set_uuid(this.form);
-          this.fields.forEach((field) => {
+          form.querySelectorAll("[name]").forEach((field) => {
             field.addEventListener("change", this.on_change);
+            this.event_listeners.push({ element: field, event: "change", handler: this.on_change });
           });
           this.form.addEventListener("submit", this.on_submit);
+          this.event_listeners.push({ element: this.form, event: "submit", handler: this.on_submit });
+          console.log(this);
         }
+        get_confirm_dialog = (form) => {
+          const nd_confirm = form.querySelector("[nd-confirm]");
+          let args = {};
+          if (nd_confirm) {
+            args.title = nd_confirm.getAttribute("nd-title") || "No title";
+            args.message = nd_confirm.getAttribute("nd-message") || "No message";
+            if (nd_confirm.querySelector("[nd-button"))
+              args.buttons = [];
+            nd_confirm.querySelectorAll("[nd-button]").forEach((btn) => {
+              const dict = {};
+              dict.action = btn.getAttribute("nd-action") || "dismiss";
+              dict.label = btn.getAttribute("nd-label") || dict.action;
+              dict.url = btn.getAttribute("nd-url") || null;
+              args.buttons.push(dict);
+            });
+          } else {
+            args = {
+              title: "Approval needed",
+              message: "Apply form changes ?",
+              buttons: [
+                { action: "accept", label: "Yes" },
+                { action: "dismiss", label: "No" }
+              ]
+            };
+          }
+          return nd.factory.create("two-button", args);
+        };
+        close = (reason) => {
+          this.logger.info(`Closing form. Reason: '${reason}.'`);
+          const nd_dialog = this.form.closest("[nd-dialog]");
+          this.logger.info(`Removing attached event listeners (${this.event_listeners.length}).`);
+          this.event_listeners.forEach((listener) => {
+            listener.element.removeEventListener(listener.event, listener.handler);
+          });
+          this.form.remove();
+          if (nd_dialog) {
+            const dialog_id = nd_dialog.id;
+            this.logger.info(`Closing the containing dialog (${dialog_id}).`);
+            document.dispatchEvent(new Event(`nd:close:${dialog_id}`));
+          }
+          switch (reason) {
+            case "accept":
+              this.accept_url ? nd.util.navigate_to(this.accept_url) : () => {
+              };
+              break;
+            case "dismiss":
+              this.dismiss_url ? nd.util.navigate_to(this.dismiss_url) : () => {
+              };
+              break;
+          }
+        };
         save_state = () => {
           this.logger.info("Saving form state.");
-          this.formdata = new FormData(this.form);
           this.form_str = nd.util.serialize_form(this.form);
           this.is_dirty = false;
         };
-        close = () => {
-          const nd_dialog = this.form.closest("[nd-dialog]");
-          if (!nd_dialog) {
-            return;
-          }
-          const dialog_id = nd_dialog.id;
-          this.logger.info(`Closing the containing dialog (${dialog_id}).`);
-          document.dispatchEvent(new Event(`nd:close:${dialog_id}`));
-        };
         on_change = () => {
-          this.is_dirty = nd.util.serialize_form(this.form) !== this.form_str;
+          this.is_dirty = this.form_str !== nd.util.serialize_form(this.form);
         };
         on_submit = (event2) => {
           this.logger.info("Submit event !");
           event2.preventDefault();
         };
         confirm = async () => {
-          if (this.confirm_dialog) {
-            const result = await this.confirm_dialog.run();
-            return result === "accept";
-          }
-          return true;
+          const result = await this.confirm_dialog.run();
+          return result === "accept";
         };
         accept = () => {
           if (!this.form.reportValidity())
             return;
           this.logger.info(`Submit: submitting. Form is valid.`);
           nd.fetcher.send_form(this.form);
-          this.close();
+          this.close("accept");
         };
         apply = () => {
           if (!this.is_dirty) {
@@ -1780,13 +1832,15 @@
           this.save_state();
         };
         dismiss = async () => {
+          this.logger.info("Dismissing, dirty form: ", this.is_dirty);
           let do_proceed2 = true;
           if (this.is_dirty)
             do_proceed2 = await this.confirm();
-          do_proceed2 ? this.close() : () => {
+          do_proceed2 ? this.close("dismiss") : () => {
           };
         };
         clear = async () => {
+          this.logger.info("Clearing, dirty form: ", this.is_dirty);
           let do_proceed2 = true;
           if (this.is_dirty)
             do_proceed2 = await this.confirm();
@@ -1794,13 +1848,14 @@
           };
         };
         revert = async () => {
+          this.logger.info("Revering, dirty form: ", this.is_dirty);
           if (!this.is_dirty) {
             this.logger.info("Revert: no changes.");
             return;
           }
           if (await this.confirm()) {
             this.logger.info("Revert: restoring previous state.");
-            this.form_str = nd.util.deserialize_form(this.form, this.formdata);
+            nd.util.deserialize_form(this.form, this.form_str);
             this.is_dirty = false;
           } else {
             this.logger.info("Revert: action cancelled.");
@@ -1842,6 +1897,7 @@
               return;
             }
             new Form2(element);
+            this.logger.info("New form instance created.");
           });
         }
         /**

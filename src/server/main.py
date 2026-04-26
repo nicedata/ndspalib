@@ -55,6 +55,12 @@ def websession():
     return render_template("tests/websession.html")
 
 
+@app.route("/forms", methods=["GET", "POST"])
+def forms():
+    app.title("Forms")
+    return render_template("tests/forms.html")
+
+
 # =======================================================================
 # Websession tests
 @app.route("/websession/<string:arg>", methods=["GET", "POST"])
@@ -150,10 +156,8 @@ def sse(arg="No arg"):
 
     if request.method == "POST":
         print(request.form)
-        app.alert("success", "You are logged in !")
-        app.zone("zone_3", "set")
-
-        return "Ok, boss"
+        app.alert("success", "A form was posted !")
+        return ""
 
     arg = arg.strip().lower()
     now = datetime.datetime.now().strftime("%d.%m.%Y %H:%M:%S")
@@ -199,6 +203,8 @@ def sse(arg="No arg"):
             app.download(Path("GuideOpenSource.pdf"), "book.pdf", True)
         case "form":
             return render_template("partials/test_form.html")
+        case "form_1":
+            return render_template("partials/test_form_1.html")
         case _:
             print(f"SSE: '{arg}' -> no match.")
     print(f"SSE returns: '{arg}'.")

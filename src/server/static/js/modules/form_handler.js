@@ -33,6 +33,7 @@ exports.FormHandler = class FormHandler {
 
             // Create a new Form instance
             new Form(element);
+            this.logger.info("New form instance created.");
         });
     }
 

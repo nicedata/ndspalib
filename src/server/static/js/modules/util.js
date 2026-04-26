@@ -7,19 +7,29 @@ exports.Util = class Util {
     }
 
     // Source - https://stackoverflow.com/questions/42406520/populate-an-html-form-from-a-formdata-object
+    // Source - https://stackoverflow.com/questions/42406520/populate-an-html-form-from-a-formdata-object/79932100#79932100
     serialize_form(form) {
-        const data = new FormData(form);
-        return new URLSearchParams(data).toString();
+        const result = [];
+        form.querySelectorAll("[name]").forEach((e) => {
+            switch (e.type) {
+                case "checkbox":
+                    result.push(`${e.name}=${e.checked}`);
+                    break;
+                default:
+                    result.push(`${e.name}=${e.value}`);
+                    break;
+            }
+        });
+        return result.join("&");
     }
 
-    deserialize_form(form, formdata) {
-        const entries = new URLSearchParams(formdata).entries();
+    deserialize_form(form, serialized_form_data) {
+        const entries = new URLSearchParams(serialized_form_data).entries();
         for (const [key, val] of entries) {
-            //http://javascript-coder.com/javascript-form/javascript-form-value.phtml
             const input = form.elements[key];
             switch (input.type) {
                 case "checkbox":
-                    input.checked = !!val;
+                    input.checked = !val;
                     break;
                 default:
                     input.value = val;
