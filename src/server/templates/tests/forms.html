@@ -27,9 +27,9 @@
     <!-- Buttons with possible actions -->
     <div class="text-center">
         <!-- Button with action : after submission, redirect to /posted -->
-        <button type="button" class="btn btn-outline-secondary col-2" nd-accept nd-url="/posted">Submit</button>
+        <button type="button" class="btn btn-outline-secondary col-2" nd-accept nd-url="post:/posted/get">Submit</button>
         <!-- Button with action : after cancelling, redirect to /not_posted -->
-        <button type="button" class="btn btn-outline-secondary col-2" nd-dismiss nd-url="/not_posted">Dismiss</button>
+        <button type="button" class="btn btn-outline-secondary col-2" nd-dismiss nd-url="get:/posted/post">Dismiss</button>
         <!-- Buttons acting on the form itself -->
         <button type="button" class="btn btn-outline-secondary col-2" nd-apply>Apply</button>
         <button type="button" class="btn btn-outline-secondary col-2" nd-revert>Revert</button>

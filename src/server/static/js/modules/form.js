@@ -76,7 +76,6 @@ exports.Form = class Form {
         this.form.addEventListener("submit", this.on_submit);
         // Save for nice cleaning
         this.event_listeners.push({ element: this.form, event: "submit", handler: this.on_submit });
-        console.log(this);
     }
 
     get_confirm_dialog = (form) => {

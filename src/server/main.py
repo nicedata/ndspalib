@@ -143,6 +143,17 @@ def zone_test(zone="", action="update"):
     return f"ZONES {now}"
 
 
+@app.route("/posted/<string:arg>", methods=["GET", "POST"])
+def posted(arg: str):
+    if request.method == "POST":
+        app.alert("primary", "posted : POST !")
+
+    if request.method == "GET":
+        app.alert("primary", "posted : GET !")
+
+    return ""
+
+
 # =======================================================================
 # SSE Tests
 @app.route("/echo")

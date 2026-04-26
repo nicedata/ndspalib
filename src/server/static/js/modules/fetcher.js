@@ -61,7 +61,7 @@ exports.Fetcher = class Fetcher {
         return payload;
     };
 
-    async _do_fetch(request) {
+    async execute_fetch(request) {
         const url = request.url;
         this.events = [];
         let status = null;
@@ -111,7 +111,7 @@ exports.Fetcher = class Fetcher {
         }
 
         // Build a new Request object
-        return this._do_fetch(
+        return this.execute_fetch(
             new Request(form.action, {
                 method: form.method,
                 body: new FormData(form),
@@ -125,6 +125,6 @@ exports.Fetcher = class Fetcher {
     async fetch_data(url) {
         this.logger.info(`fetch_data | Url: '${url}'.`);
         const request = new Request(url);
-        return this._do_fetch(request);
+        return this.execute_fetch(request);
     }
 };

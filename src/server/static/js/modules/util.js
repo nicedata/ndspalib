@@ -162,18 +162,39 @@ exports.Util = class Util {
         return str.replace(/\n+/g, " ").replace(/\r+/g, " ").replace(/  +/g, " ");
     }
 
-    navigate_to = (url) => {
+    navigate_to = async (new_url) => {
+        let [method, url] = ["navigate", ""];
+        if (new_url.includes(":")) {
+            [method, url] = new_url.split(":");
+            if (!["get", "post"].includes(method)) {
+                this.logger.error(`Only 'get:' or 'post:' url modifiers are allowed. Supplied method was '${method}:'.`);
+                return;
+            }
+        } else {
+            url = new_url;
+        }
+
+        // Get or Post...
+        if (["get", "post"].includes(method)) {
+            this.logger.info(`Fetching url '${url} with a '${method}' request.`);
+            console.log(`Fetching url '${url} with a '${method}' request'`);
+            const request = new Request(url, { method: method.toUpperCase() });
+            await nd.fetcher.execute_fetch(request);
+            return;
+        }
+
+        // Navigate
         let result = false;
         document.querySelectorAll("[nd-link]").forEach((link) => {
             const nd_url = link.getAttribute("nd-url");
             const href = link.getAttribute("href");
-            if (href === url || nd_url === url) {
+            if (href === new_url || nd_url === new_url) {
                 link.click();
                 result = true;
                 return;
             }
         });
-        this.logger.warn(`navigate_to | Url: '${url}'. Link: ${result ? "found" : "not found"}.`);
+        this.logger.warn(`navigate_to | Url: '${new_url}'. Link: ${result ? "found" : "not found"}.`);
         return result;
     };
 

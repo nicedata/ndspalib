@@ -287,18 +287,35 @@
           this.logger.info(`compress | String: '${this.truncate(str)}'.`);
           return str.replace(/\n+/g, " ").replace(/\r+/g, " ").replace(/  +/g, " ");
         }
-        navigate_to = (url2) => {
+        navigate_to = async (new_url) => {
+          let [method, url2] = ["navigate", ""];
+          if (new_url.includes(":")) {
+            [method, url2] = new_url.split(":");
+            if (!["get", "post"].includes(method)) {
+              this.logger.error(`Only 'get:' or 'post:' url modifiers are allowed. Supplied method was '${method}:'.`);
+              return;
+            }
+          } else {
+            url2 = new_url;
+          }
+          if (["get", "post"].includes(method)) {
+            this.logger.info(`Fetching url '${url2} with a '${method}' request.`);
+            console.log(`Fetching url '${url2} with a '${method}' request'`);
+            const request = new Request(url2, { method: method.toUpperCase() });
+            await nd.fetcher.execute_fetch(request);
+            return;
+          }
           let result = false;
           document.querySelectorAll("[nd-link]").forEach((link) => {
             const nd_url = link.getAttribute("nd-url");
             const href = link.getAttribute("href");
-            if (href === url2 || nd_url === url2) {
+            if (href === new_url || nd_url === new_url) {
               link.click();
               result = true;
               return;
             }
           });
-          this.logger.warn(`navigate_to | Url: '${url2}'. Link: ${result ? "found" : "not found"}.`);
+          this.logger.warn(`navigate_to | Url: '${new_url}'. Link: ${result ? "found" : "not found"}.`);
           return result;
         };
         as_json = (value) => {
@@ -1744,7 +1761,6 @@
           });
           this.form.addEventListener("submit", this.on_submit);
           this.event_listeners.push({ element: this.form, event: "submit", handler: this.on_submit });
-          console.log(this);
         }
         get_confirm_dialog = (form) => {
           const nd_confirm = form.querySelector("[nd-confirm]");
@@ -1970,7 +1986,7 @@
           });
           return payload;
         };
-        async _do_fetch(request) {
+        async execute_fetch(request) {
           const url2 = request.url;
           this.events = [];
           let status = null;
@@ -2003,7 +2019,7 @@
             this.logger.error("send_form: subitted data is not an HTMLFormElement.");
             return;
           }
-          return this._do_fetch(
+          return this.execute_fetch(
             new Request(form.action, {
               method: form.method,
               body: new FormData(form)
@@ -2016,7 +2032,7 @@
         async fetch_data(url2) {
           this.logger.info(`fetch_data | Url: '${url2}'.`);
           const request = new Request(url2);
-          return this._do_fetch(request);
+          return this.execute_fetch(request);
         }
       };
     }
