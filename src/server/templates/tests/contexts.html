@@ -1,0 +1,25 @@
+<h1>Contexts</h1>
+
+<h2>All Users</h2>
+
+<div nd-context="auth_user">
+    <h2>Authenticated user</h2>
+    <h3 nd-context="super_user">I'm a super user !</h3>
+</div>
+
+
+
+<div class="row justify-content-center gx-3 mt-3 border-top pt-3">
+    <div class="col-2">
+        <button nd-link nd-url="/context_test/set/auth_user" class="btn btn-sm btn-primary w-100">Set auth_user</button>
+    </div>
+    <div class="col-2">
+        <button nd-link nd-url="/context_test/set/super_user" class="btn btn-sm btn-primary w-100">Set super_user</button>
+    </div>
+    <div class="col-2">
+        <button nd-link nd-url="/context_test/reset/auth_user" class="btn btn-sm btn-primary w-100">Reset auth_user</button>
+    </div>
+    <div class="col-2">
+        <button nd-link nd-url="/context_test/reset/super_user" class="btn btn-sm btn-primary w-100">Reset super_user</button>
+    </div>
+</div>

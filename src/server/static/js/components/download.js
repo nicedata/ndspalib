@@ -1,42 +1,48 @@
 const { Logger } = require("../modules/logger.js");
 exports.Download = class Download {
-    // id: '6ad835f2-a1f5-494c-b587-dd348624be2d', data: Blob, mimetype: 'application/pdf', filename: 'book.pdf'
     constructor(blob, out_filename, preview = false) {
-        this._logger = new Logger(this.constructor.name);
-        this._blob = blob;
-        this._id = crypto.randomUUID(); // Give this instance an ID (UUID) !
-        this._href = URL.createObjectURL(blob);
-        this._out_filename = out_filename;
+        this.logger = new Logger("Download");
 
-        this._preview = preview;
-        this._element = null;
-        this.html = this._preview ? "" : nd.util.compress(`<a data-nduuid="${this._id}" style="display: none" href="${this._href}", download="${this._out_filename}"a></a>`);
-        this._logger.info(this);
+        this.blob = blob;
+        this.id = crypto.randomUUID(); // Give this instance an ID (UUID) !
+        this.href = URL.createObjectURL(blob);
+        this.out_filename = out_filename;
+
+        this.preview = preview;
+        this.element = null;
+        this.html = this.preview ? "" : nd.util.compress(`<a data-nduuid="${this.id}" style="display: none" href="${this.href}", download="${this.out_filename}"></a>`);
+        this.logger.info(this);
     }
 
+    _cleanup = () => {
+        this.logger.info("Cleanup", this.element ? this.element : "");
+        URL.revokeObjectURL(this.href);
+        if (this.element) this.element.remove();
+    };
+
     show = () => {
-        if (this._preview) {
-            window.open(URL.createObjectURL(this._blob), "_blank");
-            URL.revokeObjectURL(this._href);
+        if (this.preview) {
+            this.logger.info("Preview mode !");
+            window.open(this.href, "_blank");
+            this._cleanup();
             return;
         }
 
+        this.logger.info("Download mode !");
+
         // Create a fragment
         const fragment = nd.util.create_fragment(this.html);
+
         // Append to the document
         nd.util.insert_fragment(document.body, fragment, true, false);
-        this._element = document.querySelector(`[data-nduuid="${this._id}"]`);
-
-        this._logger.info("Showing element", this._element);
+        this.element = document.querySelector(`[data-nduuid="${this.id}"]`);
 
         // Click to initiate download
-        this._element.click();
+        this.element.click();
 
         // Remove the link element after 100 msec
         setTimeout(() => {
-            this._logger.info("Removing element", this._element);
-            URL.revokeObjectURL(this._href);
-            this._element.remove();
-        }, 1000);
+            this._cleanup();
+        }, 100);
     };
 };

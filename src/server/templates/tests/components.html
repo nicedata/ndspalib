@@ -1,0 +1,222 @@
+<h1>Components</h1>
+
+<h2>Notifications</h2>
+<table class="table table-sm table-borderless">
+    <thead>
+        <tr>
+            <th>Description</th>
+            <th class="text-center">Javascript class</th>
+            <th>Open with JS</th>
+            <th>Open with SSE</th>
+            <th>Result body</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+            <td>Alert (auto closes after a while)</td>
+            <td class="text-center"><code>Alert</code></td>
+            <td>
+                <button onclick="spa_alert()" class="btn btn-outline-primary btn-sm w-50">JS</button>
+            </td>
+            <td>
+                <button class="btn btn-outline-primary btn-sm w-50" nd-link nd-url="/sse/alert" nd-target="#a_target_1">SSE</button>
+            </td>
+            <td id="a_target_1"></td>
+        </tr>
+        <tr>
+            <td>Toast (auto closes after a while)</td>
+            <td class="text-center"><code>Toast</code></td>
+            <td>
+                <button onclick="spa_toast()" class="btn btn-outline-primary btn-sm w-50">JS</button>
+            </td>
+            <td>
+                <button class="btn btn-outline-primary btn-sm w-50" nd-link nd-url="/sse/toast" nd-target="#a_target_2">SSE</button>
+            </td>
+            <td id="a_target_2"></td>
+        </tr>
+    </tbody>
+</table>
+
+<h2>Dialogs</h2>
+<table class="table table-sm table-borderless">
+    <thead>
+        <tr>
+            <th>Description</th>
+            <th class="text-center">Javascript class</th>
+            <th>Open with JS</th>
+            <th>Open with SSE</th>
+            <th>Result body</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+            <td>Simple information dialog</td>
+            <td class="text-center"><code>OneButtonDialog</code></td>
+            <td>
+                <button onclick="spa_one_button()" class="btn btn-outline-primary btn-sm w-50">JS</button>
+            </td>
+            <td>
+                <button class="btn btn-outline-primary btn-sm w-50" nd-link nd-url="/sse/one_button" nd-target="#b_target_3">SSE</button>
+            </td>
+            <td id="b_target_3"></td>
+        </tr>
+        <tr>
+            <td>Accept and dismiss dialog</td>
+            <td class="text-center"><code>TwoButtonDialog</code></td>
+            <td>
+                <button onclick="spa_two_button()" class="btn btn-outline-primary btn-sm w-50">JS</button>
+            </td>
+            <td>
+                <button class="btn btn-outline-primary btn-sm w-50" nd-link nd-url="/sse/two_button" nd-target="#b_target_4" nd-confirm>SSE</button>
+            </td>
+            <td id="b_target_4"></td>
+        </tr>
+        <tr>
+            <td>Accept, Apply and dismiss dialog</td>
+            <td class="text-center"><code>ThreeButtonDialog</code></td>
+            <td>
+                <button onclick="spa_three_button()" class="btn btn-outline-primary btn-sm w-50">JS</button>
+            </td>
+            <td>
+                <button class="btn btn-outline-primary btn-sm w-50" nd-link nd-url="/sse/three_button" nd-target="#b_target_5">SSE</button>
+            </td>
+            <td id="b_target_5"></td>
+        </tr>
+        <tr>
+            <td>Secure confirm dialog</td>
+            <td class="text-center"><code>ConfirmDialog</code></td>
+            <td>
+                <button onclick="spa_confirm()" class="btn btn-outline-primary btn-sm w-50">JS</button>
+            </td>
+            <td>
+                <button class="btn btn-outline-primary btn-sm w-50" nd-link nd-url="/sse/confirm" nd-target="#b_target_6">SSE</button>
+            </td>
+            <td id="b_target_6"></td>
+        </tr>
+    </tbody>
+</table>
+
+<h2>Data tranfer</h2>
+<table class="table table-sm table-borderless">
+    <thead>
+        <tr>
+            <th>Description</th>
+            <th class="text-center">Javascript class</th>
+            <th>Open with JS</th>
+            <th>Open with SSE</th>
+            <th>Result body</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+            <td>Download pure</td>
+            <td class="text-center"><code>Download</code></td>
+            <td>
+                <button onclick="" class="btn btn-outline-primary btn-sm w-50" disabled>JS</button>
+            </td>
+            <td>
+                <button class="btn btn-outline-primary btn-sm w-50" nd-link nd-url="/sse/download">SSE</button>
+            </td>
+            <td>
+            </td>
+        </tr>
+        <tr>
+            <td>Download and preview</td>
+            <td class="text-center"><code>Download</code></td>
+            <td>
+                <button onclick="" class="btn btn-outline-primary btn-sm w-50" disabled>JS</button>
+            </td>
+            <td>
+                <button class="btn btn-outline-primary btn-sm w-50" nd-link nd-url="/sse/preview">SSE</button>
+            </td>
+            <td>
+            </td>
+        </tr>
+    </tbody>
+</table>
+
+
+<script>
+    spa_alert = () => {
+        var args = {
+            "severity": "primary",
+            "message": "New arguments have been set !",
+            "urls": {
+                "redirect": "/_new",
+            },
+        }
+        nd.factory.create('alert', args).show();
+    }
+
+    spa_toast = () => {
+        var args = {
+            "title": "Toast from JS",
+            "message": "Arguments set from a JS script !",
+            "urls": {
+                "redirect": "/_new",
+            },
+        }
+        var t = nd.factory.create('toast', args).show();
+    }
+
+    spa_one_button = () => {
+        var args = {
+            "title": "This is a one button dialog (JS)",
+            "message": "And this is my <b>message</b>",
+            "buttons": [
+                { "action": "accept", "label": "Got it !", "url": "/_accept" },
+            ]
+        }
+        nd.factory.create('one-button', args).show();
+    }
+
+    spa_two_button = () => {
+        var args = {
+            "title": "This is a one button dialog (JS)",
+            "message": "And this is my <b>message</b>",
+            "buttons": [
+                { "action": "accept", "label": "Oh oui", "url": "/_accept" },
+                { "action": "dismiss", "label": "Non merci", "url": "/_dismiss" },
+            ],
+        };
+        nd.factory.create('two-button', args).show();
+    }
+
+    spa_three_button = () => {
+        var args = {
+            "title": "This is a one button dialog (JS)",
+            "message": "And this is my <b>message</b>",
+            "buttons": [
+                { "action": "accept", "label": "Oh oui", "url": "/_accept" },
+                { "action": "apply", "label": "Appliquer", "url": "/apply" },
+                { "action": "dismiss", "label": "Non merci", "url": "/_dismiss" },
+            ],
+        };
+        nd.factory.create('three-button', args).show();
+    }
+
+    spa_confirm = () => {
+        var args = {
+            "title": "Confirmation sécurisée (JS)",
+            "message": "Ceci est un message envoyé par le serveur !",
+            "confirm": "Autoriser",
+            "buttons": [
+                { "action": "accept", "label": "OK", "url": "/_accept" },
+                { "action": "dismiss", "label": "Quitter", "url": "/_dismiss" },
+            ],
+        }
+
+
+
+
+
+
+
+
+
+
+
+
+        nd.factory.create('confirm', args).show();
+    }
+</script>

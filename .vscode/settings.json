@@ -1,7 +1,7 @@
 {
     "python.languageServer": "Default",
     "js/ts.implicitProjectConfig.checkJs": true,
-    "javascript.validate.enable": true,
+    "js/ts.validate.enabled": false,
     "files.exclude": {
         "releases": true,
         "**/.git": true,
@@ -31,7 +31,7 @@
     "editor.fontLigatures": true,
     "editor.lineHeight": 20,
     "editor.fontSize": 14,
-    "editor.tabSize": 2,
+    "editor.tabSize": 4,
     "terminal.integrated.fontFamily": "'JetBrains Mono', monospace",
     "terminal.integrated.fontSize": 14,
     "terminal.integrated.lineHeight": 1.3

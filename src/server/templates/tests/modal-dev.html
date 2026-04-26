@@ -1,0 +1,102 @@
+<h1>Modal development</h1>
+
+<button class="col-1 btn btn-primary btn-sm me-1" onclick="(open_modal(1))">Open modal 1</button>
+<button class="col-1 btn btn-primary btn-sm me-1" onclick="(open_modal(2))">Open modal 2</button>
+<button class="col-1 btn btn-primary btn-sm me-1" onclick="(open_notif(1))">Open notif 1</button>
+<button class="col-1 btn btn-primary btn-sm me-1" onclick="(open_notif(2))">Open notif 2</button>
+
+<script>
+    open_modal = (num) => {
+        const modal = document.getElementById(`modal_${num}`);
+        if (modal) {
+            console.log(modal);
+            modal.style.display = 'flex';
+        }
+
+    }
+    open_notif = (num) => {
+        const notif = document.getElementById(`notif_${num}`);
+        if (notif) {
+            console.log(notif);
+            notif.style.display = 'block';
+        }
+
+    }
+</script>
+
+<style>
+</style>
+
+<div class="nd-modal" style="display:none" role="document">
+    <div>
+        <div class="nd-modal-content" style="width: 30%">
+            <h5 class="nd-header">Confirmation sécurisée</h5>
+            <div>
+                Ceci est un message envoyé par le serveur !<br>Vous allez être redirigé vers <b>/index</b>
+            </div>
+            <div class="nd-footer">
+                <div class="col-6">
+                    <!-- Confirmation checkbox -->
+                    <input type="checkbox"> <label><i class="bi bi-arrow-left ms-2 me-1"></i>Autoriser</label>
+                </div>
+                <div class="col-6 text-end">
+                    <button nd-dismiss class="btn btn-secondary" style="width: 7rem">Oh non</button>
+                    <button nd-accept class="btn btn-secondary" style="width: 7rem" disabled>Oui !</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<div class="mt-3"></div>
+<div class="nd-notification-container">
+    <div nd-toast id="notif_1" class="nd-toast">
+        <div class="nd-content">
+            <span class="nd-close" onclick="this.closest('[nd-toast]').style.display='none'">&times;</span>
+            <h5 class="nd-toast-header">This is the toasts header</h5>
+            <div class="nd-toast-content">
+                Lorem ipsum dolor sit amet consectetur adipisicing elit. Id laborum sapiente ex totam dolore nemo delectus, quia dicta perspiciatis culpa cupiditate! Corporis suscipit sapiente,
+                explicabo quasi temporibus provident placeat culpa!
+            </div>
+        </div>
+    </div>
+
+    <div nd-notification id="notif_2" class="nd-notification bg-success-subtle">
+        <div class="nd-content">
+            <span class="nd-close" onclick="this.closest('[nd-notification]').style.display='none'">&times;</span>
+            Notification Content 2
+        </div>
+    </div>
+</div>
+<div id="modal_1" class="nd-modal">
+    <div class="nd-modal-content">
+        <h5 class="nd-header">This is the modal header</h5>
+        <p>
+            Lorem ipsum dolor sit amet consectetur adipisicing elit. Dolore, corporis ad velit quisquam mollitia qui facere a iste expedita aliquam animi consectetur consequuntur similique
+            explicabo voluptatum vitae nobis voluptas iure?
+        </p>
+        <p>
+            Lorem, ipsum dolor sit amet consectetur adipisicing elit. Accusamus maxime minus debitis cumque. Sequi nisi, cum dolore esse corrupti optio minima possimus atque praesentium, quaerat
+            qui vel odio similique voluptatem?
+        </p>
+        <div class="nd-footer">
+            <button nd-accept class="col-1 btn btn-primary me-1">OK</button>
+            <button nd-cancel class="col-1 btn btn-danger me-1">Cancel</button>
+            <button nd-cancel class="col-1 btn btn-success me-1" onclick="open_modal(2)">Modal 2</button>
+        </div>
+    </div>
+</div>
+<div id="modal_2" class="nd-modal">
+    <div class="nd-modal-content w-25">
+        <h5 class="nd-header">This is the modal header</h5>
+        <p>
+            Lorem ipsum dolor sit amet consectetur adipisicing elit. Porro doloribus sint maxime, vero, similique sapiente maiores excepturi suscipit quasi, cumque obcaecati consequatur eligendi
+            rerum temporibus tempora quam. Repudiandae, at architecto!
+        </p>
+        <div class="nd-footer">
+            <div nd-version>
+            </div>
+        </div>
+    </div>
+</div>

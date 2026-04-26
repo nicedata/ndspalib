@@ -1,0 +1,97 @@
+<h1>Zone updates</h1>
+
+<div class="row justify-content-center">
+    <!-- Zone #1 -->
+    <div nd-zone="zone_1" class="col-5 border rounded-3 p-2 m-2">
+        <h2 class="h4 text-center border-bottom mb-3">Zone 1</h2>
+        <p>Demonstration of local updates using the context event (GET).</p>
+        <div class="mt-2 row">
+            <div class="col-sm-4">
+                A ramdom number :
+            </div>
+            <div class="col-sm-5">
+                <code nd-zone-field="random">To be updated !</code>
+            </div>
+        </div>
+        <div class="mt-2 row">
+            <div class="col-sm-4">
+                Time stamp :
+            </div>
+            <div class="col-sm-5">
+                <code nd-zone-field="stamp">To be updated !</code>
+            </div>
+        </div>
+        <div class="mt-2 mb-2 row">
+            <div class="col-sm-4">
+                <div for="select" class="col-form-label">Available options :</div>
+            </div>
+            <div class="col-sm-6">
+                <select nd-zone-field="selector" id="select" class="form-control form-select">
+                    <option value="">-- Will be updated ! --</option>
+                </select>
+            </div>
+        </div>
+    </div>
+
+    <!-- Zone #2 -->
+    <div nd-zone="zone_2" class="col-5 border rounded-3 p-2 m-2">
+        <h2 class="h4 text-center border-bottom mb-3">Zone 2</h2>
+        <p>Demonstration of local updates using the context event (GET).</p>
+        <div class="mt-2 row">
+            <div class="col-sm-4">
+                A ramdom number :
+            </div>
+            <div class="col-sm-5">
+                <code nd-zone-field="random">To be updated !</code>
+            </div>
+        </div>
+        <div class="mt-2 row">
+            <div class="col-sm-4">
+                Time stamp :
+            </div>
+            <div class="col-sm-5">
+                <code nd-zone-field="stamp">To be updated !</code>
+            </div>
+        </div>
+        <div class="mt-2 mb-2 row">
+            <div class="col-sm-4">
+                <div for="select" class="col-form-label">Available options :</div>
+            </div>
+            <div class="col-sm-6">
+                <select nd-zone-field="selector" id="select" class="form-control form-select">
+                    <option value="">-- Will be updated ! --</option>
+                </select>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Form -->
+<div class="row justify-content-center ">
+    <div class="col-8 border rounded-3 p-2 m-2 align-items-center">
+        <h2 class="h4 text-center border-bottom mb-3">Load a form (Zone 3)</h2>
+        <div class="row justify-content-center">
+            <div nd-zone="zone_3" class="col-8">
+                <!-- <div nd-zone-field="form"></div> -->
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Buttons -->
+<div class="row justify-content-center">
+    <div class="col d-flex pt-3 justify-content-center">
+        <button nd-link nd-url="/zone_test/zone_1/update" class="btn btn-primary ms-2 me-1 col-2">Update Zone #1</button>
+        <button nd-link nd-url="/zone_test/zone_2/update" class="btn btn-primary ms-2 me-1 col-2">Update Zone #2</button>
+    </div>
+</div>
+
+<div class="row justify-content-center">
+    <div class="col d-flex pt-3 justify-content-center">
+        <button nd-link nd-url="/zone_test/zone_3/update" class="btn btn-primary ms-2 me-1 col-2">Update Zone #3</button>
+        <button nd-link nd-url="/zone_test/zone_3/show" class="btn btn-primary ms-2 me-1 col-2">Show Zone #3</button>
+        <button nd-link nd-url="/zone_test/zone_3/hide" class="btn btn-primary ms-2 me-1 col-2">Hide Zone #3</button>
+        <button nd-link nd-url="/zone_test/zone_3/clear" class="btn btn-primary ms-2 me-1 col-2">Clear Zone #3</button>
+        <button nd-link nd-url="/zone_test/zone_3/remove" class="btn btn-primary ms-2 me-1 col-2">Remove Zone #3</button>
+    </div>
+</div>

@@ -6,7 +6,7 @@
 const { Logger } = require("./logger.js");
 exports.Events = class Events {
     constructor() {
-        this._logger = new Logger(this.constructor.name);
+        this.logger = new Logger(this.constructor.name);
         // List of active event listeners (array of [event, element, listener] arrays)
         this._listeners = [];
     }
@@ -27,14 +27,14 @@ exports.Events = class Events {
                 event = args.pop();
                 this._listeners.push([event, selector, listener]);
                 document.addEventListener(event, listener);
-                this._logger.info(`Calling function on(), first form. Selector: ${selector}, event:${event}, listener:${listener}`);
+                this.logger.info(`Calling function on(), first form. Selector: ${selector}, event:${event}, listener:${listener}`);
                 break;
             case 2: // Form 2
                 [selector, event] = [args.pop(), args.pop()];
                 document.querySelectorAll(selector).forEach((element) => {
                     this._listeners.push([event, element, listener]);
                     element.addEventListener(event, listener);
-                    this._logger.info(`Calling function on(), second form. Selector: ${selector}, event:${event}, listener:${listener}`);
+                    this.logger.info(`Calling function on(), second form. Selector: ${selector}, event:${event}, listener:${listener}`);
                 });
                 break;
             default:
@@ -57,7 +57,7 @@ exports.Events = class Events {
                 this._listeners.forEach((item, index) => {
                     const [event, element, listener] = item;
                     if (event === event) {
-                        this._logger.info(`Calling function off(), first form. Selector: ${selector}, event:${event}, listener:${listener}`);
+                        this.logger.info(`Calling function off(), first form. Selector: ${selector}, event:${event}, listener:${listener}`);
                         document.removeEventListener(event, listener);
                         this._listeners.splice(index, 1);
                     }
@@ -69,7 +69,7 @@ exports.Events = class Events {
                     this._listeners.forEach((item, index) => {
                         const [event, element, listener] = item;
                         if (event === event && element === target) {
-                            this._logger.info(`Calling function off(), second form. Selector: ${selector}, event:${event}, listener:${listener}`);
+                            this.logger.info(`Calling function off(), second form. Selector: ${selector}, event:${event}, listener:${listener}`);
                             element.removeEventListener(event, listener);
                             this._listeners.splice(index, 1);
                         }
@@ -81,6 +81,10 @@ exports.Events = class Events {
         }
     }
 
+    fire(event, detail) {
+        document.dispatchEvent(new CustomEvent(event, { detail: detail }));
+    }
+
     /**
      * Remove ALL event listeners
      *
@@ -89,7 +93,7 @@ exports.Events = class Events {
         this._listeners.forEach((item, _) => {
             const [event, element, listener] = item;
             element.removeEventListener(event, listener);
-            this._logger.info(`Calling function flush(). Selector: ${selector}, event:${event}, listener:${listener}`);
+            this.logger.info(`Calling function flush(). Selector: ${selector}, event:${event}, listener:${listener}`);
         });
         this._listeners = [];
     }

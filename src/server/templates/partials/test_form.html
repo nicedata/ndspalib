@@ -1,0 +1,23 @@
+<form nd-form method="post" action="/sse/form" nd-confirm="{'title':'Approbation', 'message':'Effectuer l\'opération ?', 'buttons' : [{'action': 'accept', 'label': 'Oh oui', 'url': '/_accept'},  
+{'action': 'dismiss', 'label': 'Non merci', 'url': '/_dismiss'}]}">
+    <div class="mb-3">
+        <label for="id_email" class="form-label">Email address</label>
+        <input type="email" name="email" class="form-control" id="id_email" aria-describedby="email_help" autocomplete="email" required />
+        <div id="email_help" class="form-text">We'll never share your email with anyone else.</div>
+    </div>
+    <div class="mb-3">
+        <label for="id_password" class="form-label">Password</label>
+        <input type="password" name="password" class="form-control" id="id_password" autocomplete="off" required />
+    </div>
+    <div class="mb-3 form-check">
+        <input type="checkbox" name="checkout" class="form-check-input" id="id_checkout" required />
+        <label class="form-check-label" for="id_checkout">Check me out</label>
+    </div>
+    <div class="text-center">
+        <button type="button" class="btn btn-outline-secondary col-2" nd-accept>Submit</button>
+        <button type="button" class="btn btn-outline-secondary col-2" nd-apply>Apply</button>
+        <button type="button" class="btn btn-outline-secondary col-2" nd-dismiss>Dismiss</button>
+        <button type="button" class="btn btn-outline-secondary col-2" nd-revert>Revert</button>
+        <button type="button" class="btn btn-outline-secondary col-2" nd-clear>Clear</button>
+    </div>
+</form>

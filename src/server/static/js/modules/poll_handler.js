@@ -53,7 +53,7 @@ exports.PollHandler = class PollHandler extends BaseHandler {
         timers_to_clear.forEach((timer) => {
             const index = this._timers.indexOf(timer);
             this._timers.splice(index, 1);
-            this._logger.info(`Cleared and removed timer ${timer.id} for ${timer.uuid}.`);
+            this.logger.info(`Cleared and removed timer ${timer.id} for ${timer.uuid}.`);
         });
     }
 
@@ -73,7 +73,7 @@ exports.PollHandler = class PollHandler extends BaseHandler {
 
             // Check url
             if (!url) {
-                this._logger.error(`No <nd-url> defined on element`, Object(element));
+                this.logger.error(`No <nd-url> defined on element`, Object(element));
             }
 
             // Check interval
@@ -100,7 +100,7 @@ exports.PollHandler = class PollHandler extends BaseHandler {
             const result = this._timers.find(({ id, uuid }) => id === timeout_id);
             const index = this._timers.indexOf(result);
             this._timers.splice(index, 1);
-            this._logger.info(`Removed timer ${result.id} for ${result.uuid}. Active timers : ${this._timers.length}`);
+            this.logger.info(`Removed timer ${result.id} for ${result.uuid}. Active timers : ${this._timers.length}`);
 
             // Get the data and update the targets if the document is not hidden (save bandwidth)
             if (!document.hidden) {
@@ -118,6 +118,6 @@ exports.PollHandler = class PollHandler extends BaseHandler {
 
         // Add this tmeout ID to the timers list
         this._timers.push({ id: timeout_id, uuid: uuid });
-        this._logger.info(`Added timer ${timeout_id} (${interval_ms}ms) for ${uuid}. Active timers : ${this._timers.length}`);
+        this.logger.info(`Added timer ${timeout_id} (${interval_ms}ms) for ${uuid}. Active timers : ${this._timers.length}`);
     }
 };

@@ -1,0 +1,35 @@
+<h1>Web session with ND SPA</h1>
+
+<div class="row">
+    <div class="col-2">
+        Provides :
+        <ul>
+            <li>Login</li>
+            <li>Login out</li>
+        </ul>
+    </div>
+    <div class="col-5">
+        Accounts :
+        <ul>
+            <li>user@test.com / user : no privileges</li>
+            <li>admin@test.com / admin : administrator</li>
+            <li>superadmin@test.com / superadmin : super administrator</li>
+        </ul>
+    </div>
+
+</div>
+
+<!-- Menu -->
+<div class="border-bottom border-top pb-2 pt-2 mt-3">
+    <!-- Items that are always shown -->
+    <a href="/websession" nd-link class="border-end ps-2 pe-2">Welcome</a>
+    <a href="/websession" nd-link class="border-end ps-2 pe-2">News</a>
+    <a href="/websession" nd-link class="border-end ps-2 pe-2">Contact</a>
+    <!-- Context dependent items -->
+    <a nd-context="authenticated" href="/websession/admin" nd-link class="border-end ps-2 pe-2">My Account</a>
+    <a nd-context="authenticated:hide" href="/websession/login" nd-link nd-target="#forms" class="border-end ps-2 pe-2">Login</a>
+    <a nd-context="authenticated" href="/websession/logout" nd-link class="border-end ps-2 pe-2">Logout</a>
+</div>
+<div id="forms" nd-context="authenticated:hide" nd-zone="forms">
+    <!-- Form will be updated by SSE -->
+</div>
