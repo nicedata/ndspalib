@@ -9,7 +9,7 @@
     "src/server/static/js/constants.js"(exports2) {
       var INFOS2 = {
         PROGNAME: "NDS SPA utilities",
-        VERSION: "1.0.11-dev",
+        VERSION: "1.0.12-dev",
         AUTHOR: "Martin Mohnhaupt <martin.mohnhaupt@etik.com>",
         LICENCE: "MIT License, https://mit-license.org/",
         INSPIREDBY: {
@@ -1486,12 +1486,11 @@
           const notification_events = [
             ND_EVENTS.ALERT,
             ND_EVENTS.TOAST,
-            ND_EVENTS.DIALOG,
             ND_EVENTS.CONFIRM,
             ND_EVENTS.ONE_BUTTON_DIALOG,
             ND_EVENTS.TWO_BUTTON_DIALOG,
             ND_EVENTS.THREE_BUTTON_DIALOG,
-            ND_EVENTS.MODAL,
+            ND_EVENTS.CUSTOM_DIALOG,
             ND_EVENTS.DOWNLOAD,
             ND_EVENTS.REDIRECT
           ];

@@ -140,6 +140,9 @@ class FlaskMiddleware:
         # Call the original WSGI application with the custom start_response function to generate the response.
         return self._wsgi_app(environ, custom_start_response)
 
+    def is_spa_request(self) -> bool:
+        return isinstance(self._request.headers.get("X-Nd-Version"), str)
+
     def set_title(self, title) -> None:
         """Set the title for the response, which can be used by the SPA to display a custom title for the page or section being updated.
 

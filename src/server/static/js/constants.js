@@ -4,7 +4,7 @@
 
 const INFOS = {
     PROGNAME: "NDS SPA utilities",
-    VERSION: "1.0.11-dev",
+    VERSION: "1.0.12-dev",
     AUTHOR: "Martin Mohnhaupt <martin.mohnhaupt@etik.com>",
     LICENCE: "MIT License, https://mit-license.org/",
     INSPIREDBY: {

@@ -9,12 +9,11 @@ exports.EventHandler = class EventHandler {
         const notification_events = [
             ND_EVENTS.ALERT,
             ND_EVENTS.TOAST,
-            ND_EVENTS.DIALOG,
             ND_EVENTS.CONFIRM,
             ND_EVENTS.ONE_BUTTON_DIALOG,
             ND_EVENTS.TWO_BUTTON_DIALOG,
             ND_EVENTS.THREE_BUTTON_DIALOG,
-            ND_EVENTS.MODAL,
+            ND_EVENTS.CUSTOM_DIALOG,
             ND_EVENTS.DOWNLOAD,
             ND_EVENTS.REDIRECT,
         ];

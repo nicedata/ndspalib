@@ -58,6 +58,7 @@ def websession():
 @app.route("/forms", methods=["GET", "POST"])
 def forms():
     app.title("Forms")
+    print(app.is_spa_request())
     return render_template("tests/forms.html")
 
 

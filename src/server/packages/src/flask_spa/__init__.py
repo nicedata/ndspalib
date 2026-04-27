@@ -87,6 +87,9 @@ class FlaskSpa(Flask):
         """
         self._middleware.set_title(title)
 
+    def is_spa_request(self) -> bool:
+        return self._middleware.is_spa_request()
+
     def set_context(self, context: str) -> None:
         self._send(EventFactory.context(context, "set"))
 
