@@ -5,8 +5,9 @@
  */
 const { Logger } = require("./logger.js");
 exports.Events = class Events {
+    static LOGGER = new Logger("Events", true);
     constructor() {
-        this.logger = new Logger(this.constructor.name);
+        this.logger = Events.LOGGER;
         // List of active event listeners (array of [event, element, listener] arrays)
         this._listeners = [];
     }

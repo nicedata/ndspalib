@@ -140,7 +140,7 @@ Poll the `/poll` url every `10000` ms (10 seconds which is the **default** value
 
 | Attribute     | Default | Meaning                                                      |
 | ------------- | ------- | ------------------------------------------------------------ |
-| `nd-switch`   |         | `<select>` elements with an `nd-switch` will update targets on option change. |
+| `nd-select`   |         | `<select>` elements with an `nd-select` will update targets on option change. |
 | `nd-url`      |         | URL to poll                                                  |
 | `nd-target`   |         | Target selector (`#id`, `.class`). If not specified, the inner content is updated |
 | `nd-interval` | 10000   | Poll interval in milliseconds                                |
@@ -150,7 +150,7 @@ Poll the `/poll` url every `10000` ms (10 seconds which is the **default** value
 ```html
 <div class="row mb-3 align-items-center">
     <div class="col-2">
-        <select class="form-select" aria-label="Default select example" nd-switch=".numbers">
+        <select class="form-select" aria-label="Default select example" nd-select=".numbers">
             <option>-- Select a value --</option>
             <option value="1">One</option>
             <option value="2">Two</option>

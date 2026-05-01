@@ -65,7 +65,7 @@
     <!-- Use the local library (symbolic link) -->
     <script src="/static/ndspalib.js"></script>
     <script>
-        nd.glogger.info("Development mode");
+        nd.core_logger.info("Development mode");
     </script>
     {% endif %}
 
@@ -95,24 +95,27 @@
         <a href="/websession" nd-link nd-target="main" class="border-end ps-2 pe-2">Web Session</a>
         <a href="/forms" nd-link nd-target="main" class="border-end ps-2 pe-2">Forms</a>
         <a href="/sandbox" nd-link nd-target="main" class="border-end ps-2 pe-2">Sandbox</a>
+        <a href="/trackers" nd-link nd-target="main" class="border-end ps-2 pe-2">Trackers</a>
+
         <span nd-zone="user-status" class="text-primary" style="float: right"></span>
     </div>
 
-    <main class="mt-3" nd-init="/forms">
+    <main class="mt-3" nd-init="/trackers">
         <!-- Will be updated with the response of nd-init -->
     </main>
 
     <footer class="d-flex flex-wrap py-3 my-4 border-top border-secondary-subtle">
         <div class="col-md-4 mb-0 text-body-secondary">&copy; 2026, Nice Data Systems</div>
         <div class="col-md-4 mb-0 text-body-secondary text-center">
-            NDS SPA Utilities Demo | <span Xnd-poll nd-url="/poll/raw" nd-interval="5000"></span>
+            NDS SPA Utilities Demo
         </div>
         <div class="col-md-4 mb-0 text-body-secondary text-end">FlaskSpa {{ context.version }} | <span nd-version></span></div>
     </footer>
 
     <script>
         nd.debug.enable();
-        nd.debug.filter(['Logger', 'Fetcher', 'LinkHandler', 'PollHandler', 'DialogFactory', 'XEventHandler', 'Util', 'XTwoButtonDialog', 'Alert', 'VersionHandler', 'SourceHandler']);
+        nd.debug.ignore(['*']);
+        nd.debug.force(['Logger', 'HandlerTracker']);
     </script>
 </body>
 

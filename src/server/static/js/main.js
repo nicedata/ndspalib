@@ -1,12 +1,22 @@
 /**
  * Include needed modules
  */
+
+// Constants and modules needed for startup
 const { INFOS, DIALOG_CONTAINER, NOTIFICATION_CONTAINER } = require("./constants.js");
 const { Debug } = require("./modules/debug.js");
 const { Logger } = require("./modules/logger.js");
+
+const PROG_INFO = `${INFOS.PROGNAME} ${INFOS.VERSION}`;
+
+// Create a core logger
+const core_logger = new Logger("Core", true);
+core_logger.info(`${PROG_INFO} : initializing...`);
+
+// Other modules
 const { Util } = require("./modules/util.js");
 const { Events } = require("./modules/events.js");
-const { SwitchHandler } = require("./modules/switch_handler.js");
+const { SelectHandler } = require("./modules/select_handler.js");
 const { PollHandler } = require("./modules/poll_handler.js");
 const { SourceHandler } = require("./modules/source_handler.js");
 const { VersionHandler } = require("./modules/version_handler.js");
@@ -14,26 +24,18 @@ const { LinkHandler } = require("./modules/link_handler.js");
 const { EventHandler } = require("./modules/event_handler.js");
 const { ZoneHandler } = require("./modules/zone_handler.js");
 const { ContextHandler } = require("./modules/context_handler.js");
+const { HandlerTracker } = require("./modules/handler_tracker.js");
 const { FormHandler } = require("./modules/form_handler.js");
 const { Fetcher } = require("./modules/fetcher.js");
-// Components
+
+// GUI Components
 const { Alert, DialogFactory, ConfirmDialog, Toast } = require("./components/dialogs.js");
-
-// Dev
-const { Form } = require("./modules/form.js");
-
-const PROG_INFO = `${INFOS.PROGNAME} ${INFOS.VERSION}`;
-
-// Create a logger
-const core_logger = new Logger("Core", true);
 
 // Check bootstrap presence and version
 if (typeof bootstrap === "undefined") throw new Error("Bootstrap library not present !");
 const bs_version = bootstrap.Tooltip.VERSION;
 [bs_major, _, _] = bs_version.split(".");
 if (bs_major < 5) throw new Error(`${PROGNAME} needs Bootstrap 5.x.x library. Current Bootstrap version is ${bs_version}.`);
-
-const ORIGIN = window.location.origin;
 
 const nd_init = () => {
     return new Promise((resolve) => {
@@ -48,12 +50,11 @@ const nd_init = () => {
             util: new Util(),
             events: new Events(),
             fetcher: new Fetcher(),
-            glogger: core_logger, // The 'Core' logger
-            factory: new DialogFactory(),
+            core_logger: core_logger, // The 'Core' logger
+            dialog_factory: new DialogFactory(),
+            tracker: new HandlerTracker(),
             dialog_container: null,
             notification_container: null,
-
-            // Form: Form,
 
             // Handlers (will be initialized when DOM is loaded)
             handlers: [],
@@ -114,11 +115,12 @@ const nd_init = () => {
                     new SourceHandler(),
                     new VersionHandler(),
                     new LinkHandler(),
-                    new SwitchHandler(),
+                    new SelectHandler(),
                     new EventHandler(),
                     new ZoneHandler(),
                     new ContextHandler(),
                     new FormHandler(),
+                    new HandlerTracker(),
                 ];
             },
 
@@ -163,7 +165,6 @@ const on_dom_loaded = async () => {
 };
 
 // initialize framework, then attach it to the current window
-core_logger.info(`${PROG_INFO} : initializing...`);
 nd_init().then((nd_core) => {
     window.nd = nd_core;
     core_logger.info(`${PROG_INFO} : ready !`);

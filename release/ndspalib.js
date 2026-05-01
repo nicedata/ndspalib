@@ -9,7 +9,7 @@
     "src/server/static/js/constants.js"(exports2) {
       var INFOS2 = {
         PROGNAME: "NDS SPA utilities",
-        VERSION: "1.0.12-dev",
+        VERSION: "1.0.13-dev",
         AUTHOR: "Martin Mohnhaupt <martin.mohnhaupt@etik.com>",
         LICENCE: "MIT License, https://mit-license.org/",
         INSPIREDBY: {
@@ -80,34 +80,49 @@
           if (!!Debug2._instance) {
             return Debug2._instance;
           }
-          this._debug = true;
-          this._classname = "Debug";
-          this._filter = [];
+          this.debug = true;
+          this.classname = "Debug";
+          this.filter_items = [];
+          this.filter_override = [];
           Debug2._instance = this;
         }
         enable() {
-          this._debug = true;
-          console.info(`INFO | ${this._classname} | Debugging is enabled.`);
+          this.debug = true;
+          console.info(`INFO | ${this.classname} | Debugging is enabled.`);
         }
         disable() {
-          this._debug = false;
-          console.info(`INFO | ${this._classname} | Debugging is disabled.`);
+          this.debug = false;
+          console.info(`INFO | ${this.classname} | Debugging is disabled.`);
         }
         is_active() {
-          return this._debug;
+          return this.debug;
         }
-        filter(items) {
-          if (!Array.isArray(items))
-            console.error(`ERROR | ${this._classname} | Function debug.filter() requires a list as an argument.`);
-          this._filter = items;
-          if (this._debug)
-            console.log(`INFO | Debug | ${this._classname} filtered source(s) :`, this._filter.toString().replaceAll(",", ", "));
-        }
+        ignore = (items) => {
+          if (!Array.isArray(items)) {
+            console.error(`ERROR | ${this.classname} | Function debug.ignore() requires a list of strings as an argument.`);
+            return;
+          }
+          this.filter_items = items;
+          this.filter_items.includes("*") ? this.filter_items = ["*"] : () => {
+          };
+          if (this.debug)
+            console.log(`INFO | Debug | ${this.classname} ignored source(s) :`, this.filter_items.join(", "));
+        };
+        force = (items) => {
+          if (!Array.isArray(items)) {
+            console.error(`ERROR | ${this.classname} | Function debug.force() requires a list of strings as an argument.`);
+            return;
+          }
+          this.filter_override = items;
+          if (this.debug)
+            console.log(`INFO | Debug | ${this.classname} forced source(s) :`, this.filter_override.join(", "));
+        };
         is_filtered(source) {
-          for (const filter of this._filter)
-            if (filter === source)
-              return true;
-          return false;
+          if (this.filter_override.includes(source))
+            return false;
+          let result = false;
+          this.filter_items.includes("*") ? result = true : this.filter_items.includes(source);
+          return result;
         }
       };
     }
@@ -119,28 +134,28 @@
       var { Debug: Debug2 } = require_debug();
       exports2.Logger = class Logger {
         constructor(source, silent = false) {
-          const class_name = this.constructor.name;
-          this._source = source;
-          this._debug = new Debug2();
-          if (!this._debug.is_active())
+          const name = "Logger";
+          this.source = source;
+          this.debug = new Debug2();
+          if (!this.debug.is_active())
             return;
-          if (this._debug.is_filtered(class_name))
+          if (this.debug.is_filtered(name))
             return;
           if (!silent)
-            console.info(`INFO | ${class_name} | Creating a logger for ${this._source}`);
+            console.info(`INFO | ${name} | Creating a logger for ${this.source}`);
         }
         info() {
-          if (!this._debug.is_active())
+          if (!this.debug.is_active())
             return;
-          if (this._debug.is_filtered(this._source))
+          if (this.debug.is_filtered(this.source))
             return;
-          console.info(`INFO | ${this._source} |`, ...arguments);
+          console.info(`INFO | ${this.source} |`, ...arguments);
         }
         error() {
-          console.error(`ERROR | ${this._source} |`, ...arguments);
+          console.error(`ERROR | ${this.source} |`, ...arguments);
         }
         warn() {
-          console.warn(`WARNING | ${this._source} |`, ...arguments);
+          console.warn(`WARNING | ${this.source} |`, ...arguments);
         }
       };
     }
@@ -150,10 +165,11 @@
   var require_util = __commonJS({
     "src/server/static/js/modules/util.js"(exports2) {
       var { ND_EVENTS, VERSION } = require_constants();
-      var { Logger: Logger2 } = require_logger();
-      exports2.Util = class Util {
+      var { Logger: Logger3 } = require_logger();
+      exports2.Util = class Util2 {
+        static LOGGER = new Logger3("Util", true);
         constructor() {
-          this.logger = new Logger2("Util");
+          this.logger = Util2.LOGGER;
         }
         // Source - https://stackoverflow.com/questions/42406520/populate-an-html-form-from-a-formdata-object
         // Source - https://stackoverflow.com/questions/42406520/populate-an-html-form-from-a-formdata-object/79932100#79932100
@@ -288,20 +304,20 @@
           return str.replace(/\n+/g, " ").replace(/\r+/g, " ").replace(/  +/g, " ");
         }
         navigate_to = async (new_url) => {
-          let [method, url2] = ["navigate", ""];
+          let [method, url] = ["navigate", ""];
           if (new_url.includes(":")) {
-            [method, url2] = new_url.split(":");
+            [method, url] = new_url.split(":");
             if (!["get", "post"].includes(method)) {
               this.logger.error(`Only 'get:' or 'post:' url modifiers are allowed. Supplied method was '${method}:'.`);
               return;
             }
           } else {
-            url2 = new_url;
+            url = new_url;
           }
           if (["get", "post"].includes(method)) {
-            this.logger.info(`Fetching url '${url2} with a '${method}' request.`);
-            console.log(`Fetching url '${url2} with a '${method}' request'`);
-            const request = new Request(url2, { method: method.toUpperCase() });
+            this.logger.info(`Fetching url '${url} with a '${method}' request.`);
+            console.log(`Fetching url '${url} with a '${method}' request'`);
+            const request = new Request(url, { method: method.toUpperCase() });
             await nd.fetcher.execute_fetch(request);
             return;
           }
@@ -329,10 +345,11 @@
   // src/server/static/js/modules/events.js
   var require_events = __commonJS({
     "src/server/static/js/modules/events.js"(exports2) {
-      var { Logger: Logger2 } = require_logger();
-      exports2.Events = class Events {
+      var { Logger: Logger3 } = require_logger();
+      exports2.Events = class Events2 {
+        static LOGGER = new Logger3("Events", true);
         constructor() {
-          this.logger = new Logger2(this.constructor.name);
+          this.logger = Events2.LOGGER;
           this._listeners = [];
         }
         /**
@@ -422,10 +439,10 @@
   // src/server/static/js/modules/base_handler.js
   var require_base_handler = __commonJS({
     "src/server/static/js/modules/base_handler.js"(exports2) {
-      var { Logger: Logger2 } = require_logger();
+      var { Logger: Logger3 } = require_logger();
       exports2.BaseHandler = class BaseHandler {
         constructor() {
-          this.logger = new Logger2(this.constructor.name);
+          this.logger = new Logger3(this.constructor.name);
         }
         /**
          * Process a given fragment.
@@ -443,360 +460,16 @@
     }
   });
 
-  // src/server/static/js/modules/switch_handler.js
-  var require_switch_handler = __commonJS({
-    "src/server/static/js/modules/switch_handler.js"(exports2) {
-      var { BaseHandler: BaseHandler2 } = require_base_handler();
-      exports2.SwitchHandler = class SwitchHandler extends BaseHandler2 {
-        constructor() {
-          super();
-        }
-        process(fragment) {
-          if (document.querySelectorAll("[nd-switch]").length == 0)
-            return;
-          this._process(fragment);
-        }
-        postprocess() {
-        }
-        _process(fragment) {
-          fragment.querySelectorAll("[nd-switch]").forEach(async (element) => {
-            const nd_switch = element.getAttribute("nd-switch");
-            const nd_options_url = element.getAttribute("nd-options");
-            this.logger.info(`Processing switch element`, element);
-            if (element.tagName !== "SELECT") {
-              this.logger.error(`<nd-switch> only applies to 'select' tags. Error element:`, element);
-              return;
-            }
-            const targets2 = Array();
-            nd_switch.split(" ").forEach((s) => {
-              if (s) {
-                this.logger.info(`Processing switch element with class or id '${s}'`);
-                document.querySelectorAll(s).forEach((t) => {
-                  if (t.hasAttribute("nd-show-for") || t.hasAttribute("nd-hide-for")) {
-                    t.hidden = true;
-                  }
-                  this.logger.info(`Found target identified by '${s}' (class or id) :`, t);
-                  targets2.push(t);
-                });
-              }
-            });
-            if (nd_options_url) {
-              this.logger.info(`Getting select option from url '${nd_options_url}'.`);
-              await nd.fetcher.fetch_data(nd_options_url).then((data2) => {
-                const fragment2 = nd.util.create_fragment(data2);
-                nd.util.insert_fragment(element, fragment2);
-              });
-            }
-            element.addEventListener("change", () => {
-              this._update_targets(element, targets2);
-            });
-            element.selectedIndex = 0;
-            element.dispatchEvent(new Event("change"));
-          });
-        }
-        _update_targets(selector2, targets2) {
-          if (selector2.selectedIndex < 0)
-            return;
-          const value = selector2.options[selector2.selectedIndex].getAttribute("value");
-          targets2.forEach((e) => {
-            const nd_show_for = e.getAttribute("nd-show-for");
-            const nd_hide_for = e.getAttribute("nd-hide-for");
-            const nd_follow = e.hasAttribute("nd-follow");
-            const nd_sync = e.hasAttribute("nd-sync");
-            const nd_url = e.getAttribute("nd-url");
-            const has_nd_url = nd_url ? true : false;
-            if (nd_sync && nd_follow) {
-              this.logger.error("<nd-sync> and <nd-follow> are nutually exclusive !", e);
-              return;
-            }
-            const show_targets = nd_show_for ? nd_show_for.split(" ") : [];
-            const hide_targets = nd_hide_for ? nd_hide_for.split(" ") : [];
-            if (nd_sync) {
-              if (has_nd_url && value) {
-                const url2 = `${nd_url}/${value}`;
-                nd.fetcher.fetch_data(url2).then((data2) => {
-                  const fragment = nd.util.create_fragment(data2);
-                  nd.util.insert_fragment(e, fragment);
-                });
-              } else {
-                e.innerText = value ? value : "";
-              }
-            }
-            if (nd_follow) {
-              if (value) {
-                nd.fetcher.fetch_data(value).then((data2) => {
-                  const fragment = nd.util.create_fragment(data2);
-                  nd.util.insert_fragment(e, fragment, false, true);
-                });
-              } else {
-                e.innerHTML = "";
-              }
-            }
-            if (show_targets.includes("*")) {
-              e.hidden = value ? false : true;
-              show_targets.splice(show_targets.indexOf("*"), 1);
-            }
-            if (hide_targets.includes("*")) {
-              e.hidden = value ? true : false;
-              hide_targets.splice(hide_targets.indexOf("*"), 1);
-            }
-            if (show_targets.length)
-              e.hidden = !show_targets.includes(value);
-            if (hide_targets.length)
-              e.hidden = hide_targets.includes(value);
-          });
-        }
-      };
-    }
-  });
-
-  // src/server/static/js/modules/poll_handler.js
-  var require_poll_handler = __commonJS({
-    "src/server/static/js/modules/poll_handler.js"(exports2) {
-      var { POLL_DEFAULT_INTERVAL_MS } = require_constants();
-      var { BaseHandler: BaseHandler2 } = require_base_handler();
-      exports2.PollHandler = class PollHandler extends BaseHandler2 {
-        constructor() {
-          super();
-          this._timers = [];
-        }
-        /**
-         * Process a given fragment.
-         */
-        process(fragment) {
-          if (document.querySelectorAll("[nd-poll]").length == 0)
-            return;
-          this._process(fragment);
-        }
-        /**
-         * Clean the DOM (remove unused timers)
-         */
-        postprocess() {
-          const timers_to_clear = [];
-          this._timers.forEach((timer, index) => {
-            if (document.querySelectorAll(`[data-nduuid="${timer.uuid}"]`).length == 0) {
-              clearTimeout(timer.id);
-              timers_to_clear.push(timer);
-            }
-          });
-          timers_to_clear.forEach((timer) => {
-            const index = this._timers.indexOf(timer);
-            this._timers.splice(index, 1);
-            this.logger.info(`Cleared and removed timer ${timer.id} for ${timer.uuid}.`);
-          });
-        }
-        /**
-         * Process (internal) a given fragment (HTML element)
-         */
-        _process(fragment) {
-          fragment.querySelectorAll(`[nd-poll]`).forEach((element) => {
-            const url2 = element.getAttribute("nd-url");
-            const selector2 = element.getAttribute("nd-target");
-            const targets2 = selector2 ? nd.util.get_targets(selector2) : [element];
-            let interval_ms = element.getAttribute("nd-interval");
-            const uuid2 = nd.util.set_uuid(element);
-            if (!url2) {
-              this.logger.error(`No <nd-url> defined on element`, Object(element));
-            }
-            if (!interval_ms || isNaN(interval_ms)) {
-              interval_ms = POLL_DEFAULT_INTERVAL_MS;
-            } else {
-              interval_ms = Number(interval_ms);
-              interval_ms = interval_ms < 1e3 ? 1e3 : interval_ms;
-            }
-            if (url2)
-              this._poll(uuid2, url2, targets2, interval_ms);
-          });
-        }
-        /**
-         * Polling function
-         */
-        _poll(uuid2, url2, targets2, interval_ms) {
-          const timeout_id = setTimeout(() => {
-            clearTimeout(timeout_id);
-            const result = this._timers.find(({ id, uuid: uuid3 }) => id === timeout_id);
-            const index = this._timers.indexOf(result);
-            this._timers.splice(index, 1);
-            this.logger.info(`Removed timer ${result.id} for ${result.uuid}. Active timers : ${this._timers.length}`);
-            if (!document.hidden) {
-              nd.fetcher.fetch_data(url2).then((data2) => {
-                targets2.forEach((t) => {
-                  const fragment = nd.util.create_fragment(data2);
-                  nd.util.insert_fragment(t, fragment, false, true);
-                });
-              });
-            }
-            this._poll(uuid2, url2, targets2, interval_ms);
-          }, interval_ms);
-          this._timers.push({ id: timeout_id, uuid: uuid2 });
-          this.logger.info(`Added timer ${timeout_id} (${interval_ms}ms) for ${uuid2}. Active timers : ${this._timers.length}`);
-        }
-      };
-    }
-  });
-
-  // src/server/static/js/modules/source_handler.js
-  var require_source_handler = __commonJS({
-    "src/server/static/js/modules/source_handler.js"(exports2) {
-      var { BaseHandler: BaseHandler2 } = require_base_handler();
-      exports2.SourceHandler = class SourceHandler extends BaseHandler2 {
-        constructor() {
-          super();
-        }
-        process_init(fragment) {
-          if (document.querySelectorAll("[nd-init]").length == 0)
-            return;
-          fragment.querySelectorAll(`[nd-init]`).forEach((element) => {
-            const url2 = element.getAttribute("nd-init");
-            this.logger.info(`Processing element`, element);
-            if (url2 === "/") {
-              this.logger.error(`'nd-init' cannot be the root url (/) !`);
-              return;
-            }
-            if (!url2) {
-              this.logger.error(`No valid url defined in 'nd-init' on element`, Object(element));
-              element.innerHTML = `<span style="color: red">Error: no valid url defined in 'nd-init' on element &lt;${element.tagName.toLowerCase()} data-nduuid="${uuid}"&gt;</span>`;
-              return;
-            }
-            this.logger.info(`nd-init: Fetching data from '${url2}'...`);
-            nd.fetcher.fetch_data(url2).then((data2) => {
-              if (data2) {
-                const fragment2 = nd.util.create_fragment(data2);
-                nd.util.insert_fragment(element, fragment2, false, true);
-              } else {
-                this.logger.error(`Url '${url2}' returned no data !`);
-                element.innerHTML = `<span style="color: red">Error: url '${url2}' returned no data for element ${nd.util.as_text(element)}</span>`;
-              }
-            });
-            element.removeAttribute("nd-init");
-          });
-        }
-        /**
-         * Process a given fragment.
-         */
-        process(fragment) {
-          this.process_init(fragment);
-          if (document.querySelectorAll("[nd-source]").length == 0)
-            return;
-          fragment.querySelectorAll(`[nd-source]`).forEach((element) => {
-            const url2 = element.getAttribute("nd-source");
-            this.logger.info(`Processing element`, element);
-            if (url2 === "/") {
-              this.logger.error(`<nd-source cannot be the root url (/) !`);
-              return;
-            }
-            const uuid2 = nd.util.set_uuid(element);
-            if (!url2) {
-              this.logger.error(`No valid url defined in 'nd-source' on element`, Object(element));
-              element.innerHTML = `<span style="color: red">Error: no valid url defined in 'nd-source' on element &lt;${element.tagName.toLowerCase()} data-nduuid="${uuid2}"&gt;</span>`;
-              return;
-            }
-            this.logger.info(`Fetching data from '${url2}' for element with uuid '${uuid2}'...`);
-            nd.fetcher.fetch_data(url2).then((data2) => {
-              if (data2) {
-                const fragment2 = nd.util.create_fragment(data2);
-                nd.util.insert_fragment(element, fragment2, false, true);
-              } else {
-                this.logger.error(`Url '${url2}' returned no data !`);
-                element.innerHTML = `<span style="color: red">Error: url '${url2}' returned no data for element ${nd.util.as_text(element)}</span>`;
-              }
-            });
-          });
-        }
-        /**
-         * Clean the DOM
-         */
-        postprocess() {
-        }
-      };
-    }
-  });
-
-  // src/server/static/js/modules/version_handler.js
-  var require_version_handler = __commonJS({
-    "src/server/static/js/modules/version_handler.js"(exports2) {
-      var { BaseHandler: BaseHandler2 } = require_base_handler();
-      exports2.VersionHandler = class VersionHandler extends BaseHandler2 {
-        constructor() {
-          super();
-        }
-        /**
-         * Process a given fragment.
-         */
-        process(fragment) {
-          if (document.querySelectorAll("[nd-version]").length == 0)
-            return;
-          fragment.querySelectorAll(`[nd-version]`).forEach((element) => {
-            this.logger.info(`Processing element`, element);
-            element.textContent = nd.version;
-          });
-        }
-        /**
-         * Clean the DOM
-         */
-        postprocess() {
-        }
-      };
-    }
-  });
-
   // src/server/static/js/components/dialogs.js
   var require_dialogs = __commonJS({
     "src/server/static/js/components/dialogs.js"(exports2) {
-      var { Logger: Logger2 } = require_logger();
+      var { Logger: Logger3 } = require_logger();
       var { TOAST_DELAY_MS, DIALOG_CONTAINER: DIALOG_CONTAINER2 } = require_constants();
-      var DEFAULT_ARGS = {
-        type: "notification | dialog",
-        severity: "danger",
-        // Severity
-        title: "No title defined !",
-        // The dialog's title
-        message: "No message defined !",
-        // The dialog's body
-        buttons: {
-          accept: "OK",
-          // The 'accept' button's label
-          dismiss: "Cancel",
-          // The 'dismiss' button's label
-          apply: "Apply"
-          // The 'apply' button's label
-        },
-        confirm: "Please, confirm the operation",
-        // Confirm checkbox label
-        urls: {
-          redirect: "/_redirect",
-          // The redirect URL
-          accept: "/_accept",
-          // The 'accept' url
-          dismiss: "/_dismiss",
-          // The 'dismiss' url
-          apply: "/_apply"
-          // The 'apply' url
-        },
-        actions: {
-          accept: "js_accept",
-          // The 'accept' action
-          dismiss: "js_dismiss",
-          // The 'dismiss' action
-          apply: "js_apply"
-          // The 'apply' action
-        },
-        payload: {
-          data: "this is my data stream",
-          mimetype: "application/pdf",
-          filename: "my_document.pdf",
-          mode: "preview"
-        },
-        custom: {
-          html: "<p>This is HTML</p>",
-          width_pc: 50
-        }
-      };
       var BaseDialog = class {
         constructor(logger_name, args) {
-          this.logger = new Logger2(logger_name);
+          this.logger = new Logger3(logger_name);
           this.id = crypto.randomUUID();
-          this.args = args || DEFAULT_ARGS;
+          this.args = args;
           this.can_display = void 0;
           this.dialog = null;
           this.html = null;
@@ -916,14 +589,14 @@
         constructor(args) {
           super("ConfirmDialog", args);
           this.args.type = "dialog";
-          console.log(args.buttons.find(({ action: action2 }) => action2 === "accept"));
-          console.log(args.buttons.find(({ action: action2 }) => action2 === "dismiss"));
+          console.log(args.buttons.find(({ action }) => action === "accept"));
+          console.log(args.buttons.find(({ action }) => action === "dismiss"));
           this.close_event = `nd:close:${this.id}`;
           this.btn_dismiss = null;
           this.btn_accept = null;
           this.cb_confirm = null;
-          const accept_button_obj = args.buttons.find(({ action: action2 }) => action2 === "accept");
-          const dismiss_button_obj = args.buttons.find(({ action: action2 }) => action2 === "dismiss");
+          const accept_button_obj = args.buttons.find(({ action }) => action === "accept");
+          const dismiss_button_obj = args.buttons.find(({ action }) => action === "dismiss");
           const accept_url = accept_button_obj ? accept_button_obj.url : null;
           const dismiss_url = dismiss_button_obj ? dismiss_button_obj.url : null;
           const css_class = `nd-modal`;
@@ -1007,7 +680,7 @@
           this.args.type = "dialog";
           this.close_event = `nd:close:${this.id}`;
           this.btn_accept = null;
-          const accept_button_obj = args.buttons.find(({ action: action2 }) => action2 === "accept");
+          const accept_button_obj = args.buttons.find(({ action }) => action === "accept");
           const css_class = `nd-modal`;
           const css_style = `width: 30%`;
           const buttons = nd.util.compress(`
@@ -1059,8 +732,8 @@
           this.close_event = `nd:close:${this.id}`;
           this.btn_dismiss = null;
           this.btn_accept = null;
-          const accept_button_obj = args.buttons.find(({ action: action2 }) => action2 === "accept");
-          const dismiss_button_obj = args.buttons.find(({ action: action2 }) => action2 === "dismiss");
+          const accept_button_obj = args.buttons.find(({ action }) => action === "accept");
+          const dismiss_button_obj = args.buttons.find(({ action }) => action === "dismiss");
           const css_class = `nd-modal`;
           const css_style = `width: 30%`;
           const buttons = nd.util.compress(`
@@ -1123,9 +796,9 @@
           this.btn_apply = null;
           this.btn_dismiss = null;
           this.btn_accept = null;
-          const accept_button_obj = args.buttons.find(({ action: action2 }) => action2 === "accept");
-          const apply_button_obj = args.buttons.find(({ action: action2 }) => action2 === "apply");
-          const dismiss_button_obj = args.buttons.find(({ action: action2 }) => action2 === "dismiss");
+          const accept_button_obj = args.buttons.find(({ action }) => action === "accept");
+          const apply_button_obj = args.buttons.find(({ action }) => action === "apply");
+          const dismiss_button_obj = args.buttons.find(({ action }) => action === "dismiss");
           const css_class = `nd-modal`;
           const css_style = `width: 30%`;
           const buttons = nd.util.compress(`
@@ -1306,11 +979,12 @@
       };
       var { Alert: Alert2, Toast: Toast2, OneButtonDialog, TwoButtonDialog: TwoButtonDialog2, ThreeButtonDialog, ConfirmDialog: ConfirmDialog2, CustomDialog } = require_dialogs();
       exports2.DialogFactory = class DialogFactory2 {
+        static LOGGER = new Logger3("DialogFactory", true);
         constructor() {
           if (!!DialogFactory2._instance) {
             return DialogFactory2._instance;
           }
-          this.logger = new Logger2("DialogFactory");
+          this.logger = DialogFactory2.LOGGER;
         }
         create(type, args) {
           this.logger.info(`Create a new dialog. Type: '${type}'. Arguments: ${args ? JSON.stringify(args) : "none"}.`);
@@ -1336,90 +1010,60 @@
     }
   });
 
-  // src/server/static/js/modules/link_handler.js
-  var require_link_handler = __commonJS({
-    "src/server/static/js/modules/link_handler.js"(exports, module) {
-      var { TARGET_NONE } = require_constants();
-      var { BaseHandler } = require_base_handler();
+  // src/server/static/js/modules/link.js
+  var require_link = __commonJS({
+    "src/server/static/js/modules/link.js"(exports, module) {
+      var { Logger } = require_logger();
       var { TwoButtonDialog } = require_dialogs();
-      exports.LinkHandler = class LinkHandler extends BaseHandler {
-        constructor() {
-          super();
-          this.handlers = [];
-        }
-        /**
-         * Process a given fragment.
-         */
-        process(fragment) {
-          if (fragment.querySelectorAll("[nd-link]").length == 0)
+      exports.Link = class _Link {
+        static LOGGER = new Logger("Link", true);
+        constructor(element) {
+          this.logger = _Link.LOGGER;
+          this.element = element;
+          this.url = null;
+          this.confirm = null;
+          this.action = null;
+          this.data = null;
+          this.targets = [];
+          element.removeAttribute("data-ndtrack");
+          const href = element.getAttribute("href");
+          this.url = href ? href : element.getAttribute("nd-url");
+          this.confirm = element.getAttribute("nd-confirm");
+          this.action = element.getAttribute("nd-action");
+          this.data = element.getAttribute("nd-data");
+          if (!this.url) {
+            this.logger.error(`No <nd-url> defined on element`, element);
             return;
-          this.logger.info(`Processing fragment`, fragment);
-          fragment.querySelectorAll("[nd-link]").forEach((element) => {
-            this.logger.info(`Processing 'nd-link' element`, element);
-            let url2 = element.getAttribute("href");
-            url2 = url2 ? url2 : element.getAttribute("nd-url");
-            const nd_zone = element.getAttribute("nd-zone-target");
-            const nd_confirm = element.getAttribute("nd-confirm");
-            const nd_action = element.getAttribute("nd-action");
-            const nd_data = element.getAttribute("nd-data");
-            if (!url2) {
-              this.logger.error(`No <nd-url> defined on element`, element);
-              return;
-            }
-            const append = false;
-            const selector2 = element.getAttribute("nd-target");
-            const targets2 = selector2 ? nd.util.get_targets(selector2) : [];
-            if (!targets2.length && selector2 && selector2.toLowerCase() !== TARGET_NONE) {
-              this.logger.error(`No <nd-target> defined on element`, element);
-            }
-            const uuid2 = nd.util.set_uuid(element);
-            element.addEventListener("click", (event2) => {
-              this._click_handler(event2, url2, targets2, nd_confirm, nd_action, nd_data);
-            });
-            this.handlers.push(uuid2);
-            this.logger.info(`Added a click handler on element`, element);
-          });
+          }
+          const append = false;
+          const selector2 = element.getAttribute("nd-target");
+          this.targets = selector2 ? nd.util.get_targets(selector2) : [];
+          if (!this.targets.length && selector2 && selector2.toLowerCase() !== TARGET_NONE) {
+            this.logger.error(`No <nd-target> defined on element`, element);
+          }
+          nd.tracker.add_listener(element, "click", this._click_handler);
+          this.logger.info(`New Link created (${element.getAttribute("data-ndtrack")}).`);
         }
-        /**
-         * Clean the DOM (remove unused handlers)
-         */
-        postprocess() {
-          const handlers_to_remove = [];
-          const handlers_count = this.handlers.length;
-          this.handlers.forEach((uuid2) => {
-            if (document.querySelectorAll(`[data-nduuid="${uuid2}"]`).length == 0) {
-              handlers_to_remove.push(uuid2);
-            }
-          });
-          handlers_to_remove.forEach((uuid2) => {
-            const index = this.handlers.indexOf(uuid2);
-            this.handlers.splice(index, 1);
-            this.logger.info(`Removed link handler for element ${uuid2}`);
-          });
-          const cleaned_handlers_count = handlers_count - this.handlers.length;
-          if (cleaned_handlers_count)
-            this.logger.info(`Cleaned ${cleaned_handlers_count} of ${this.handlers.length} link handlers`);
-        }
-        _click_handler = async (event, url, targets, confirm, action, data) => {
+        _click_handler = async (event) => {
           event.preventDefault();
           let do_proceed = true;
           let request_context = null;
-          if (data) {
+          if (this.data) {
           }
-          if (confirm) {
-            const args = nd.util.as_json(confirm);
+          if (this.confirm) {
+            const args = nd.util.as_json(this.confirm);
             do_proceed = await TwoButtonDialog.create_from_args(args).run() === "accept";
           }
           if (do_proceed) {
-            action ? eval(action) : () => {
+            this.action ? eval(this.action) : () => {
             };
-            nd.fetcher.fetch_data(url).then((data2) => {
-              if (data2) {
-                targets.forEach((t) => {
+            nd.fetcher.fetch_data(this.url).then((data) => {
+              if (data) {
+                this.targets.forEach((t) => {
                   if (t.tagName === "INPUT") {
-                    t.value = data2;
+                    t.value = data;
                   } else {
-                    const fragment = nd.util.create_fragment(data2);
+                    const fragment = nd.util.create_fragment(data);
                     nd.util.insert_fragment(t, fragment, false, true);
                   }
                 });
@@ -1431,13 +1075,364 @@
     }
   });
 
+  // src/server/static/js/modules/select.js
+  var require_select = __commonJS({
+    "src/server/static/js/modules/select.js"(exports2) {
+      var { Logger: Logger3 } = require_logger();
+      var { Link } = require_link();
+      exports2.Select = class Select {
+        constructor(element) {
+          this.logger = new Logger3("Select");
+          this.selector = element;
+          this.targets = [];
+          const nd_targets = element.getAttribute("nd-target");
+          const nd_options_url = element.getAttribute("nd-url");
+          if (element.tagName !== "SELECT") {
+            this.logger.error(`'nd-select' only apply to 'select' tags. Error element:`, element);
+            return;
+          }
+          const targets = Array();
+          if (nd_targets) {
+            nd_targets.split(" ").forEach((target) => {
+              if (target) {
+                this.logger.info(`Processing switch element with class or id '${target}'`);
+                document.querySelectorAll(target).forEach((t) => {
+                  if (t.hasAttribute("nd-show-for") || t.hasAttribute("nd-hide-for")) {
+                    t.hidden = true;
+                  }
+                  this.logger.info(`Found target identified by '${target}' (class or id) :`, t);
+                  this.targets.push(t);
+                });
+              }
+            });
+          }
+          if (nd_options_url) {
+            this.logger.info(`Getting select option from url '${nd_options_url}'.`);
+            nd.fetcher.fetch_data(nd_options_url).then((data) => {
+              const fragment = nd.util.create_fragment(data);
+              nd.util.insert_fragment(element, fragment);
+            });
+          }
+          nd.tracker.add_listener(element, "change", this._update_targets);
+          this.selector.selectedIndex = 0;
+          this.selector.dispatchEvent(new Event("change"));
+        }
+        _update_targets = (event2) => {
+          if (this.selector.selectedIndex < 0)
+            return;
+          const option = this.selector.options[this.selector.selectedIndex];
+          const value = option.getAttribute("value");
+          const link = option.getAttribute("nd-url");
+          this.targets.forEach((target) => {
+            const nd_show_for = target.getAttribute("nd-show-for");
+            const nd_hide_for = target.getAttribute("nd-hide-for");
+            const nd_follow = target.hasAttribute("nd-follow");
+            const nd_sync = target.hasAttribute("nd-sync");
+            const nd_activate = target.hasAttribute("nd-activate");
+            const bool_count = [nd_follow, nd_sync, nd_activate].filter(Boolean).length;
+            if (!bool_count) {
+              this.logger.error("One of 'nd-sync', 'nd-follow' or 'nd-activate' must be set !", target);
+              return;
+            }
+            if (bool_count > 1) {
+              this.logger.error("'nd-sync', 'nd-follow' or 'nd-activate' are mutually exclusive !", target);
+              return;
+            }
+            const nd_url = target.getAttribute("nd-url");
+            const has_nd_url = nd_url ? true : false;
+            const show_targets = nd_show_for ? nd_show_for.split(" ") : [];
+            const hide_targets = nd_hide_for ? nd_hide_for.split(" ") : [];
+            if (nd_activate) {
+              target.innerHTML = value;
+              target.setAttribute("nd-link", "");
+              target.setAttribute("nd-url", link);
+              new Link(target);
+              nd.util.refresh(target);
+            }
+            if (nd_sync) {
+              if (has_nd_url && value) {
+                const url = `${nd_url}/${value}`;
+                nd.fetcher.fetch_data(url).then((data) => {
+                  const fragment = nd.util.create_fragment(data);
+                  nd.util.insert_fragment(target, fragment);
+                });
+              } else {
+                target.innerText = value ? value : "";
+              }
+            }
+            if (nd_follow && link) {
+              nd.fetcher.fetch_data(link).then((data) => {
+                const fragment = nd.util.create_fragment(data);
+                nd.util.insert_fragment(target, fragment, false, true);
+              });
+            }
+            if (show_targets.includes("*")) {
+              target.hidden = value ? false : true;
+              show_targets.splice(show_targets.indexOf("*"), 1);
+            }
+            if (hide_targets.includes("*")) {
+              target.hidden = value ? true : false;
+              hide_targets.splice(hide_targets.indexOf("*"), 1);
+            }
+            if (show_targets.length)
+              target.hidden = !show_targets.includes(value);
+            if (hide_targets.length)
+              target.hidden = hide_targets.includes(value);
+          });
+        };
+      };
+    }
+  });
+
+  // src/server/static/js/modules/select_handler.js
+  var require_select_handler = __commonJS({
+    "src/server/static/js/modules/select_handler.js"(exports2) {
+      var { BaseHandler } = require_base_handler();
+      var { Select } = require_select();
+      exports2.SelectHandler = class SelectHandler extends BaseHandler {
+        constructor() {
+          super();
+        }
+        process(fragment) {
+          if (document.querySelectorAll("[nd-select]").length == 0)
+            return;
+          fragment.querySelectorAll("[nd-select]").forEach((element) => {
+            new Select(element);
+          });
+        }
+        postprocess() {
+        }
+      };
+    }
+  });
+
+  // src/server/static/js/modules/poll_handler.js
+  var require_poll_handler = __commonJS({
+    "src/server/static/js/modules/poll_handler.js"(exports2) {
+      var { POLL_DEFAULT_INTERVAL_MS } = require_constants();
+      var { BaseHandler } = require_base_handler();
+      exports2.PollHandler = class PollHandler extends BaseHandler {
+        constructor() {
+          super();
+          this._timers = [];
+        }
+        /**
+         * Process a given fragment.
+         */
+        process(fragment) {
+          if (document.querySelectorAll("[nd-poll]").length == 0)
+            return;
+          this._process(fragment);
+        }
+        /**
+         * Clean the DOM (remove unused timers)
+         */
+        postprocess() {
+          const timers_to_clear = [];
+          this._timers.forEach((timer, index) => {
+            if (document.querySelectorAll(`[data-nduuid="${timer.uuid}"]`).length == 0) {
+              clearTimeout(timer.id);
+              timers_to_clear.push(timer);
+            }
+          });
+          timers_to_clear.forEach((timer) => {
+            const index = this._timers.indexOf(timer);
+            this._timers.splice(index, 1);
+            this.logger.info(`Cleared and removed timer ${timer.id} for ${timer.uuid}.`);
+          });
+        }
+        /**
+         * Process (internal) a given fragment (HTML element)
+         */
+        _process(fragment) {
+          fragment.querySelectorAll(`[nd-poll]`).forEach((element) => {
+            const url = element.getAttribute("nd-url");
+            const selector2 = element.getAttribute("nd-target");
+            const targets = selector2 ? nd.util.get_targets(selector2) : [element];
+            let interval_ms = element.getAttribute("nd-interval");
+            const uuid2 = nd.util.set_uuid(element);
+            if (!url) {
+              this.logger.error(`No <nd-url> defined on element`, Object(element));
+            }
+            if (!interval_ms || isNaN(interval_ms)) {
+              interval_ms = POLL_DEFAULT_INTERVAL_MS;
+            } else {
+              interval_ms = Number(interval_ms);
+              interval_ms = interval_ms < 1e3 ? 1e3 : interval_ms;
+            }
+            if (url)
+              this._poll(uuid2, url, targets, interval_ms);
+          });
+        }
+        /**
+         * Polling function
+         */
+        _poll(uuid2, url, targets, interval_ms) {
+          const timeout_id = setTimeout(() => {
+            clearTimeout(timeout_id);
+            const result = this._timers.find(({ id, uuid: uuid3 }) => id === timeout_id);
+            const index = this._timers.indexOf(result);
+            this._timers.splice(index, 1);
+            this.logger.info(`Removed timer ${result.id} for ${result.uuid}. Active timers : ${this._timers.length}`);
+            if (!document.hidden) {
+              nd.fetcher.fetch_data(url).then((data) => {
+                targets.forEach((t) => {
+                  const fragment = nd.util.create_fragment(data);
+                  nd.util.insert_fragment(t, fragment, false, true);
+                });
+              });
+            }
+            this._poll(uuid2, url, targets, interval_ms);
+          }, interval_ms);
+          this._timers.push({ id: timeout_id, uuid: uuid2 });
+          this.logger.info(`Added timer ${timeout_id} (${interval_ms}ms) for ${uuid2}. Active timers : ${this._timers.length}`);
+        }
+      };
+    }
+  });
+
+  // src/server/static/js/modules/source_handler.js
+  var require_source_handler = __commonJS({
+    "src/server/static/js/modules/source_handler.js"(exports2) {
+      var { BaseHandler } = require_base_handler();
+      exports2.SourceHandler = class SourceHandler extends BaseHandler {
+        constructor() {
+          super();
+        }
+        process_init(fragment) {
+          if (document.querySelectorAll("[nd-init]").length == 0)
+            return;
+          fragment.querySelectorAll(`[nd-init]`).forEach((element) => {
+            const url = element.getAttribute("nd-init");
+            this.logger.info(`Processing element`, element);
+            if (url === "/") {
+              this.logger.error(`'nd-init' cannot be the root url (/) !`);
+              return;
+            }
+            if (!url) {
+              this.logger.error(`No valid url defined in 'nd-init' on element`, Object(element));
+              element.innerHTML = `<span style="color: red">Error: no valid url defined in 'nd-init' on element &lt;${element.tagName.toLowerCase()} data-nduuid="${uuid}"&gt;</span>`;
+              return;
+            }
+            this.logger.info(`nd-init: Fetching data from '${url}'...`);
+            nd.fetcher.fetch_data(url).then((data) => {
+              if (data) {
+                const fragment2 = nd.util.create_fragment(data);
+                nd.util.insert_fragment(element, fragment2, false, true);
+              } else {
+                this.logger.error(`Url '${url}' returned no data !`);
+                element.innerHTML = `<span style="color: red">Error: url '${url}' returned no data for element ${nd.util.as_text(element)}</span>`;
+              }
+            });
+            element.removeAttribute("nd-init");
+          });
+        }
+        /**
+         * Process a given fragment.
+         */
+        process(fragment) {
+          this.process_init(fragment);
+          if (document.querySelectorAll("[nd-source]").length == 0)
+            return;
+          fragment.querySelectorAll(`[nd-source]`).forEach((element) => {
+            const url = element.getAttribute("nd-source");
+            this.logger.info(`Processing element`, element);
+            if (url === "/") {
+              this.logger.error(`<nd-source cannot be the root url (/) !`);
+              return;
+            }
+            const uuid2 = nd.util.set_uuid(element);
+            if (!url) {
+              this.logger.error(`No valid url defined in 'nd-source' on element`, Object(element));
+              element.innerHTML = `<span style="color: red">Error: no valid url defined in 'nd-source' on element &lt;${element.tagName.toLowerCase()} data-nduuid="${uuid2}"&gt;</span>`;
+              return;
+            }
+            this.logger.info(`Fetching data from '${url}' for element with uuid '${uuid2}'...`);
+            nd.fetcher.fetch_data(url).then((data) => {
+              if (data) {
+                const fragment2 = nd.util.create_fragment(data);
+                nd.util.insert_fragment(element, fragment2, false, true);
+              } else {
+                this.logger.error(`Url '${url}' returned no data !`);
+                element.innerHTML = `<span style="color: red">Error: url '${url}' returned no data for element ${nd.util.as_text(element)}</span>`;
+              }
+            });
+          });
+        }
+        /**
+         * Clean the DOM
+         */
+        postprocess() {
+        }
+      };
+    }
+  });
+
+  // src/server/static/js/modules/version_handler.js
+  var require_version_handler = __commonJS({
+    "src/server/static/js/modules/version_handler.js"(exports2) {
+      var { BaseHandler } = require_base_handler();
+      exports2.VersionHandler = class VersionHandler extends BaseHandler {
+        constructor() {
+          super();
+        }
+        /**
+         * Process a given fragment.
+         */
+        process(fragment) {
+          if (document.querySelectorAll("[nd-version]").length == 0)
+            return;
+          fragment.querySelectorAll(`[nd-version]`).forEach((element) => {
+            this.logger.info(`Processing element`, element);
+            element.textContent = nd.version;
+          });
+        }
+        /**
+         * Clean the DOM
+         */
+        postprocess() {
+        }
+      };
+    }
+  });
+
+  // src/server/static/js/modules/link_handler.js
+  var require_link_handler = __commonJS({
+    "src/server/static/js/modules/link_handler.js"(exports2) {
+      var { BaseHandler } = require_base_handler();
+      var { Link } = require_link();
+      exports2.LinkHandler = class LinkHandler extends BaseHandler {
+        constructor() {
+          super();
+        }
+        /**
+         * Process a given fragment.
+         */
+        process(fragment) {
+          if (fragment.querySelectorAll("[nd-link]").length == 0)
+            return;
+          this.logger.info(`Processing fragment`, fragment);
+          fragment.querySelectorAll("[nd-link]").forEach((element) => {
+            this.logger.info(`Processing 'nd-link' element`, element);
+            new Link(element);
+          });
+        }
+        /**
+         * Clean the DOM (remove unused handlers)
+         */
+        postprocess() {
+        }
+      };
+    }
+  });
+
   // src/server/static/js/components/download.js
   var require_download = __commonJS({
     "src/server/static/js/components/download.js"(exports2) {
-      var { Logger: Logger2 } = require_logger();
+      var { Logger: Logger3 } = require_logger();
       exports2.Download = class Download {
         constructor(blob, out_filename, preview = false) {
-          this.logger = new Logger2("Download");
+          this.logger = new Logger3("Download");
           this.blob = blob;
           this.id = crypto.randomUUID();
           this.href = URL.createObjectURL(blob);
@@ -1479,10 +1474,13 @@
       var { ND_EVENTS } = require_constants();
       var { OneButtonDialog, TwoButtonDialog: TwoButtonDialog2, ThreeButtonDialog, ConfirmDialog: ConfirmDialog2, Toast: Toast2, Alert: Alert2 } = require_dialogs();
       var { Download } = require_download();
-      var { Logger: Logger2 } = require_logger();
-      exports2.EventHandler = class EventHandler {
+      var { Logger: Logger3 } = require_logger();
+      exports2.EventHandler = class EventHandler2 {
         constructor() {
-          this.logger = new Logger2("EventHandler");
+          if (!!EventHandler2._instance) {
+            return EventHandler2._instance;
+          }
+          this.logger = new Logger3("EventHandler");
           const notification_events = [
             ND_EVENTS.ALERT,
             ND_EVENTS.TOAST,
@@ -1498,6 +1496,7 @@
             this.logger.info(`Adding a listener to handle '${value}' events.`);
             document.addEventListener(value, this._event_handler);
           });
+          EventHandler2._instance = this;
         }
         // Todo : remove
         process(fragment) {
@@ -1509,7 +1508,7 @@
           this.logger.info(`Event received: ${event2.type}.`);
           this.logger.info(`Event detail: ${JSON.stringify(event2.detail)}.`);
           const detail = event2.detail;
-          let data2 = null;
+          let data = null;
           switch (event2.type) {
             case ND_EVENTS.ALERT:
               new Alert2(detail).show();
@@ -1534,11 +1533,11 @@
               break;
             case ND_EVENTS.REDIRECT:
               this.logger.info(`Redrect | Url: '${detail.urls.redirect}'...`);
-              data2 = await nd.fetcher.fetch_data(detail.urls.redirect);
-              this.logger.info(`Redrect | Data: '${nd.util.truncate(data2)}.`);
+              data = await nd.fetcher.fetch_data(detail.urls.redirect);
+              this.logger.info(`Redrect | Data: '${nd.util.truncate(data)}.`);
               const target = document.querySelector("main");
               if (target) {
-                const fragment = nd.util.create_fragment(data2);
+                const fragment = nd.util.create_fragment(data);
                 nd.util.insert_fragment(target, fragment, false, true, false);
                 nd.util.refresh(target);
               }
@@ -1553,10 +1552,10 @@
   var require_zone_handler = __commonJS({
     "src/server/static/js/modules/zone_handler.js"(exports2) {
       var { ND_EVENTS } = require_constants();
-      var { Logger: Logger2 } = require_logger();
+      var { Logger: Logger3 } = require_logger();
       exports2.ZoneHandler = class ZoneHandler {
         constructor() {
-          this.logger = new Logger2("ZoneHandler");
+          this.logger = new Logger3("ZoneHandler");
           this.logger.info(`Adding a listener to handle '${ND_EVENTS.ZONE}' events.`);
           document.addEventListener(ND_EVENTS.ZONE, this._event_handler);
         }
@@ -1577,7 +1576,7 @@
         _event_handler = (event2) => {
           this.logger.info(`Event: ${event2.type}. Zone: '${event2.detail.name}'. Fields: ${event2.detail.fields.length}. Action: '${event2.detail.action}'.`);
           const zone_name = event2.detail.name;
-          const action2 = event2.detail.action;
+          const action = event2.detail.action;
           const zone_fields = event2.detail.fields;
           const zone = document.querySelector(`[nd-zone="${zone_name}"]`);
           if (!zone) {
@@ -1585,7 +1584,7 @@
             return;
           }
           const has_fields = zone.querySelectorAll(`[nd-zone-field]`).length > 0;
-          switch (action2) {
+          switch (action) {
             case "show":
             case "focus":
               zone.hidden = false;
@@ -1633,10 +1632,11 @@
   var require_context_handler = __commonJS({
     "src/server/static/js/modules/context_handler.js"(exports2) {
       var { ND_EVENTS } = require_constants();
-      var { Logger: Logger2 } = require_logger();
-      exports2.ContextHandler = class ContextHandler {
+      var { Logger: Logger3 } = require_logger();
+      exports2.ContextHandler = class ContextHandler2 {
+        static LOGGER = new Logger3("ContextHandler", true);
         constructor() {
-          this.logger = new Logger2("ContextHandler");
+          this.logger = ContextHandler2.LOGGER;
           this.context = [];
           this.logger.info(`Adding a listener to handle '${ND_EVENTS.CONTEXT}' events.`);
           document.addEventListener(ND_EVENTS.CONTEXT, this._event_handler);
@@ -1649,12 +1649,12 @@
               this.logger.error(`No context specified in element`, e);
               return;
             }
-            const [context, action2 = "show"] = attribute.split(":");
-            if (!["show", "hide"].includes(action2)) {
-              this.logger.error(`Unsupported context action: '${action2}. Allowed actions are 'show' or 'hide'.`);
+            const [context, action = "show"] = attribute.split(":");
+            if (!["show", "hide"].includes(action)) {
+              this.logger.error(`Unsupported context action: '${action}. Allowed actions are 'show' or 'hide'.`);
               return;
             }
-            switch (action2) {
+            switch (action) {
               case "show":
                 e.hidden = this.context.includes(context) ? false : true;
                 break;
@@ -1666,14 +1666,14 @@
         };
         // Todo : remove
         process = (fragment) => {
-          this._update_document();
         };
         postprocess = () => {
+          this._update_document();
         };
         _event_handler = (event2) => {
           this.logger.info(`Event: ${event2.type}. Context: '${event2.detail.context}'. Action: '${event2.detail.action}'`);
-          const { context, action: action2 } = event2.detail;
-          switch (action2) {
+          const { context, action } = event2.detail;
+          switch (action) {
             case "set":
               if (this.context.includes(context)) {
                 this.logger.info(`Value '${context}' is already present.`);
@@ -1699,15 +1699,77 @@
     }
   });
 
+  // src/server/static/js/modules/handler_tracker.js
+  var require_handler_tracker = __commonJS({
+    "src/server/static/js/modules/handler_tracker.js"(exports2) {
+      var { Logger: Logger3 } = require_logger();
+      exports2.HandlerTracker = class HandlerTracker2 {
+        static LOGGER = new Logger3("HandlerTracker", true);
+        constructor() {
+          if (!!HandlerTracker2._instance) {
+            return HandlerTracker2._instance;
+          }
+          this.logger = HandlerTracker2.LOGGER;
+          this.handlers = [];
+          HandlerTracker2._instance = this;
+        }
+        _register_listener = (element, event2, handler, use_capture = null) => {
+          const weakref = new WeakRef(element);
+          use_capture === true ? weakref.deref().addEventListener(event2, handler, use_capture) : weakref.deref().addEventListener(event2, handler);
+          const item = {
+            weakref,
+            trackid: element.dataset.ndtrack,
+            event: event2,
+            handler,
+            use_capture
+          };
+          this.handlers.push(item);
+          this.logger.info(`Tracking '${event2}' handler on element '${element.tagName.toLowerCase()}' (${element.dataset.ndtrack}).`);
+        };
+        process(fragment) {
+        }
+        postprocess() {
+          this.logger.info(`Postprocessing : ${this.handlers.length} handler(s) to check.`);
+          if (this.handlers.length === 0)
+            return;
+          let deleted_count = 0;
+          this.handlers.slice().forEach((tracker) => {
+            const uuid2 = tracker.trackid;
+            const selector2 = `[data-ndtrack="${uuid2}"]`;
+            if (document.querySelector(selector2))
+              return;
+            const element = tracker.weakref.deref();
+            if (element) {
+              this.logger.info(`Cleaning '${tracker.event}' handler on '${element.tagName.toLowerCase()}' (${uuid2}).`);
+              element.removeEventListener(tracker.event, tracker.handler);
+            } else {
+              this.logger.info(`Element '${uuid2}' already went to garbage (GC).`);
+            }
+            const index = this.handlers.findIndex(({ trackid }) => trackid === uuid2);
+            this.handlers.splice(index, 1);
+            deleted_count++;
+          });
+          this.logger.info(`Postprocessing : ${deleted_count} handler(s) removed. ${this.handlers.length} handlers(s) kept.`);
+        }
+        add_listener = (element, event2, handler) => {
+          if (!element.hasAttribute("data-ndtrack")) {
+            element.dataset.ndtrack = crypto.randomUUID();
+          }
+          this._register_listener(element, event2, handler);
+        };
+      };
+    }
+  });
+
   // src/server/static/js/modules/form.js
   var require_form = __commonJS({
     "src/server/static/js/modules/form.js"(exports2) {
-      var { Logger: Logger2 } = require_logger();
-      exports2.Form = class Form2 {
+      var { Logger: Logger3 } = require_logger();
+      exports2.Form = class Form {
         static ACTIONS = ["nd-accept", "nd-apply", "nd-dismiss", "nd-revert", "nd-clear"];
         static REQUIRED_ACTIONS = ["nd-accept"];
         constructor(form) {
-          this.logger = new Logger2("Form");
+          this.logger = new Logger3("Form");
           this.form = form;
           this.form_str = nd.util.serialize_form(this.form);
           this.is_dirty = false;
@@ -1717,9 +1779,9 @@
           this.event_listeners = [];
           nd.util.set_uuid(this.form);
           this.confirm_dialog = this.get_confirm_dialog(this.form);
-          Form2.ACTIONS.forEach((action2) => {
-            const element = form.querySelector(`[${action2}]`);
-            switch (action2) {
+          Form.ACTIONS.forEach((action) => {
+            const element = form.querySelector(`[${action}]`);
+            switch (action) {
               case "nd-accept":
                 if (element) {
                   element.addEventListener("click", this.accept);
@@ -1786,7 +1848,7 @@
               ]
             };
           }
-          return nd.factory.create("two-button", args);
+          return nd.dialog_factory.create("two-button", args);
         };
         close = (reason) => {
           this.logger.info(`Closing form. Reason: '${reason}.'`);
@@ -1883,11 +1945,11 @@
   // src/server/static/js/modules/form_handler.js
   var require_form_handler = __commonJS({
     "src/server/static/js/modules/form_handler.js"(exports2) {
-      var { Logger: Logger2 } = require_logger();
-      var { Form: Form2 } = require_form();
+      var { Logger: Logger3 } = require_logger();
+      var { Form } = require_form();
       exports2.FormHandler = class FormHandler {
         constructor() {
-          this.logger = new Logger2("FormHandler");
+          this.logger = new Logger3("FormHandler");
           this.forms = [];
         }
         /**
@@ -1902,16 +1964,16 @@
               return;
             }
             let ok_count = 0;
-            Form2.REQUIRED_ACTIONS.forEach((action2) => {
-              element.querySelector(`[${action2}]`) ? ok_count++ : () => {
+            Form.REQUIRED_ACTIONS.forEach((action) => {
+              element.querySelector(`[${action}]`) ? ok_count++ : () => {
               };
             });
-            if (ok_count !== Form2.REQUIRED_ACTIONS.length) {
-              this.logger.error(`Please ensure that ${Form2.REQUIRED_ACTIONS.join(" and ")} action elements (e. g. <button>, <a>, ...) are set.
+            if (ok_count !== Form.REQUIRED_ACTIONS.length) {
+              this.logger.error(`Please ensure that ${Form.REQUIRED_ACTIONS.join(" and ")} action elements (e. g. <button>, <a>, ...) are set.
   Element:`, element);
               return;
             }
-            new Form2(element);
+            new Form(element);
             this.logger.info("New form instance created.");
           });
         }
@@ -1929,14 +1991,15 @@
     "src/server/static/js/modules/fetcher.js"(exports2) {
       var { ND_EVENTS, VERSION } = require_constants();
       var { Download } = require_constants();
-      var { Logger: Logger2 } = require_logger();
+      var { Logger: Logger3 } = require_logger();
       exports2.Fetcher = class Fetcher2 {
+        static LOGGER = new Logger3("Fetcher", true);
         // Singleton constructor !
         constructor() {
           if (!!Fetcher2._instance) {
             return Fetcher2._instance;
           }
-          this.logger = new Logger2("Fetcher");
+          this.logger = Fetcher2.LOGGER;
           Fetcher2._instance = this;
           this.events = [];
         }
@@ -1986,30 +2049,30 @@
           return payload;
         };
         async execute_fetch(request) {
-          const url2 = request.url;
+          const url = request.url;
           this.events = [];
           let status = null;
-          let data2 = null;
+          let data = null;
           request.headers.append("X-Nd-Version", `"${VERSION}"`);
           request.headers.append("X-Nd-Url", `"${request.url}"`);
-          document.dispatchEvent(new CustomEvent(ND_EVENTS.FETCH_BEFORE, { detail: { url: url2, data: null, status } }));
+          document.dispatchEvent(new CustomEvent(ND_EVENTS.FETCH_BEFORE, { detail: { url, data: null, status } }));
           try {
             const response = await fetch(request);
             this.logger.info(`Response status: ${response.status}`);
             if (!response.ok) {
-              document.dispatchEvent(new CustomEvent(ND_EVENTS.FETCH_ERROR, { detail: { url: url2, data: null, status: response.status } }));
+              document.dispatchEvent(new CustomEvent(ND_EVENTS.FETCH_ERROR, { detail: { url, data: null, status: response.status } }));
               this.logger.error(`Response status: ${response.status}`);
               return null;
             }
             this._process_headers(response.headers);
             const payload = await response.blob();
             this.logger.info(`Result is of type '${payload.type}'.`);
-            const data3 = await this._process_events(payload).text();
-            document.dispatchEvent(new CustomEvent(ND_EVENTS.FETCH_AFTER, { detail: { url: url2, data: data3, status } }));
-            return data3;
+            const data2 = await this._process_events(payload).text();
+            document.dispatchEvent(new CustomEvent(ND_EVENTS.FETCH_AFTER, { detail: { url, data: data2, status } }));
+            return data2;
           } catch (error) {
-            document.dispatchEvent(new CustomEvent(ND_EVENTS.FETCH_ERROR, { detail: { url: url2, data: error.message, status } }));
-            this.logger.error(`Error on url '${url2}':  ${error.message}`);
+            document.dispatchEvent(new CustomEvent(ND_EVENTS.FETCH_ERROR, { detail: { url, data: error.message, status } }));
+            this.logger.error(`Error on url '${url}':  ${error.message}`);
             return null;
           }
         }
@@ -2028,9 +2091,9 @@
         /**
          * fetch_data - fetch data from server as text
          */
-        async fetch_data(url2) {
-          this.logger.info(`fetch_data | Url: '${url2}'.`);
-          const request = new Request(url2);
+        async fetch_data(url) {
+          this.logger.info(`fetch_data | Url: '${url}'.`);
+          const request = new Request(url);
           return this.execute_fetch(request);
         }
       };
@@ -2040,10 +2103,13 @@
   // src/server/static/js/main.js
   var { INFOS, DIALOG_CONTAINER, NOTIFICATION_CONTAINER } = require_constants();
   var { Debug } = require_debug();
-  var { Logger } = require_logger();
+  var { Logger: Logger2 } = require_logger();
+  var PROG_INFO = `${INFOS.PROGNAME} ${INFOS.VERSION}`;
+  var core_logger = new Logger2("Core", true);
+  core_logger.info(`${PROG_INFO} : initializing...`);
   var { Util } = require_util();
   var { Events } = require_events();
-  var { SwitchHandler } = require_switch_handler();
+  var { SelectHandler } = require_select_handler();
   var { PollHandler } = require_poll_handler();
   var { SourceHandler } = require_source_handler();
   var { VersionHandler } = require_version_handler();
@@ -2051,19 +2117,16 @@
   var { EventHandler } = require_event_handler();
   var { ZoneHandler } = require_zone_handler();
   var { ContextHandler } = require_context_handler();
+  var { HandlerTracker } = require_handler_tracker();
   var { FormHandler } = require_form_handler();
   var { Fetcher } = require_fetcher();
   var { Alert, DialogFactory, ConfirmDialog, Toast } = require_dialogs();
-  var { Form } = require_form();
-  var PROG_INFO = `${INFOS.PROGNAME} ${INFOS.VERSION}`;
-  var core_logger = new Logger("Core", true);
   if (typeof bootstrap === "undefined")
     throw new Error("Bootstrap library not present !");
   var bs_version = bootstrap.Tooltip.VERSION;
   [bs_major, _, _] = bs_version.split(".");
   if (bs_major < 5)
     throw new Error(`${PROGNAME} needs Bootstrap 5.x.x library. Current Bootstrap version is ${bs_version}.`);
-  var ORIGIN = window.location.origin;
   var nd_init = () => {
     return new Promise((resolve) => {
       const debug = new Debug();
@@ -2075,12 +2138,12 @@
         util: new Util(),
         events: new Events(),
         fetcher: new Fetcher(),
-        glogger: core_logger,
+        core_logger,
         // The 'Core' logger
-        factory: new DialogFactory(),
+        dialog_factory: new DialogFactory(),
+        tracker: new HandlerTracker(),
         dialog_container: null,
         notification_container: null,
-        // Form: Form,
         // Handlers (will be initialized when DOM is loaded)
         handlers: [],
         // Layer
@@ -2129,11 +2192,12 @@
             new SourceHandler(),
             new VersionHandler(),
             new LinkHandler(),
-            new SwitchHandler(),
+            new SelectHandler(),
             new EventHandler(),
             new ZoneHandler(),
             new ContextHandler(),
-            new FormHandler()
+            new FormHandler(),
+            new HandlerTracker()
           ];
         },
         on_dom_ready: () => {
@@ -2149,7 +2213,7 @@
     });
   };
   navigation.addEventListener("navigate", (event2) => {
-    const url2 = new URL(event2.destination.url);
+    const url = new URL(event2.destination.url);
     const is_download = event2.sourceElement.hasAttribute("download");
     if (!is_download) {
       event2.preventDefault();
@@ -2163,7 +2227,6 @@
     nd.on_dom_ready();
     removeEventListener("DOMContentLoaded", on_dom_loaded);
   };
-  core_logger.info(`${PROG_INFO} : initializing...`);
   nd_init().then((nd_core) => {
     window.nd = nd_core;
     core_logger.info(`${PROG_INFO} : ready !`);

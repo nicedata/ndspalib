@@ -2,8 +2,9 @@ const { ND_EVENTS, VERSION } = require("../constants.js");
 const { Logger } = require("./logger.js");
 
 exports.Util = class Util {
+    static LOGGER = new Logger("Util", true);
     constructor() {
-        this.logger = new Logger("Util");
+        this.logger = Util.LOGGER;
     }
 
     // Source - https://stackoverflow.com/questions/42406520/populate-an-html-form-from-a-formdata-object

@@ -30,7 +30,7 @@ from .event_factory import Button, EventFactory
 from .middleware import FlaskMiddleware
 from .types import Event, EventSeverity, ZoneField, ZoneAction
 
-__version__ = "0.1.7"
+__version__ = "0.1.8"
 
 
 class FlaskSpa(Flask):

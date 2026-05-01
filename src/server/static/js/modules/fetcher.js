@@ -3,12 +3,13 @@ const { Download } = require("../constants.js");
 const { Logger } = require("./logger.js");
 
 exports.Fetcher = class Fetcher {
+    static LOGGER = new Logger("Fetcher", true);
     // Singleton constructor !
     constructor() {
         if (!!Fetcher._instance) {
             return Fetcher._instance;
         }
-        this.logger = new Logger("Fetcher");
+        this.logger = Fetcher.LOGGER;
         Fetcher._instance = this;
         this.events = [];
     }

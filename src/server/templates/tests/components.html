@@ -145,7 +145,8 @@
                 "redirect": "/_new",
             },
         }
-        nd.factory.create('alert', args).show();
+        console.log(nd.dialog_dialog_factory)
+        nd.dialog_factory.create('alert', args).show();
     }
 
     spa_toast = () => {
@@ -156,7 +157,7 @@
                 "redirect": "/_new",
             },
         }
-        var t = nd.factory.create('toast', args).show();
+        nd.dialog_factory.create('toast', args).show();
     }
 
     spa_one_button = () => {
@@ -167,7 +168,7 @@
                 { "action": "accept", "label": "Got it !", "url": "/_accept" },
             ]
         }
-        nd.factory.create('one-button', args).show();
+        nd.dialog_factory.create('one-button', args).show();
     }
 
     spa_two_button = () => {
@@ -179,7 +180,7 @@
                 { "action": "dismiss", "label": "Non merci", "url": "/_dismiss" },
             ],
         };
-        nd.factory.create('two-button', args).show();
+        nd.dialog_factory.create('two-button', args).show();
     }
 
     spa_three_button = () => {
@@ -192,7 +193,7 @@
                 { "action": "dismiss", "label": "Non merci", "url": "/_dismiss" },
             ],
         };
-        nd.factory.create('three-button', args).show();
+        nd.dialog_factory.create('three-button', args).show();
     }
 
     spa_confirm = () => {
@@ -217,6 +218,6 @@
 
 
 
-        nd.factory.create('confirm', args).show();
+        nd.dialog_factory.create('confirm', args).show();
     }
 </script>

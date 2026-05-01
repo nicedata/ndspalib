@@ -105,7 +105,7 @@ exports.Form = class Form {
                 ],
             };
         }
-        return nd.factory.create("two-button", args);
+        return nd.dialog_factory.create("two-button", args);
     };
 
     close = (reason) => {

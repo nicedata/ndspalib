@@ -5,6 +5,11 @@ const { Logger } = require("./logger.js");
 
 exports.EventHandler = class EventHandler {
     constructor() {
+        // Singleton !
+        if (!!EventHandler._instance) {
+            return EventHandler._instance;
+        }
+
         this.logger = new Logger("EventHandler");
         const notification_events = [
             ND_EVENTS.ALERT,
@@ -23,6 +28,7 @@ exports.EventHandler = class EventHandler {
             this.logger.info(`Adding a listener to handle '${value}' events.`);
             document.addEventListener(value, this._event_handler);
         });
+        EventHandler._instance = this;
     }
 
     // Todo : remove

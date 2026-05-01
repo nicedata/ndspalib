@@ -8,39 +8,39 @@
 const { Logger } = require("../modules/logger.js");
 const { TOAST_DELAY_MS, DIALOG_CONTAINER } = require("../constants.js");
 
-const DEFAULT_ARGS = {
-    type: "notification | dialog",
-    severity: "danger", // Severity
-    title: "No title defined !", // The dialog's title
-    message: "No message defined !", // The dialog's body
-    buttons: {
-        accept: "OK", // The 'accept' button's label
-        dismiss: "Cancel", // The 'dismiss' button's label
-        apply: "Apply", // The 'apply' button's label
-    },
-    confirm: "Please, confirm the operation", // Confirm checkbox label
-    urls: {
-        redirect: "/_redirect", // The redirect URL
-        accept: "/_accept", // The 'accept' url
-        dismiss: "/_dismiss", // The 'dismiss' url
-        apply: "/_apply", // The 'apply' url
-    },
-    actions: {
-        accept: "js_accept", // The 'accept' action
-        dismiss: "js_dismiss", // The 'dismiss' action
-        apply: "js_apply", // The 'apply' action
-    },
-    payload: {
-        data: "this is my data stream",
-        mimetype: "application/pdf",
-        filename: "my_document.pdf",
-        mode: "preview",
-    },
-    custom: {
-        html: "<p>This is HTML</p>",
-        width_pc: 50,
-    },
-};
+// const DEFAULT_ARGS = {
+//     type: "notification | dialog",
+//     severity: "danger", // Severity
+//     title: "No title defined !", // The dialog's title
+//     message: "No message defined !", // The dialog's body
+//     buttons: {
+//         accept: "OK", // The 'accept' button's label
+//         dismiss: "Cancel", // The 'dismiss' button's label
+//         apply: "Apply", // The 'apply' button's label
+//     },
+//     confirm: "Please, confirm the operation", // Confirm checkbox label
+//     urls: {
+//         redirect: "/_redirect", // The redirect URL
+//         accept: "/_accept", // The 'accept' url
+//         dismiss: "/_dismiss", // The 'dismiss' url
+//         apply: "/_apply", // The 'apply' url
+//     },
+//     actions: {
+//         accept: "js_accept", // The 'accept' action
+//         dismiss: "js_dismiss", // The 'dismiss' action
+//         apply: "js_apply", // The 'apply' action
+//     },
+//     payload: {
+//         data: "this is my data stream",
+//         mimetype: "application/pdf",
+//         filename: "my_document.pdf",
+//         mode: "preview",
+//     },
+//     custom: {
+//         html: "<p>This is HTML</p>",
+//         width_pc: 50,
+//     },
+// };
 
 /**
  * BaseDialog class
@@ -61,7 +61,7 @@ class BaseDialog {
     constructor(logger_name, args) {
         this.logger = new Logger(logger_name); // The dialog's logger
         this.id = crypto.randomUUID(); // The dialog's ID (UUID)
-        this.args = args || DEFAULT_ARGS; // The dialog's arguments (content, buttons, urls, etc.)
+        this.args = args; // The dialog's arguments (content, buttons, urls, etc.)
         this.can_display = undefined; // A boolean indicating if the dialog can be displayed or not. It is set by the inject() method.
         this.dialog = null; // The dialog element (DOM element)
         this.html = null; // The dialog's HTML content (string)
@@ -774,12 +774,13 @@ exports.Toast = class Toast extends BaseDialog {
 
 const { Alert, Toast, OneButtonDialog, TwoButtonDialog, ThreeButtonDialog, ConfirmDialog, CustomDialog } = require("./dialogs.js");
 exports.DialogFactory = class DialogFactory {
+    static LOGGER = new Logger("DialogFactory", true);
     constructor() {
         // This class ia a singleton class
         if (!!DialogFactory._instance) {
             return DialogFactory._instance;
         }
-        this.logger = new Logger("DialogFactory");
+        this.logger = DialogFactory.LOGGER;
     }
 
     create(type, args) {

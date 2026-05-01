@@ -4,16 +4,18 @@ import time
 from pathlib import Path
 
 from flask import render_template, request
+import lorem
 from packages.src.flask_spa import FlaskSpa
 from packages.src.flask_spa.event_factory import Button
 from packages.src.flask_spa.types import ButtonAction, ZoneField, ZoneNew
-
 
 PROD_MODE = False
 
 app = FlaskSpa(__name__)
 
 
+# =======================================================================
+# Main endpoints
 @app.route("/")
 def home():
     return render_template("base.html", context={"production_mode": PROD_MODE, "version": FlaskSpa.version()})
@@ -58,8 +60,13 @@ def websession():
 @app.route("/forms", methods=["GET", "POST"])
 def forms():
     app.title("Forms")
-    print(app.is_spa_request())
     return render_template("tests/forms.html")
+
+
+@app.route("/trackers", methods=["GET", "POST"])
+def trackers():
+    app.title("Trackers")
+    return render_template("tests/trackers.html")
 
 
 # =======================================================================
@@ -157,10 +164,17 @@ def posted(arg: str):
 
 # =======================================================================
 # SSE Tests
-@app.route("/echo")
+# @app.route("/echo")
 @app.route("/echo/<string:arg>")
 def echo(arg="-1"):
-    return arg
+    print(request.url)
+    return f"Server echoes : <code>{arg}</code>"
+
+
+@app.route("/lorem/<string:arg>")
+def lorem_ipsum(arg="-1"):
+    print(request.url)
+    return f"<b>Help for option {arg}</b>: {lorem.sentence()}"
 
 
 @app.route("/sse/<string:arg>", methods=["GET", "POST"])
@@ -262,7 +276,7 @@ def select_test():
     return render_template("tests/select-test.html")
 
 
-@app.route("/selecttestpotions")
+@app.route("/select-options")
 def select_test_options():
     time.sleep(2)
     opts = """

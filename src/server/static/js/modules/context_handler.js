@@ -2,8 +2,9 @@ const { ND_EVENTS } = require("../constants.js");
 const { Logger } = require("./logger.js");
 
 exports.ContextHandler = class ContextHandler {
+    static LOGGER = new Logger("ContextHandler", true);
     constructor() {
-        this.logger = new Logger("ContextHandler");
+        this.logger = ContextHandler.LOGGER;
         this.context = []; // The current context (initially not set)
 
         // Add an event listeners
@@ -41,11 +42,11 @@ exports.ContextHandler = class ContextHandler {
     };
 
     // Todo : remove
-    process = (fragment) => {
+    process = (fragment) => {};
+
+    postprocess = () => {
         this._update_document();
     };
-
-    postprocess = () => {};
 
     _event_handler = (event) => {
         this.logger.info(`Event: ${event.type}. Context: '${event.detail.context}'. Action: '${event.detail.action}'`);
