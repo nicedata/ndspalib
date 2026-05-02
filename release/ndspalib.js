@@ -9,7 +9,7 @@
     "src/server/static/js/constants.js"(exports2) {
       var INFOS2 = {
         PROGNAME: "NDS SPA utilities",
-        VERSION: "1.0.14-dev",
+        VERSION: "1.0.15-dev",
         AUTHOR: "Martin Mohnhaupt <martin.mohnhaupt@etik.com>",
         LICENCE: "MIT License, https://mit-license.org/",
         INSPIREDBY: {
@@ -1765,6 +1765,7 @@
               break;
           }
           this._update_document();
+          nd.environment = this.envs;
         };
       };
     }
@@ -2122,6 +2123,7 @@ ${headers_dump.join("\n")}`);
           let data = null;
           request.headers.append("X-Nd-Version", `"${VERSION}"`);
           request.headers.append("X-Nd-Url", `"${request.url}"`);
+          request.headers.append("X-Nd-Environment", `"${JSON.stringify(nd.environment)}"`);
           document.dispatchEvent(new CustomEvent(ND_EVENTS.FETCH_BEFORE, { detail: { url, data: null, status } }));
           try {
             const response = await fetch(request);
@@ -2212,6 +2214,7 @@ ${headers_dump.join("\n")}`);
         tracker: new HandlerTracker(),
         dialog_container: null,
         notification_container: null,
+        environment: [],
         // Handlers (will be initialized when DOM is loaded)
         handlers: [],
         // Layer

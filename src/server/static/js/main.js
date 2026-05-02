@@ -56,6 +56,7 @@ const nd_init = () => {
             tracker: new HandlerTracker(),
             dialog_container: null,
             notification_container: null,
+            environment: [],
 
             // Handlers (will be initialized when DOM is loaded)
             handlers: [],

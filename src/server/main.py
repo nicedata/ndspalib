@@ -66,6 +66,7 @@ def forms():
 @app.route("/environment")
 def environment():
     app.title("Environment")
+    app.get_env("key_name")
     return render_template("tests/environment.html")
 
 

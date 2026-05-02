@@ -67,6 +67,7 @@ exports.Fetcher = class Fetcher {
         // Add our own headers
         request.headers.append("X-Nd-Version", `"${VERSION}"`);
         request.headers.append("X-Nd-Url", `"${request.url}"`);
+        request.headers.append("X-Nd-Environment", `"${JSON.stringify(nd.environment)}"`);
 
         // Trigger before fetch event
         document.dispatchEvent(new CustomEvent(ND_EVENTS.FETCH_BEFORE, { detail: { url: url, data: null, status: status } }));

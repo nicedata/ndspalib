@@ -17,6 +17,7 @@ The FlaskSpa class extends the Flask class and provides methods for sending vari
 The middleware is designed to be easy to use and integrate into existing Flask applications, making it a powerful tool for enhancing the user experience of SPAs.
 """
 
+import json
 import mimetypes
 from io import BytesIO
 from os import PathLike
@@ -25,12 +26,11 @@ from typing import List
 
 from flask import Flask
 
-
 from .event_factory import Button, EventFactory
 from .middleware import FlaskMiddleware
-from .types import Event, EventSeverity, ZoneField, ZoneAction
+from .types import Event, EventSeverity, ZoneAction, ZoneField
 
-__version__ = "0.1.9"
+__version__ = "0.1.10"
 
 
 class FlaskSpa(Flask):
@@ -89,6 +89,17 @@ class FlaskSpa(Flask):
     def clear_env(self) -> None:
         self._send(EventFactory.environment("unset"))
 
+    def get_env(self, key: str) -> str:
+        json_str = self._middleware._request.headers.get("X-Nd-Environment") or '"[]"'
+        # Strip first and last " character
+        env = json.loads(json_str[1:-1])
+
+        # Search
+        res = next((sub for sub in env if sub["key"] == key), None)
+
+        return res["value"] if res else ""
+
+    # Context
     def set_context(self, context: str) -> None:
         self._send(EventFactory.context(context, "set"))
 

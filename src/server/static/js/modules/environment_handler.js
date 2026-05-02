@@ -64,5 +64,8 @@ exports.EnvironmentHandler = class EnvironmentHandler {
 
         // Update the whole document !
         this._update_document();
+
+        // copy the environment to the core
+        nd.environment = this.envs;
     };
 };
