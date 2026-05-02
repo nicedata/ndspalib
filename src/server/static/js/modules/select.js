@@ -31,22 +31,29 @@ exports.Select = class Select {
             });
         }
 
+        // Add a tracked 'change' event listener
+        nd.tracker.add_listener(element, "change", this._update_targets);
+
         if (nd_options_url) {
             this.logger.info(`Getting select option from url '${nd_options_url}'.`);
             nd.fetcher.fetch_data(nd_options_url).then((data) => {
                 const fragment = nd.util.create_fragment(data);
                 nd.util.insert_fragment(element, fragment);
+
+                // First time update
+                this._setup();
+                return;
             });
         }
+        this._setup();
+    }
 
-        // Add a tracked 'change' event listener
-        nd.tracker.add_listener(element, "change", this._update_targets);
-
+    _setup = () => {
         // Set the selection to the first option
         this.selector.selectedIndex = 0;
         // Initial update !
         this.selector.dispatchEvent(new Event("change"));
-    }
+    };
 
     _update_targets = (event) => {
         if (this.selector.selectedIndex < 0) return;
@@ -67,12 +74,7 @@ exports.Select = class Select {
             const nd_activate = target.hasAttribute("nd-activate");
 
             // nd-sync, nd-follow and nd-activate cannot appear together !
-            const bool_count = [nd_follow, nd_sync, nd_activate].filter(Boolean).length;
-            if (!bool_count) {
-                this.logger.error("One of 'nd-sync', 'nd-follow' or 'nd-activate' must be set !", target);
-                return;
-            }
-            if (bool_count > 1) {
+            if ([nd_follow, nd_sync, nd_activate].filter(Boolean).length > 1) {
                 this.logger.error("'nd-sync', 'nd-follow' or 'nd-activate' are mutually exclusive !", target);
                 return;
             }

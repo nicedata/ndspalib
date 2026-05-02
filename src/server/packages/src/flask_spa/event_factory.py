@@ -20,21 +20,35 @@ Date: 2024-06
 from io import BytesIO
 from typing import List
 
-from .types import Alert, Button, ConfirmDialog, ContextAction, CustomDialog, Dialog, Download, DownloadMode, Event, ZoneAction, EventSeverity, EventType, Stream, Toast, Urls, ZoneField, ZoneNew
+from .types import Alert, Button, ConfirmDialog, ContextAction, Title, EnvironmentAction, CustomDialog, Dialog, Download, DownloadMode, Event, ZoneAction, EventSeverity, EventType, Stream, Toast, Urls, ZoneField, Zone
 
 
 class EventFactory:
     @staticmethod
-    def context(context: str, action: ContextAction) -> Event:
-        result = Event(EventType.CONTEXT)
-        result.detail = {"context": context, "action": action}
+    def title(value: str):
+        result = Event(EventType.TITLE)
+        result.detail = Title(value).as_dict()
 
         return result
 
     @staticmethod
-    def zone_new(zone: str, action: ZoneAction, fields: List[ZoneField] = []) -> Event:
+    def environment(action: EnvironmentAction, key: str = "", value: str = "") -> Event:
+        result = Event(EventType.ENVIRONMENT)
+        result.detail = dict(action=action, key=key, value=value)
+
+        return result
+
+    @staticmethod
+    def context(context: str, action: ContextAction) -> Event:
+        result = Event(EventType.CONTEXT)
+        result.detail = dict(context=context, action=action)
+
+        return result
+
+    @staticmethod
+    def zone(zone: str, action: ZoneAction, fields: List[ZoneField] = []) -> Event:
         result = Event(EventType.ZONE)
-        result.detail = ZoneNew(zone, action, fields).as_dict()
+        result.detail = Zone(zone, action, fields).as_dict()
 
         return result
 

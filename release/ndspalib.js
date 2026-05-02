@@ -9,7 +9,7 @@
     "src/server/static/js/constants.js"(exports2) {
       var INFOS2 = {
         PROGNAME: "NDS SPA utilities",
-        VERSION: "1.0.13-dev",
+        VERSION: "1.0.14-dev",
         AUTHOR: "Martin Mohnhaupt <martin.mohnhaupt@etik.com>",
         LICENCE: "MIT License, https://mit-license.org/",
         INSPIREDBY: {
@@ -39,9 +39,12 @@
         THREE_BUTTON_DIALOG: "nd:dialog:three_button",
         CUSTOM_DIALOG: "nd:dialog:custom",
         DOWNLOAD: "nd:download",
+        // Others
         REDIRECT: "nd:redirect",
         ZONE: "nd:zone",
-        CONTEXT: "nd:context"
+        CONTEXT: "nd:context",
+        ENVIRONMENT: "nd:environ",
+        TITLE: "nd:title"
       };
       exports2.DIALOG_CONTAINER = "nd-dialog-container";
       exports2.NOTIFICATION_CONTAINER = "nd-notification-container";
@@ -1106,17 +1109,22 @@
               }
             });
           }
+          nd.tracker.add_listener(element, "change", this._update_targets);
           if (nd_options_url) {
             this.logger.info(`Getting select option from url '${nd_options_url}'.`);
             nd.fetcher.fetch_data(nd_options_url).then((data) => {
               const fragment = nd.util.create_fragment(data);
               nd.util.insert_fragment(element, fragment);
+              this._setup();
+              return;
             });
           }
-          nd.tracker.add_listener(element, "change", this._update_targets);
+          this._setup();
+        }
+        _setup = () => {
           this.selector.selectedIndex = 0;
           this.selector.dispatchEvent(new Event("change"));
-        }
+        };
         _update_targets = (event2) => {
           if (this.selector.selectedIndex < 0)
             return;
@@ -1129,12 +1137,7 @@
             const nd_follow = target.hasAttribute("nd-follow");
             const nd_sync = target.hasAttribute("nd-sync");
             const nd_activate = target.hasAttribute("nd-activate");
-            const bool_count = [nd_follow, nd_sync, nd_activate].filter(Boolean).length;
-            if (!bool_count) {
-              this.logger.error("One of 'nd-sync', 'nd-follow' or 'nd-activate' must be set !", target);
-              return;
-            }
-            if (bool_count > 1) {
+            if ([nd_follow, nd_sync, nd_activate].filter(Boolean).length > 1) {
               this.logger.error("'nd-sync', 'nd-follow' or 'nd-activate' are mutually exclusive !", target);
               return;
             }
@@ -1490,7 +1493,8 @@
             ND_EVENTS.THREE_BUTTON_DIALOG,
             ND_EVENTS.CUSTOM_DIALOG,
             ND_EVENTS.DOWNLOAD,
-            ND_EVENTS.REDIRECT
+            ND_EVENTS.REDIRECT,
+            ND_EVENTS.TITLE
           ];
           notification_events.forEach((value) => {
             this.logger.info(`Adding a listener to handle '${value}' events.`);
@@ -1510,6 +1514,9 @@
           const detail = event2.detail;
           let data = null;
           switch (event2.type) {
+            case ND_EVENTS.TITLE:
+              document.title = detail.title;
+              break;
             case ND_EVENTS.ALERT:
               new Alert2(detail).show();
               break;
@@ -1637,7 +1644,7 @@
         static LOGGER = new Logger3("ContextHandler", true);
         constructor() {
           this.logger = ContextHandler2.LOGGER;
-          this.context = [];
+          this.contexts = [];
           this.logger.info(`Adding a listener to handle '${ND_EVENTS.CONTEXT}' events.`);
           document.addEventListener(ND_EVENTS.CONTEXT, this._event_handler);
         }
@@ -1656,10 +1663,10 @@
             }
             switch (action) {
               case "show":
-                e.hidden = this.context.includes(context) ? false : true;
+                e.hidden = this.contexts.includes(context) ? false : true;
                 break;
               case "hide":
-                e.hidden = this.context.includes(context) ? true : false;
+                e.hidden = this.contexts.includes(context) ? true : false;
                 break;
             }
           });
@@ -1675,23 +1682,87 @@
           const { context, action } = event2.detail;
           switch (action) {
             case "set":
-              if (this.context.includes(context)) {
+              if (this.contexts.includes(context)) {
                 this.logger.info(`Value '${context}' is already present.`);
                 return;
               }
-              this.context.push(context);
+              this.contexts.push(context);
               break;
             case "reset":
-              if (!this.context.includes(context)) {
+              if (!this.contexts.includes(context)) {
                 this.logger.info(`Value '${context}' is not set.`);
                 return;
               }
-              const index = this.context.indexOf(context);
-              index !== -1 ? this.context.splice(index, 1) : () => {
+              const index = this.contexts.indexOf(context);
+              index !== -1 ? this.contexts.splice(index, 1) : () => {
               };
+              break;
+            case "clear":
+              this.contexts = [];
               break;
             default:
               return;
+          }
+          this._update_document();
+        };
+      };
+    }
+  });
+
+  // src/server/static/js/modules/environment_handler.js
+  var require_environment_handler = __commonJS({
+    "src/server/static/js/modules/environment_handler.js"(exports2) {
+      var { ND_EVENTS } = require_constants();
+      var { Logger: Logger3 } = require_logger();
+      exports2.EnvironmentHandler = class EnvironmentHandler2 {
+        static LOGGER = new Logger3("EnvironmentHandler", true);
+        constructor() {
+          if (!!EnvironmentHandler2._instance) {
+            return EnvironmentHandler2._instance;
+          }
+          this.logger = EnvironmentHandler2.LOGGER;
+          EnvironmentHandler2._instance = this;
+          this.logger = EnvironmentHandler2.LOGGER;
+          this.envs = [];
+          this.logger.info(`Adding a listener to handle '${ND_EVENTS.ENVIRONMENT}' events.`);
+          document.addEventListener(ND_EVENTS.ENVIRONMENT, this._event_handler);
+        }
+        _update_document = () => {
+          this.logger.info(`Updating document. Environment: ${JSON.stringify(this.envs)}.`);
+          document.querySelectorAll("[nd-env]").forEach((e) => {
+            const key = e.getAttribute("nd-env");
+            if (!key) {
+              this.logger.error(`No key specified in element`, e);
+              return;
+            }
+            const result = this.envs.find((env) => env.key === key);
+            if (!result)
+              return;
+            e.innerHTML = result.value;
+          });
+        };
+        // Todo : remove
+        process = (fragment) => {
+        };
+        postprocess = () => {
+          this._update_document();
+        };
+        _event_handler = (event2) => {
+          this.logger.info(`Event: ${event2.type}. Data: '${JSON.stringify(event2.detail)}'.`);
+          const data = event2.detail;
+          switch (data.action) {
+            case "set":
+              const result = this.envs.find((env) => env.key === data.key);
+              result ? result.value = data.value : this.envs.push({ key: data.key, value: data.value });
+              break;
+            case "unset":
+              const index = this.envs.findIndex((env) => env.key === data.key);
+              index >= 0 ? this.envs.splice(index, 1) : () => {
+              };
+              break;
+            case "clear":
+              this.envs = [];
+              break;
           }
           this._update_document();
         };
@@ -2004,31 +2075,27 @@
           this.events = [];
         }
         _process_headers = (headers) => {
-          let headers_dump = "";
+          let headers_dump = [];
           headers.forEach((v, k) => {
-            headers_dump += `'${k}'->'${v}', `;
+            headers_dump.push(`'${k}'->'${v}'`);
             const sse = k.toLowerCase();
-            let match = false;
-            let content = null;
             switch (sse) {
+              case "x-nd-environment":
+                const data = JSON.parse(v);
+                this.logger.info(`Received server environment '${sse}'. Content: '${v}'.`);
+                document.dispatchEvent(new CustomEvent(ND_EVENTS.ENVIRONMENT, { detail: data }));
+                break;
               case "x-nd-event":
                 this.events = JSON.parse(v);
-                content = v;
-                match = true;
-                break;
-              case "x-nd-title":
-                document.title = v;
-                match = true;
-                content = v;
+                this.logger.info(`Received server messages '${sse}'. Content: '${v}'.`);
                 break;
               case "x-nd-url":
                 console.log("X-ND-URL", v);
                 break;
             }
-            if (match)
-              this.logger.info(`Received server message '${sse}'. Content: '${content}'.`);
           });
-          this.logger.info(`Headers : ${headers_dump}`);
+          this.logger.info(`Headers : 
+${headers_dump.join("\n")}`);
         };
         // Dispatch received events !
         _process_events = (payload) => {
@@ -2117,6 +2184,7 @@
   var { EventHandler } = require_event_handler();
   var { ZoneHandler } = require_zone_handler();
   var { ContextHandler } = require_context_handler();
+  var { EnvironmentHandler } = require_environment_handler();
   var { HandlerTracker } = require_handler_tracker();
   var { FormHandler } = require_form_handler();
   var { Fetcher } = require_fetcher();
@@ -2197,7 +2265,8 @@
             new ZoneHandler(),
             new ContextHandler(),
             new FormHandler(),
-            new HandlerTracker()
+            new HandlerTracker(),
+            new EnvironmentHandler()
           ];
         },
         on_dom_ready: () => {

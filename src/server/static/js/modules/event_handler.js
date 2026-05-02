@@ -21,6 +21,7 @@ exports.EventHandler = class EventHandler {
             ND_EVENTS.CUSTOM_DIALOG,
             ND_EVENTS.DOWNLOAD,
             ND_EVENTS.REDIRECT,
+            ND_EVENTS.TITLE,
         ];
 
         // Add event listeners (event list)
@@ -44,6 +45,9 @@ exports.EventHandler = class EventHandler {
         let data = null;
 
         switch (event.type) {
+            case ND_EVENTS.TITLE:
+                document.title = detail.title;
+                break;
             case ND_EVENTS.ALERT:
                 new Alert(detail).show();
                 break;

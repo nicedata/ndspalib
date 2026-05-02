@@ -15,30 +15,26 @@ exports.Fetcher = class Fetcher {
     }
 
     _process_headers = (headers) => {
-        let headers_dump = "";
+        let headers_dump = [];
         headers.forEach((v, k) => {
-            headers_dump += `'${k}'->'${v}', `;
+            headers_dump.push(`'${k}'->'${v}'`);
             const sse = k.toLowerCase();
-            let match = false;
-            let content = null;
             switch (sse) {
+                case "x-nd-environment":
+                    const data = JSON.parse(v);
+                    this.logger.info(`Received server environment '${sse}'. Content: '${v}'.`);
+                    document.dispatchEvent(new CustomEvent(ND_EVENTS.ENVIRONMENT, { detail: data }));
+                    break;
                 case "x-nd-event":
                     this.events = JSON.parse(v);
-                    content = v;
-                    match = true;
-                    break;
-                case "x-nd-title":
-                    document.title = v;
-                    match = true;
-                    content = v;
+                    this.logger.info(`Received server messages '${sse}'. Content: '${v}'.`);
                     break;
                 case "x-nd-url":
                     console.log("X-ND-URL", v);
                     break;
             }
-            if (match) this.logger.info(`Received server message '${sse}'. Content: '${content}'.`);
         });
-        this.logger.info(`Headers : ${headers_dump}`);
+        this.logger.info(`Headers : \n${headers_dump.join("\n")}`);
     };
 
     // Dispatch received events !

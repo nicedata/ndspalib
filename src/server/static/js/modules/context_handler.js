@@ -5,7 +5,7 @@ exports.ContextHandler = class ContextHandler {
     static LOGGER = new Logger("ContextHandler", true);
     constructor() {
         this.logger = ContextHandler.LOGGER;
-        this.context = []; // The current context (initially not set)
+        this.contexts = []; // The current context (initially not set)
 
         // Add an event listeners
         this.logger.info(`Adding a listener to handle '${ND_EVENTS.CONTEXT}' events.`);
@@ -32,10 +32,10 @@ exports.ContextHandler = class ContextHandler {
 
             switch (action) {
                 case "show":
-                    e.hidden = this.context.includes(context) ? false : true;
+                    e.hidden = this.contexts.includes(context) ? false : true;
                     break;
                 case "hide":
-                    e.hidden = this.context.includes(context) ? true : false;
+                    e.hidden = this.contexts.includes(context) ? true : false;
                     break;
             }
         });
@@ -54,19 +54,22 @@ exports.ContextHandler = class ContextHandler {
 
         switch (action) {
             case "set":
-                if (this.context.includes(context)) {
+                if (this.contexts.includes(context)) {
                     this.logger.info(`Value '${context}' is already present.`);
                     return;
                 }
-                this.context.push(context);
+                this.contexts.push(context);
                 break;
             case "reset":
-                if (!this.context.includes(context)) {
+                if (!this.contexts.includes(context)) {
                     this.logger.info(`Value '${context}' is not set.`);
                     return;
                 }
-                const index = this.context.indexOf(context);
-                index !== -1 ? this.context.splice(index, 1) : () => {};
+                const index = this.contexts.indexOf(context);
+                index !== -1 ? this.contexts.splice(index, 1) : () => {};
+                break;
+            case "clear":
+                this.contexts = [];
                 break;
             default:
                 return;

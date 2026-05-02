@@ -4,7 +4,7 @@
 
 const INFOS = {
     PROGNAME: "NDS SPA utilities",
-    VERSION: "1.0.13-dev",
+    VERSION: "1.0.14-dev",
     AUTHOR: "Martin Mohnhaupt <martin.mohnhaupt@etik.com>",
     LICENCE: "MIT License, https://mit-license.org/",
     INSPIREDBY: {
@@ -36,9 +36,12 @@ exports.ND_EVENTS = {
     THREE_BUTTON_DIALOG: "nd:dialog:three_button",
     CUSTOM_DIALOG: "nd:dialog:custom",
     DOWNLOAD: "nd:download",
+    // Others
     REDIRECT: "nd:redirect",
     ZONE: "nd:zone",
     CONTEXT: "nd:context",
+    ENVIRONMENT: "nd:environ",
+    TITLE: "nd:title",
 };
 
 exports.DIALOG_CONTAINER = "nd-dialog-container";

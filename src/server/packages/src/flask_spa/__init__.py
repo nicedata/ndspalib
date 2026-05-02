@@ -30,7 +30,7 @@ from .event_factory import Button, EventFactory
 from .middleware import FlaskMiddleware
 from .types import Event, EventSeverity, ZoneField, ZoneAction
 
-__version__ = "0.1.8"
+__version__ = "0.1.9"
 
 
 class FlaskSpa(Flask):
@@ -73,34 +73,33 @@ class FlaskSpa(Flask):
         """
         self._middleware.add_event(event)
 
-    def title(self, title: str):
-        """Set the title of the page.
-
-        This method allows you to set the title of the page that will be displayed in the browser's title bar or tab.
-        It sends an event to the client with the new title, which can be processed by the client-side SPA to update the page title dynamically.
-
-        Args:
-            title (str): The new title to be set for the page.\n
-                        This is a string that represents the desired title that will be displayed in the browser.
-                        It can be any string value, such as "Home", "Dashboard", or "My App".
-                        The method will send this title to the client, allowing the SPA to update the page title accordingly.
-        """
-        self._middleware.set_title(title)
-
     def is_spa_request(self) -> bool:
         return self._middleware.is_spa_request()
+
+    def title(self, value: str):
+        self._send(EventFactory.title(value))
+
+    # Environment
+    def set_env(self, key: str, value) -> None:
+        self._send(EventFactory.environment("set", key, value))
+
+    def unset_env(self, key: str) -> None:
+        self._send(EventFactory.environment("unset", key))
+
+    def clear_env(self) -> None:
+        self._send(EventFactory.environment("unset"))
 
     def set_context(self, context: str) -> None:
         self._send(EventFactory.context(context, "set"))
 
-    def clear_context(self, context: str) -> None:
+    def reset_context(self, context: str) -> None:
         self._send(EventFactory.context(context, "reset"))
 
-    def zone(self, zone: str, action: ZoneAction, fields: List[ZoneField] = []) -> None:
-        self._send(EventFactory.zone_new(zone, action, fields))
+    def clear_context(self) -> None:
+        self._send(EventFactory.context("", "clear"))
 
-    def set_zone_new(self, zone: str, content: str) -> None:
-        self.zone(zone, "set", [ZoneField("", content)])
+    def zone(self, zone: str, action: ZoneAction, fields: List[ZoneField] = []) -> None:
+        self._send(EventFactory.zone(zone, action, fields))
 
     def redirect_to(self, url: str = "") -> None:
         """Redirect the client to a specified URL.

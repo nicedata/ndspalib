@@ -45,6 +45,8 @@ class EventType(StrEnum):
     REDIRECT = "nd:redirect"
     ZONE = "nd:zone"
     CONTEXT = "nd:context"
+    ENVIRONMENT = "nd:environ"
+    TITLE = "nd:title"
 
 
 type EventSeverity = Literal["danger", "warning", "success", "info", "primary"]
@@ -96,7 +98,7 @@ class ButtonAction(StrEnum):
     DISMISS = "dismiss"
 
 
-type ContextAction = Literal["set", "reset"]
+type ContextAction = Literal["set", "reset", "clear"]
 
 
 # Type definitions for better readability and type checking
@@ -143,7 +145,7 @@ type ZoneAction = Literal["show", "hide", "remove", "clear", "set"]
 
 
 @dataclass
-class ZoneNew(Base):
+class Zone(Base):
     name: str
     action: ZoneAction | None = None
     fields: List[ZoneField] = field(default_factory=list)
@@ -153,6 +155,14 @@ class ZoneNew(Base):
 
     def add_fields(self, items: List[ZoneField]):
         self.fields.extend(items)
+
+
+@dataclass
+class Title(Base):
+    title: str
+
+
+type EnvironmentAction = Literal["set", "unset", "clear"]
 
 
 @dataclass

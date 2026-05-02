@@ -32,7 +32,6 @@ class FlaskMiddleware:
 
         self._request: Request
         self._response: Response
-        self._title: str | None = None
         self._events: List[Event] = []
         self._streams: List[Stream] = []
 
@@ -126,14 +125,6 @@ class FlaskMiddleware:
             if self._streams:
                 self._streams.clear()
 
-            # If a title is set in the _title attribute, add it as a header "x-nd-title" to the response headers and
-            # then clear the _title attribute for the next request.
-            # This allows the SPA to receive and display any title that was set during the request processing and ensures
-            # that the title is not duplicated in subsequent responses.
-            if self._title:
-                headers.append(("x-nd-title", self._title))
-                self._title = ""
-
             # Call the original start_response function with the modified headers to continue processing the response.
             return start_response(status, headers, exc_info)
 
@@ -142,14 +133,6 @@ class FlaskMiddleware:
 
     def is_spa_request(self) -> bool:
         return isinstance(self._request.headers.get("X-Nd-Version"), str)
-
-    def set_title(self, title) -> None:
-        """Set the title for the response, which can be used by the SPA to display a custom title for the page or section being updated.
-
-        Args:
-            title (str): The title to be set for the response, which will be included in the "x-nd-title" header for the SPA to use when updating the page or section.
-        """
-        self._title = title
 
     def add_event(self, event: Event):
         """Add an event to the _events list, which will be included in the response headers for the SPA to process and trigger specific

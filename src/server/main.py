@@ -7,7 +7,7 @@ from flask import render_template, request
 import lorem
 from packages.src.flask_spa import FlaskSpa
 from packages.src.flask_spa.event_factory import Button
-from packages.src.flask_spa.types import ButtonAction, ZoneField, ZoneNew
+from packages.src.flask_spa.types import ButtonAction, ZoneField, Zone
 
 PROD_MODE = False
 
@@ -63,10 +63,24 @@ def forms():
     return render_template("tests/forms.html")
 
 
-@app.route("/trackers", methods=["GET", "POST"])
-def trackers():
-    app.title("Trackers")
-    return render_template("tests/trackers.html")
+@app.route("/environment")
+def environment():
+    app.title("Environment")
+    return render_template("tests/environment.html")
+
+
+# =======================================================================
+# Environment test
+@app.route("/environment/set")
+def set_env():
+    app.set_env("key_name", "Testor was here !")
+    return ""
+
+
+@app.route("/environment/unset")
+def unset_env():
+    app.unset_env("key_name")
+    return ""
 
 
 # =======================================================================
@@ -95,7 +109,7 @@ def websession_endpoint(arg=""):
             return render_template("/partials/login_form.html")
         if arg == "logout":
             app.alert("success", "You are logged out !")
-            app.clear_context("authenticated")  # Remove 'authenticated' context
+            app.reset_context("authenticated")  # Remove 'authenticated' context
 
     return ""
 
@@ -103,13 +117,18 @@ def websession_endpoint(arg=""):
 # =======================================================================
 # Context tests
 @app.route("/context_test")
+@app.route("/context_test/<string:action>")
 @app.route("/context_test/<string:action>/<string:context>")
 def context_test(action="", context=""):
+    if action == "clear":
+        app.clear_context()
+        return ""
+
     if context:
         if action == "set":
             app.set_context(context)
         if action == "reset":
-            app.clear_context(context)
+            app.reset_context(context)
     return ""
 
 
@@ -122,13 +141,13 @@ def zone_test(zone="", action="update"):
 
     now = datetime.datetime.now().strftime("%H:%M:%S")
     if zone in ("zone_1", "zone_2"):
-        my_zone = ZoneNew(zone)
+        my_zone = Zone(zone)
         options = ['<option value="">-- Select an option --</option>']
         options += [f'<option value="{v * 100}">{zone}_{v}</option>' for v in range(1, 5)]
         my_zone.add_fields([ZoneField("random", random.randint(0, 10000)), ZoneField("stamp", now), ZoneField("selector", "".join(options))])
 
     elif zone == "zone_3":
-        my_zone = ZoneNew(zone)
+        my_zone = Zone(zone)
         my_zone.add_field(ZoneField("form", render_template("partials/login_form.html")))
         print(my_zone)
 
@@ -270,10 +289,16 @@ def link_test():
 
 # =======================================================================
 # SSE select
-@app.route("/selecttest")
-def select_test():
-    app.title("Select")
-    return render_template("tests/select-test.html")
+@app.route("/selects")
+def selects():
+    app.title("Selects")
+    return render_template("tests/selects.html")
+
+
+@app.route("/selects/enhanced")
+def selects_enhanced():
+    app.title("Enhanced Selects")
+    return render_template("tests/selects_enhanced.html")
 
 
 @app.route("/select-options")

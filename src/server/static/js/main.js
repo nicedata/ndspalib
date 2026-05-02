@@ -24,6 +24,7 @@ const { LinkHandler } = require("./modules/link_handler.js");
 const { EventHandler } = require("./modules/event_handler.js");
 const { ZoneHandler } = require("./modules/zone_handler.js");
 const { ContextHandler } = require("./modules/context_handler.js");
+const { EnvironmentHandler } = require("./modules/environment_handler.js");
 const { HandlerTracker } = require("./modules/handler_tracker.js");
 const { FormHandler } = require("./modules/form_handler.js");
 const { Fetcher } = require("./modules/fetcher.js");
@@ -121,6 +122,7 @@ const nd_init = () => {
                     new ContextHandler(),
                     new FormHandler(),
                     new HandlerTracker(),
+                    new EnvironmentHandler(),
                 ];
             },
 
