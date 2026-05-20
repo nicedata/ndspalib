@@ -1,0 +1,2 @@
+sudo sshfs -v -o allow_other,default_permissions sysadm@192.168.1.11:/home/sysadm/zensical-docker/zensical-data/ /home/mohnhaupt/zensical
+

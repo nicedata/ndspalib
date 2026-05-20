@@ -6,7 +6,7 @@
 
   // src/server/static/js/constants.js
   var require_constants = __commonJS({
-    "src/server/static/js/constants.js"(exports2) {
+    "src/server/static/js/constants.js"(exports) {
       var INFOS2 = {
         PROGNAME: "NDS SPA utilities",
         VERSION: "1.0.15-dev",
@@ -17,11 +17,11 @@
           UNPOLY: "UNPOLY : https://unpoly.com/"
         }
       };
-      exports2.INFOS = INFOS2;
-      exports2.PROGNAME = INFOS2.PROGNAME;
-      exports2.VERSION = INFOS2.VERSION;
-      exports2.TARGET_NONE = ":none:";
-      exports2.ND_EVENTS = {
+      exports.INFOS = INFOS2;
+      exports.PROGNAME = INFOS2.PROGNAME;
+      exports.VERSION = INFOS2.VERSION;
+      exports.TARGET_NONE = ":none:";
+      exports.ND_EVENTS = {
         // Core events
         POLL_START: "nd:poll:start",
         POLL_END: "nd:poll:end",
@@ -44,15 +44,17 @@
         ZONE: "nd:zone",
         CONTEXT: "nd:context",
         ENVIRONMENT: "nd:environ",
-        TITLE: "nd:title"
+        TITLE: "nd:title",
+        CHANGE: "nd:change",
+        FORM_RESET: "nd:form:reset"
       };
-      exports2.DIALOG_CONTAINER = "nd-dialog-container";
-      exports2.NOTIFICATION_CONTAINER = "nd-notification-container";
-      exports2.TOAST_DELAY_MS = 3e3;
-      exports2.POLL_DEFAULT_INTERVAL_MS = 1e4;
-      exports2.noop = () => {
+      exports.DIALOG_CONTAINER = "nd-dialog-container";
+      exports.NOTIFICATION_CONTAINER = "nd-notification-container";
+      exports.TOAST_DELAY_MS = 3e3;
+      exports.POLL_DEFAULT_INTERVAL_MS = 1e4;
+      exports.noop = () => {
       };
-      exports2.STYLING = {
+      exports.STYLING = {
         BOOTSTRAP: {
           CLASSES: {
             ND_NOTIFICATION_CONTAINER: "nd-notification-container",
@@ -77,8 +79,8 @@
 
   // src/server/static/js/modules/debug.js
   var require_debug = __commonJS({
-    "src/server/static/js/modules/debug.js"(exports2) {
-      exports2.Debug = class Debug2 {
+    "src/server/static/js/modules/debug.js"(exports) {
+      exports.Debug = class Debug2 {
         constructor() {
           if (!!Debug2._instance) {
             return Debug2._instance;
@@ -133,9 +135,9 @@
 
   // src/server/static/js/modules/logger.js
   var require_logger = __commonJS({
-    "src/server/static/js/modules/logger.js"(exports2) {
+    "src/server/static/js/modules/logger.js"(exports) {
       var { Debug: Debug2 } = require_debug();
-      exports2.Logger = class Logger {
+      exports.Logger = class Logger {
         constructor(source, silent = false) {
           const name = "Logger";
           this.source = source;
@@ -166,11 +168,11 @@
 
   // src/server/static/js/modules/util.js
   var require_util = __commonJS({
-    "src/server/static/js/modules/util.js"(exports2) {
+    "src/server/static/js/modules/util.js"(exports) {
       var { ND_EVENTS, VERSION } = require_constants();
-      var { Logger: Logger3 } = require_logger();
-      exports2.Util = class Util2 {
-        static LOGGER = new Logger3("Util", true);
+      var { Logger: Logger2 } = require_logger();
+      exports.Util = class Util2 {
+        static LOGGER = new Logger2("Util", true);
         constructor() {
           this.logger = Util2.LOGGER;
         }
@@ -308,10 +310,11 @@
         }
         navigate_to = async (new_url) => {
           let [method, url] = ["navigate", ""];
-          if (new_url.includes(":")) {
-            [method, url] = new_url.split(":");
+          if (new_url.includes("::")) {
+            [method, url] = new_url.split("::");
+            console.log("Nav", method, url);
             if (!["get", "post"].includes(method)) {
-              this.logger.error(`Only 'get:' or 'post:' url modifiers are allowed. Supplied method was '${method}:'.`);
+              this.logger.error(`Only 'get::' or 'post::' url modifiers are allowed. Supplied method was '${method}:'.`);
               return;
             }
           } else {
@@ -341,16 +344,30 @@
           const cleaned_value = value.replaceAll("\\'", "#####").replaceAll("'", '"').replaceAll("#####", "'");
           return JSON.parse(cleaned_value);
         };
+        action_detail_dict = (arr) => {
+          let result = {};
+          if (!(arr instanceof Array))
+            return result;
+          let index = 0;
+          arr.forEach((arg) => {
+            if (arg instanceof Object && arg.length > 0) {
+              result["detail"] = arg[0];
+            } else {
+              result[`arg${index++}`] = arg;
+            }
+          });
+          return result;
+        };
       };
     }
   });
 
   // src/server/static/js/modules/events.js
   var require_events = __commonJS({
-    "src/server/static/js/modules/events.js"(exports2) {
-      var { Logger: Logger3 } = require_logger();
-      exports2.Events = class Events2 {
-        static LOGGER = new Logger3("Events", true);
+    "src/server/static/js/modules/events.js"(exports) {
+      var { Logger: Logger2 } = require_logger();
+      exports.Events = class Events2 {
+        static LOGGER = new Logger2("Events", true);
         constructor() {
           this.logger = Events2.LOGGER;
           this._listeners = [];
@@ -363,20 +380,20 @@
          *    Form 2 :  on(event, selector, listener)
          */
         on(...args) {
-          let [event2, selector2, listener] = [null, null, args.pop()];
+          let [event, selector2, listener] = [null, null, args.pop()];
           switch (args.length) {
             case 1:
-              event2 = args.pop();
-              this._listeners.push([event2, selector2, listener]);
-              document.addEventListener(event2, listener);
-              this.logger.info(`Calling function on(), first form. Selector: ${selector2}, event:${event2}, listener:${listener}`);
+              event = args.pop();
+              this._listeners.push([event, selector2, listener]);
+              document.addEventListener(event, listener);
+              this.logger.info(`Calling function on(), first form. Selector: ${selector2}, event:${event}, listener:${listener}`);
               break;
             case 2:
-              [selector2, event2] = [args.pop(), args.pop()];
+              [selector2, event] = [args.pop(), args.pop()];
               document.querySelectorAll(selector2).forEach((element) => {
-                this._listeners.push([event2, element, listener]);
-                element.addEventListener(event2, listener);
-                this.logger.info(`Calling function on(), second form. Selector: ${selector2}, event:${event2}, listener:${listener}`);
+                this._listeners.push([event, element, listener]);
+                element.addEventListener(event, listener);
+                this.logger.info(`Calling function on(), second form. Selector: ${selector2}, event:${event}, listener:${listener}`);
               });
               break;
             default:
@@ -391,14 +408,14 @@
          */
         off(...args) {
           args.reverse();
-          let [event2, selector2, listener] = [args.pop(), null, null];
+          let [event, selector2, listener] = [args.pop(), null, null];
           switch (args.length) {
             case 0:
               this._listeners.forEach((item, index) => {
-                const [event3, element, listener2] = item;
-                if (event3 === event3) {
-                  this.logger.info(`Calling function off(), first form. Selector: ${selector2}, event:${event3}, listener:${listener2}`);
-                  document.removeEventListener(event3, listener2);
+                const [event2, element, listener2] = item;
+                if (event2 === event2) {
+                  this.logger.info(`Calling function off(), first form. Selector: ${selector2}, event:${event2}, listener:${listener2}`);
+                  document.removeEventListener(event2, listener2);
                   this._listeners.splice(index, 1);
                 }
               });
@@ -407,10 +424,10 @@
               selector2 = args.pop();
               Array.from(document.querySelectorAll(selector2)).forEach((target) => {
                 this._listeners.forEach((item, index) => {
-                  const [event3, element, listener2] = item;
-                  if (event3 === event3 && element === target) {
-                    this.logger.info(`Calling function off(), second form. Selector: ${selector2}, event:${event3}, listener:${listener2}`);
-                    element.removeEventListener(event3, listener2);
+                  const [event2, element, listener2] = item;
+                  if (event2 === event2 && element === target) {
+                    this.logger.info(`Calling function off(), second form. Selector: ${selector2}, event:${event2}, listener:${listener2}`);
+                    element.removeEventListener(event2, listener2);
                     this._listeners.splice(index, 1);
                   }
                 });
@@ -420,8 +437,8 @@
               return;
           }
         }
-        fire(event2, detail) {
-          document.dispatchEvent(new CustomEvent(event2, { detail }));
+        fire(event, detail) {
+          document.dispatchEvent(new CustomEvent(event, { detail }));
         }
         /**
          * Remove ALL event listeners
@@ -429,9 +446,9 @@
          */
         flush() {
           this._listeners.forEach((item, _2) => {
-            const [event2, element, listener] = item;
-            element.removeEventListener(event2, listener);
-            this.logger.info(`Calling function flush(). Selector: ${selector}, event:${event2}, listener:${listener}`);
+            const [event, element, listener] = item;
+            element.removeEventListener(event, listener);
+            this.logger.info(`Calling function flush(). Selector: ${selector}, event:${event}, listener:${listener}`);
           });
           this._listeners = [];
         }
@@ -441,11 +458,11 @@
 
   // src/server/static/js/modules/base_handler.js
   var require_base_handler = __commonJS({
-    "src/server/static/js/modules/base_handler.js"(exports2) {
-      var { Logger: Logger3 } = require_logger();
-      exports2.BaseHandler = class BaseHandler {
+    "src/server/static/js/modules/base_handler.js"(exports) {
+      var { Logger: Logger2 } = require_logger();
+      exports.BaseHandler = class BaseHandler {
         constructor() {
-          this.logger = new Logger3(this.constructor.name);
+          this.logger = new Logger2(this.constructor.name);
         }
         /**
          * Process a given fragment.
@@ -463,14 +480,583 @@
     }
   });
 
+  // src/server/static/js/modules/action.js
+  var require_action = __commonJS({
+    "src/server/static/js/modules/action.js"(exports) {
+      var { Logger: Logger2 } = require_logger();
+      var ACTION_MODIFIERS = ["before", "after"];
+      var ActionDetail = class {
+        when = null;
+        url = null;
+        source = null;
+        targets = [];
+        str_data = null;
+        json_data = null;
+      };
+      exports.Action = class Action {
+        static LOGGER = new Logger2("Action", true);
+        constructor(element) {
+          this.logger = Action.LOGGER;
+          this.code = null;
+          this.when = null;
+          this.action = null;
+          this.details = new ActionDetail();
+          const action = element.getAttribute("nd-action");
+          if (!action)
+            return;
+          this.details.source = element;
+          this.details.url = element.getAttribute("nd-url");
+          const targets = element.getAttribute("nd-target");
+          this.details.targets = targets ? document.querySelectorAll(targets) : [];
+          if (action.includes("::")) {
+            [this.when, this.code] = action.split("::");
+            if (!ACTION_MODIFIERS.includes(this.when)) {
+              this.logger.error(`Only 'before' and 'after' action modifiers are allowed. Element :`, element);
+              return;
+            }
+          } else {
+            this.code = action;
+            this.when = "before";
+          }
+          this.details.when = this.when;
+          this.details.url ? () => {
+          } : this.when = "before";
+          this.action = new Function(this.code);
+        }
+        // Method to set target elements after the action has been created, allowing for dynamic updates to the targets.
+        set_targets = (targets) => {
+          this.details.targets = targets;
+        };
+        // Method to execute the action function with the provided data and log the execution.
+        excecute = (data = null) => {
+          this.logger.info(`Executing ${this.code}, ${this.when} fetch.`);
+          this.details.str_data = data;
+          try {
+            this.details.json_data = JSON.parse(data);
+          } catch (error) {
+            this.details.json_data = null;
+          }
+          this.action.call(null, this.details);
+        };
+      };
+    }
+  });
+
+  // src/server/static/js/modules/link.js
+  var require_link = __commonJS({
+    "src/server/static/js/modules/link.js"(exports) {
+      var { Logger: Logger2 } = require_logger();
+      var { Action } = require_action();
+      exports.Link = class Link {
+        static LOGGER = new Logger2("Link", true);
+        constructor(element) {
+          this.logger = Link.LOGGER;
+          this.element = element;
+          this.url = null;
+          this.confirm_dialog = null;
+          this.action = null;
+          this.targets = [];
+          this.element.style.cursor = "pointer";
+          const has_url = element.hasAttribute("href") || element.hasAttribute("nd-url");
+          const has_action = element.hasAttribute("nd-action");
+          if (!(has_url || has_action)) {
+            this.logger.error(`No 'nd-url' or 'nd-action' is defined on element`, element);
+            return;
+          }
+          const href = element.getAttribute("href");
+          this.url = href ? href : element.getAttribute("nd-url");
+          this.action = new Action(element);
+          element.removeAttribute("data-ndtrack");
+          const template_id = element.getAttribute("nd-confirm");
+          if (template_id) {
+            this.confirm_dialog = nd.dialog.get(template_id);
+          }
+          const selector2 = element.getAttribute("nd-target");
+          this.targets = selector2 ? nd.util.get_targets(selector2) : [];
+          nd.tracker.add_listener(element, "click", this.click_handler);
+          this.logger.info(`New Link created (${element.getAttribute("data-ndtrack")}).`);
+        }
+        click_handler = async (event) => {
+          event.preventDefault();
+          let do_proceed = true;
+          this.confirm_dialog ? do_proceed = await this.confirm_dialog.run() === "accept" : () => {
+          };
+          if (do_proceed) {
+            if (this.action.when == "before")
+              this.action.excecute();
+            if (this.url) {
+              nd.fetcher.fetch_data(this.url).then((data) => {
+                if (data) {
+                  this.targets.forEach((t) => {
+                    if (t.tagName === "INPUT") {
+                      t.value = data;
+                    } else {
+                      const fragment = nd.util.create_fragment(data);
+                      nd.util.insert_fragment(t, fragment, false, true);
+                    }
+                  });
+                }
+                if (this.action.when == "after")
+                  this.action.excecute(data);
+              });
+            }
+          }
+        };
+        static clear_link = (element) => {
+          element.removeAttribute("nd-link");
+          element.removeAttribute("nd-url");
+          element.removeAttribute("data-ndtrack");
+          element.style.cursor = "";
+        };
+        static create_link = (element, url) => {
+          element.setAttribute("nd-link", "");
+          element.setAttribute("nd-url", url);
+          return new Link(element);
+        };
+      };
+    }
+  });
+
+  // src/server/static/js/modules/select.js
+  var require_select = __commonJS({
+    "src/server/static/js/modules/select.js"(exports) {
+      var { ND_EVENTS } = require_constants();
+      var { Logger: Logger2 } = require_logger();
+      var { Link } = require_link();
+      exports.Select = class Select {
+        constructor(element) {
+          this.logger = new Logger2("Select");
+          this.selector = element;
+          this.id = element.id || null;
+          this.targets = [];
+          this.inform = [];
+          if (element.tagName !== "SELECT") {
+            this.logger.error(`'nd-select' only applies to 'select' tags. Error element:`, element);
+            return;
+          }
+          this.nd_default = element.getAttribute("nd-default");
+          this.nd_default = this.nd_default ? `<option>${this.nd_default}</option>` : null;
+          this.nd_default ? element.innerHTML = this.nd_default : () => {
+          };
+          const nd_target = element.getAttribute("nd-target");
+          nd_target ? this.logger.info(`Target selection: '${nd_target}'`) : () => {
+          };
+          document.querySelectorAll(nd_target).forEach((target) => {
+            target.hidden = target.hasAttribute("nd-show-for") || target.hasAttribute("nd-hide-for");
+            this.logger.info(`Found target '${target.outerHTML}'`);
+            this.targets.push(target);
+          });
+          const nd_inform = element.getAttribute("nd-inform");
+          nd_inform ? this.logger.info(`Inform selection: '${nd_inform}'`) : () => {
+          };
+          document.querySelectorAll(nd_inform).forEach((target) => {
+            if (target.tagName !== "SELECT") {
+              this.logger.error(`The 'nd-inform' attribute may reference <select> elements only, not '${target.tagName}' elements.`, target);
+            } else {
+              this.logger.info(`Found inform target '${target.outerHTML}'`);
+              this.inform.push(target);
+            }
+          });
+          nd.tracker.add_listener(element, "change", this._update_targets);
+          nd.tracker.add_listener(element, ND_EVENTS.CHANGE, this._on_nd_inform);
+          const nd_options_url = element.getAttribute("nd-url");
+          if (nd_options_url) {
+            this.logger.info(`Getting select option from url '${nd_options_url}'.`);
+            nd.fetcher.fetch_data(nd_options_url).then((data) => {
+              const fragment = nd.util.create_fragment(data);
+              nd.util.insert_fragment(element, fragment);
+              this._setup();
+              return;
+            });
+          }
+          this._setup();
+        }
+        _setup = () => {
+          this.selector.selectedIndex = 0;
+          this.selector.dispatchEvent(new Event("change"));
+        };
+        _send_event = () => {
+          if (!this.inform)
+            return;
+          const option = this.selector.options[this.selector.selectedIndex];
+          const value = option.getAttribute("value") || null;
+          const url = option.getAttribute("nd-url") || null;
+          const payload = { source: this.id, value, url };
+          this.inform.forEach((e) => {
+            e.dispatchEvent(new CustomEvent(ND_EVENTS.CHANGE, { detail: payload }));
+          });
+        };
+        _on_nd_inform = (event) => {
+          const detail = event.detail;
+          if (!detail.url) {
+            nd.util.clear_node(this.selector);
+            if (this.nd_default) {
+              const fragment = nd.util.create_fragment(this.nd_default);
+              nd.util.insert_fragment(this.selector, fragment, false, true);
+            }
+            this._update_targets();
+          } else {
+            nd.fetcher.fetch_data(detail.url).then((data) => {
+              data = this.nd_default ? this.nd_default + data : data;
+              nd.util.clear_node(this.selector);
+              const fragment = nd.util.create_fragment(data);
+              nd.util.insert_fragment(this.selector, fragment, false, true);
+              this._update_targets();
+            });
+          }
+        };
+        _update_targets = () => {
+          if (this.selector.selectedIndex < 0)
+            return;
+          const option = this.selector.options[this.selector.selectedIndex];
+          const value = option.getAttribute("value");
+          const link = option.getAttribute("nd-url");
+          this.targets.forEach((target) => {
+            const nd_show_for = target.getAttribute("nd-show-for");
+            const nd_hide_for = target.getAttribute("nd-hide-for");
+            const nd_follow = target.hasAttribute("nd-follow");
+            const nd_sync = target.hasAttribute("nd-sync");
+            const nd_activate = target.hasAttribute("nd-activate");
+            if ([nd_follow, nd_sync, nd_activate].filter(Boolean).length > 1) {
+              this.logger.error("'nd-sync', 'nd-follow' or 'nd-activate' are mutually exclusive !", target);
+              return;
+            }
+            const nd_url = target.getAttribute("nd-url");
+            const has_nd_url = nd_url ? true : false;
+            const show_targets = nd_show_for ? nd_show_for.split(" ") : [];
+            const hide_targets = nd_hide_for ? nd_hide_for.split(" ") : [];
+            if (nd_activate) {
+              target.innerHTML = value;
+              link ? Link.create_link(target, link) : Link.clear_link(target);
+              nd.util.refresh(target);
+            }
+            if (nd_sync) {
+              if (has_nd_url && value) {
+                const url = `${nd_url}/${value}`;
+                nd.fetcher.fetch_data(url).then((data) => {
+                  const fragment = nd.util.create_fragment(data);
+                  nd.util.insert_fragment(target, fragment);
+                });
+              } else {
+                target.innerText = value ? value : "";
+              }
+            }
+            if (nd_follow && link) {
+              nd.fetcher.fetch_data(link).then((data) => {
+                const fragment = nd.util.create_fragment(data);
+                nd.util.insert_fragment(target, fragment, false, true);
+              });
+            }
+            if (show_targets.includes("*")) {
+              target.hidden = value ? false : true;
+              show_targets.splice(show_targets.indexOf("*"), 1);
+            }
+            if (hide_targets.includes("*")) {
+              target.hidden = value ? true : false;
+              hide_targets.splice(hide_targets.indexOf("*"), 1);
+            }
+            if (show_targets.length)
+              target.hidden = !show_targets.includes(value);
+            if (hide_targets.length)
+              target.hidden = hide_targets.includes(value);
+          });
+          this._send_event();
+        };
+      };
+    }
+  });
+
+  // src/server/static/js/modules/select_handler.js
+  var require_select_handler = __commonJS({
+    "src/server/static/js/modules/select_handler.js"(exports) {
+      var { BaseHandler } = require_base_handler();
+      var { Select } = require_select();
+      exports.SelectHandler = class SelectHandler extends BaseHandler {
+        constructor() {
+          super();
+        }
+        process(fragment) {
+          fragment.querySelectorAll("[nd-select]").forEach((element) => {
+            new Select(element);
+          });
+        }
+        postprocess() {
+        }
+      };
+    }
+  });
+
+  // src/server/static/js/modules/poll.js
+  var require_poll = __commonJS({
+    "src/server/static/js/modules/poll.js"(exports) {
+      var { POLL_DEFAULT_INTERVAL_MS } = require_constants();
+      var { Logger: Logger2 } = require_logger();
+      var { Action } = require_action();
+      exports.Poll = class Poll {
+        static LOGGER = new Logger2("Poll", true);
+        constructor(element) {
+          this.logger = Poll.LOGGER;
+          this.element = element;
+          this.uuid = nd.util.set_uuid(element);
+          this.url = null;
+          this.interval_ms = 0;
+          this.targets = null;
+          this.action = null;
+          this.can_poll = false;
+          const has_url = element.hasAttribute("href") || element.hasAttribute("nd-url");
+          const has_action = element.hasAttribute("nd-action");
+          if (!(has_url || has_action)) {
+            this.logger.error(`No 'nd-url' or 'nd-action' is defined on element`, element);
+            return;
+          }
+          const href = element.getAttribute("href");
+          this.url = href ? href : element.getAttribute("nd-url");
+          let interval_ms = element.getAttribute("nd-interval");
+          if (!interval_ms || isNaN(interval_ms)) {
+            interval_ms = POLL_DEFAULT_INTERVAL_MS;
+          } else {
+            interval_ms = Number(interval_ms);
+            interval_ms = interval_ms < 1e3 ? 1e3 : interval_ms;
+          }
+          this.interval_ms = interval_ms;
+          const selector2 = element.getAttribute("nd-target");
+          this.targets = selector2 ? nd.util.get_targets(selector2) : [element];
+          this.action = new Action(element);
+          this.action.set_targets(this.targets);
+          this.can_poll = true;
+        }
+        poll = () => {
+          if (!this.can_poll) {
+            this.logger.info("Element not fully initialized. Poll skipped.");
+            return;
+          }
+          if (document.hidden) {
+            this.logger.info("The document is hidden. Poll skipped.");
+            return;
+          }
+          if (this.action.when == "before")
+            this.action.excecute();
+          if (this.url) {
+            this.logger.info(`Fetching url '${this.url}'...`);
+            nd.fetcher.fetch_data(this.url).then((data) => {
+              this.targets.forEach((t) => {
+                if (data) {
+                  const fragment = nd.util.create_fragment(data);
+                  nd.util.insert_fragment(t, fragment, false, true);
+                } else {
+                  this.logger.warn(`Fetching url '${this.url}' returned no data.`, this);
+                }
+                if (this.action.when == "after")
+                  this.action.excecute(data);
+              });
+            });
+          }
+        };
+      };
+    }
+  });
+
+  // src/server/static/js/modules/poll_handler.js
+  var require_poll_handler = __commonJS({
+    "src/server/static/js/modules/poll_handler.js"(exports) {
+      var { BaseHandler } = require_base_handler();
+      var { Poll } = require_poll();
+      exports.PollHandler = class PollHandler extends BaseHandler {
+        constructor() {
+          super();
+          this.timers = [];
+        }
+        /**
+         * Process a given fragment.
+         */
+        process = (fragment) => {
+          if (document.querySelectorAll("[nd-poll]").length == 0)
+            return;
+          fragment.querySelectorAll(`[nd-poll]`).forEach((element) => {
+            const poller = new Poll(element);
+            this.poll(poller);
+          });
+        };
+        /**
+         * Clean the DOM (remove unused timers)
+         */
+        postprocess = () => {
+          const timers_to_clear = [];
+          this.timers.forEach((timer, index) => {
+            if (document.querySelectorAll(`[data-nduuid="${timer.uuid}"]`).length == 0) {
+              clearTimeout(timer.id);
+              timers_to_clear.push(timer);
+            }
+          });
+          timers_to_clear.forEach((timer) => {
+            const index = this.timers.indexOf(timer);
+            this.timers.splice(index, 1);
+            this.logger.info(`Cleared and removed timer ${timer.id} for ${timer.uuid}.`);
+          });
+        };
+        /**
+         * Polling function
+         */
+        poll = (poller) => {
+          const timeout_id = setTimeout(() => {
+            clearTimeout(timeout_id);
+            const timer = this.timers.find(({ id, uuid: uuid2 }) => id === timeout_id);
+            const timer_index = this.timers.indexOf(timer);
+            this.timers.splice(timer_index, 1);
+            this.logger.info(`Removed timer ${timer.id} for ${timer.uuid}. Active timers : ${this.timers.length}`);
+            poller.poll();
+            this.poll(poller);
+          }, poller.interval_ms);
+          this.timers.push({ id: timeout_id, uuid: poller.uuid });
+          this.logger.info(`Added timer ${timeout_id} (${poller.interval_ms}ms) for ${poller.uuid}. Active timers : ${this.timers.length}`);
+        };
+      };
+    }
+  });
+
+  // src/server/static/js/modules/source_handler.js
+  var require_source_handler = __commonJS({
+    "src/server/static/js/modules/source_handler.js"(exports) {
+      var { BaseHandler } = require_base_handler();
+      exports.SourceHandler = class SourceHandler extends BaseHandler {
+        constructor() {
+          super();
+        }
+        process_init(fragment) {
+          if (document.querySelectorAll("[nd-init]").length == 0)
+            return;
+          fragment.querySelectorAll(`[nd-init]`).forEach((element) => {
+            const url = element.getAttribute("nd-init");
+            this.logger.info(`Processing element`, element);
+            if (url === "/") {
+              this.logger.error(`'nd-init' cannot be the root url (/) !`);
+              return;
+            }
+            if (!url) {
+              this.logger.error(`No valid url defined in 'nd-init' on element ${element.outerHTML}`);
+              element.innerHTML = `<span style="color: red">Error: no valid url defined in 'nd-init' on element &lt;${element.tagName.toLowerCase()} data-nduuid="${uuid}"&gt;</span>`;
+              return;
+            }
+            this.logger.info(`nd-init: Fetching data from '${url}'...`);
+            nd.fetcher.fetch_data(url).then((data) => {
+              if (data) {
+                const fragment2 = nd.util.create_fragment(data);
+                nd.util.insert_fragment(element, fragment2, false, true);
+              } else {
+                this.logger.error(`Url '${url}' returned no data !`);
+                element.innerHTML = `<span style="color: red">Error: url '${url}' returned no data for element ${nd.util.as_text(element)}</span>`;
+              }
+            });
+            element.removeAttribute("nd-init");
+          });
+        }
+        /**
+         * Process a given fragment.
+         */
+        process(fragment) {
+          this.process_init(fragment);
+          if (document.querySelectorAll("[nd-source]").length == 0)
+            return;
+          fragment.querySelectorAll(`[nd-source]`).forEach((element) => {
+            const url = element.getAttribute("nd-source");
+            this.logger.info(`Processing element`, element);
+            if (url === "/") {
+              this.logger.error(`<nd-source cannot be the root url (/) !`);
+              return;
+            }
+            const uuid2 = nd.util.set_uuid(element);
+            if (!url) {
+              this.logger.error(`No valid url defined in 'nd-source' on element`, element);
+              element.innerHTML = `<span style="color: red">Error: no valid url defined in 'nd-source' on element &lt;${element.tagName.toLowerCase()} data-nduuid="${uuid2}"&gt;</span>`;
+              return;
+            }
+            this.logger.info(`Fetching data from '${url}' for element with uuid '${uuid2}'...`);
+            nd.fetcher.fetch_data(url).then((data) => {
+              if (data) {
+                const fragment2 = nd.util.create_fragment(data);
+                nd.util.insert_fragment(element, fragment2, false, true);
+              } else {
+                this.logger.error(`Url '${url}' returned no data !`);
+                element.innerHTML = `<span style="color: red">Error: url '${url}' returned no data for element ${nd.util.as_text(element)}</span>`;
+              }
+            });
+          });
+        }
+        /**
+         * Clean the DOM
+         */
+        postprocess() {
+        }
+      };
+    }
+  });
+
+  // src/server/static/js/modules/version_handler.js
+  var require_version_handler = __commonJS({
+    "src/server/static/js/modules/version_handler.js"(exports) {
+      var { BaseHandler } = require_base_handler();
+      exports.VersionHandler = class VersionHandler extends BaseHandler {
+        constructor() {
+          super();
+        }
+        /**
+         * Process a given fragment.
+         */
+        process(fragment) {
+          if (document.querySelectorAll("[nd-version]").length == 0)
+            return;
+          fragment.querySelectorAll(`[nd-version]`).forEach((element) => {
+            this.logger.info(`Processing element`, element);
+            element.textContent = nd.version;
+          });
+        }
+        /**
+         * Clean the DOM
+         */
+        postprocess() {
+        }
+      };
+    }
+  });
+
+  // src/server/static/js/modules/link_handler.js
+  var require_link_handler = __commonJS({
+    "src/server/static/js/modules/link_handler.js"(exports) {
+      var { BaseHandler } = require_base_handler();
+      var { Link } = require_link();
+      exports.LinkHandler = class LinkHandler extends BaseHandler {
+        constructor() {
+          super();
+        }
+        /**
+         * Process a given fragment.
+         */
+        process(fragment) {
+          if (fragment.querySelectorAll("[nd-link]").length == 0)
+            return;
+          this.logger.info(`Processing fragment`, fragment);
+          fragment.querySelectorAll("[nd-link]").forEach((element) => {
+            this.logger.info(`Processing 'nd-link' element`, element);
+            new Link(element);
+          });
+        }
+        /**
+         * Clean the DOM (remove unused handlers)
+         */
+        postprocess() {
+        }
+      };
+    }
+  });
+
   // src/server/static/js/components/dialogs.js
   var require_dialogs = __commonJS({
-    "src/server/static/js/components/dialogs.js"(exports2) {
-      var { Logger: Logger3 } = require_logger();
+    "src/server/static/js/components/dialogs.js"(exports) {
+      var { Logger: Logger2 } = require_logger();
       var { TOAST_DELAY_MS, DIALOG_CONTAINER: DIALOG_CONTAINER2 } = require_constants();
       var BaseDialog = class {
         constructor(logger_name, args) {
-          this.logger = new Logger3(logger_name);
+          this.logger = new Logger2(logger_name);
           this.id = crypto.randomUUID();
           this.args = args;
           this.can_display = void 0;
@@ -555,61 +1141,26 @@
             resolve(dialog.return_value);
           });
         };
-        static create_from_args(args = null) {
-          throw new Error("Method create_from_args() is not implemented !");
-        }
-        escape_key_handler = (event2) => {
-          if (event2.key === "Escape") {
-            event2.stopImmediatePropagation();
-            event2.preventDefault();
-          }
-        };
-        get_redirect_url = () => {
-          let redirect_url = null;
-          if (this.args.urls) {
-            switch (this.dialog.returnValue) {
-              case "accept":
-                redirect_url = this.args.urls.accept ? this.args.urls.accept : null;
-                break;
-              case "apply":
-                redirect_url = this.args.urls.dismiss ? this.args.urls.dismiss : null;
-                break;
-              case "dismiss":
-                redirect_url = this.args.urls.dismiss ? this.args.urls.dismiss : null;
-                break;
-              case "":
-                redirect_url = this.args.urls.redirect ? this.args.urls.redirect : null;
-                break;
-            }
-          }
-          return redirect_url;
-        };
         on_close_handler = () => {
           this.logger.error("Method on_close_handler() is not implemented !");
         };
       };
-      exports2.ConfirmDialog = class ConfirmDialog3 extends BaseDialog {
+      exports.ConfirmDialog = class ConfirmDialog extends BaseDialog {
         constructor(args) {
           super("ConfirmDialog", args);
           this.args.type = "dialog";
-          console.log(args.buttons.find(({ action }) => action === "accept"));
-          console.log(args.buttons.find(({ action }) => action === "dismiss"));
           this.close_event = `nd:close:${this.id}`;
           this.btn_dismiss = null;
           this.btn_accept = null;
           this.cb_confirm = null;
-          const accept_button_obj = args.buttons.find(({ action }) => action === "accept");
-          const dismiss_button_obj = args.buttons.find(({ action }) => action === "dismiss");
-          const accept_url = accept_button_obj ? accept_button_obj.url : null;
-          const dismiss_url = dismiss_button_obj ? dismiss_button_obj.url : null;
           const css_class = `nd-modal`;
           const css_style = `width: 30%`;
           const buttons = nd.util.compress(`
             <button nd-dismiss class="btn btn-secondary" style="width: 7rem">
-                ${dismiss_button_obj ? dismiss_button_obj.label : "???"}
+                ${this.args.dismiss}
             </button>
             <button nd-accept class="btn btn-secondary" style="width: 7rem" disabled>
-                ${accept_button_obj ? accept_button_obj.label : "???"}
+                ${this.args.accept}
             </button>`);
           this.html = nd.util.compress(`
             <div id="${this.id}" data-nduuid="${this.id}" class="${css_class}" role="document">
@@ -631,16 +1182,29 @@
             </div>`);
         }
         // The 'close' event handler
-        on_close_handler = (event2) => {
+        on_close_handler = (event) => {
           this.logger.info(`Hiding component (${this.return_value})...`);
           this.btn_accept.removeEventListener("click", this.action_handler);
           this.btn_dismiss.removeEventListener("click", this.action_handler);
           this.cb_confirm.removeEventListener("click", this.confirm_cb_handler);
           document.removeEventListener(this.close_event, this.on_close_handler);
           this.dialog.remove();
+          let redirect_url = null;
+          switch (this.return_value) {
+            case "accept":
+              redirect_url = this.args.accept_url;
+              break;
+            case "dismiss":
+              redirect_url = this.args.dismiss_url;
+              break;
+          }
+          if (redirect_url) {
+            this.logger.info(`Redirecting to '${redirect_url}'`);
+            nd.fetcher.redirect(redirect_url);
+          }
         };
-        action_handler = (event2) => {
-          switch (event2.srcElement) {
+        action_handler = (event) => {
+          switch (event.srcElement) {
             case this.btn_accept:
               this.return_value = "accept";
               break;
@@ -673,22 +1237,18 @@
           document.addEventListener(`nd:close:${this.id}`, this.on_close_handler);
           this.dialog.style.display = "block";
         };
-        static create_from_args(args) {
-          return new ConfirmDialog3(args);
-        }
       };
-      exports2.OneButtonDialog = class OneButtonDialog2 extends BaseDialog {
+      exports.OneButtonDialog = class OneButtonDialog extends BaseDialog {
         constructor(args) {
           super("OneButtonDialog", args);
           this.args.type = "dialog";
           this.close_event = `nd:close:${this.id}`;
           this.btn_accept = null;
-          const accept_button_obj = args.buttons.find(({ action }) => action === "accept");
           const css_class = `nd-modal`;
           const css_style = `width: 30%`;
           const buttons = nd.util.compress(`
             <button nd-accept class="btn btn-primary" style="width: 7rem">
-                    ${accept_button_obj ? accept_button_obj.label : "???"}
+                    ${this.args.accept}
             </button>`);
           this.html = nd.util.compress(`
                 <div nd-dialog id="${this.id}" data-nduuid="${this.id}" class="${css_class}" role="document">
@@ -700,14 +1260,19 @@
                 </div>`);
         }
         // The 'close' event handler
-        on_close_handler = (event2) => {
+        on_close_handler = (event) => {
           this.logger.info(`Hiding component (${this.return_value})...`);
           this.btn_accept.removeEventListener("click", this.action_handler);
           document.addEventListener(this.close_event, this.on_close_handler);
           this.dialog.remove();
+          const redirect_url = this.args.accept_url;
+          if (redirect_url) {
+            this.logger.info(`Redirecting to '${redirect_url}'`);
+            nd.fetcher.redirect(redirect_url);
+          }
         };
-        action_handler = (event2) => {
-          switch (event2.srcElement) {
+        action_handler = (event) => {
+          switch (event.srcElement) {
             case this.btn_accept:
               this.return_value = "accept";
               break;
@@ -724,27 +1289,22 @@
           document.addEventListener(`nd:close:${this.id}`, this.on_close_handler);
           this.dialog.style.display = "block";
         }
-        static create_from_args(args) {
-          return new OneButtonDialog2(args);
-        }
       };
-      exports2.TwoButtonDialog = class TwoButtonDialog3 extends BaseDialog {
+      exports.TwoButtonDialog = class TwoButtonDialog extends BaseDialog {
         constructor(args) {
           super("TwoButtonDialog", args);
           this.args.type = "dialog";
           this.close_event = `nd:close:${this.id}`;
           this.btn_dismiss = null;
           this.btn_accept = null;
-          const accept_button_obj = args.buttons.find(({ action }) => action === "accept");
-          const dismiss_button_obj = args.buttons.find(({ action }) => action === "dismiss");
           const css_class = `nd-modal`;
           const css_style = `width: 30%`;
           const buttons = nd.util.compress(`
             <button nd-accept class="btn btn-primary me-2" style="width: 7rem">
-                ${accept_button_obj ? accept_button_obj.label : "???"}
+                ${this.args.accept}
             </button>
             <button nd-dismiss class="btn btn-danger" style="width: 7rem">
-                ${dismiss_button_obj ? dismiss_button_obj.label : "???"}
+                ${this.args.dismiss}
             </button>`);
           this.html = nd.util.compress(`
                 <div nd-dialog id="${this.id}" data-nduuid="${this.id}" class="${css_class}" role="document">
@@ -756,15 +1316,28 @@
                 </div>`);
         }
         // The 'close' event handler
-        on_close_handler = (event2) => {
+        on_close_handler = (event) => {
           this.logger.info(`Hiding component (${this.return_value})...`);
           this.btn_accept.removeEventListener("click", this.action_handler);
           this.btn_dismiss.removeEventListener("click", this.action_handler);
           document.addEventListener(this.close_event, this.on_close_handler);
           this.dialog.remove();
+          let redirect_url = null;
+          switch (this.return_value) {
+            case "accept":
+              redirect_url = this.args.accept_url;
+              break;
+            case "dismiss":
+              redirect_url = this.args.dismiss_url;
+              break;
+          }
+          if (redirect_url) {
+            this.logger.info(`Redirecting to '${redirect_url}'`);
+            nd.fetcher.redirect(redirect_url);
+          }
         };
-        action_handler = (event2) => {
-          switch (event2.srcElement) {
+        action_handler = (event) => {
+          switch (event.srcElement) {
             case this.btn_accept:
               this.return_value = "accept";
               break;
@@ -786,33 +1359,26 @@
           document.addEventListener(`nd:close:${this.id}`, this.on_close_handler);
           this.dialog.style.display = "block";
         }
-        static create_from_args = (args) => {
-          return new TwoButtonDialog3(args);
-        };
       };
-      exports2.ThreeButtonDialog = class ThreeButtonDialog2 extends BaseDialog {
+      exports.ThreeButtonDialog = class ThreeButtonDialog extends BaseDialog {
         constructor(args) {
           super("ThreeButtonDialog", args);
           this.args.type = "dialog";
-          console.log(args);
           this.close_event = `nd:close:${this.id}`;
           this.btn_apply = null;
           this.btn_dismiss = null;
           this.btn_accept = null;
-          const accept_button_obj = args.buttons.find(({ action }) => action === "accept");
-          const apply_button_obj = args.buttons.find(({ action }) => action === "apply");
-          const dismiss_button_obj = args.buttons.find(({ action }) => action === "dismiss");
           const css_class = `nd-modal`;
           const css_style = `width: 30%`;
           const buttons = nd.util.compress(`
             <button nd-accept class="btn btn-success me-2" style="width: 7rem">
-                ${accept_button_obj ? accept_button_obj.label : "???"}
+                ${this.args.accept}
             </button>
             <button nd-apply class="btn btn-secondary me-2" style="width: 7rem">
-                ${apply_button_obj ? apply_button_obj.label : "???"}
+                ${this.args.apply}
             </button>
             <button nd-dismiss class="btn btn-danger me-2" style="width: 7rem">
-                ${dismiss_button_obj ? dismiss_button_obj.label : "???"}
+                ${this.args.dismiss}
             </button>`);
           this.html = nd.util.compress(`
                 <div nd-dialog id="${this.id}" data-nduuid="${this.id}" class="${css_class}" role="document">
@@ -824,16 +1390,32 @@
                 </div>`);
         }
         // The 'close' event handler
-        on_close_handler = (event2) => {
+        on_close_handler = (event) => {
           this.logger.info(`Hiding component (${this.return_value})...`);
           this.btn_accept.removeEventListener("click", this.action_handler);
           this.btn_apply.removeEventListener("click", this.action_handler);
           this.btn_dismiss.removeEventListener("click", this.action_handler);
           document.addEventListener(this.close_event, this.on_close_handler);
           this.dialog.remove();
+          let redirect_url = null;
+          switch (this.return_value) {
+            case "accept":
+              redirect_url = this.args.accept_url;
+              break;
+            case "apply":
+              redirect_url = this.args.accept_url;
+              break;
+            case "dismiss":
+              redirect_url = this.args.dismiss_url;
+              break;
+          }
+          if (redirect_url) {
+            this.logger.info(`Redirecting to '${redirect_url}'`);
+            nd.fetcher.redirect(redirect_url);
+          }
         };
-        action_handler = (event2) => {
-          switch (event2.srcElement) {
+        action_handler = (event) => {
+          switch (event.srcElement) {
             case this.btn_accept:
               this.return_value = "accept";
               break;
@@ -860,15 +1442,11 @@
           document.addEventListener(`nd:close:${this.id}`, this.on_close_handler);
           this.dialog.style.display = "block";
         }
-        static create_from_args(args) {
-          return new ThreeButtonDialog2(args);
-        }
       };
-      exports2.CustomDialog = class CustomDialog2 extends BaseDialog {
+      exports.CustomDialog = class CustomDialog extends BaseDialog {
         constructor(args) {
           super("CustomDialog", args);
           this.args.type = "dialog";
-          console.log(this.args);
           this.close_event = `nd:close:${this.id}`;
           const css_class = `nd-modal`;
           const css_style = `width: ${this.args.width_pc}%`;
@@ -881,7 +1459,7 @@
                 </div>
             </div>`);
         }
-        on_close_handler = (event2) => {
+        on_close_handler = (event) => {
           document.removeEventListener(this.close_event, this.on_close_handler);
           this.dialog.remove();
         };
@@ -894,11 +1472,8 @@
           document.addEventListener(this.close_event, this.on_close_handler);
           this.dialog.style.display = "block";
         }
-        static create_from_args(args) {
-          return new CustomDialog2(args);
-        }
       };
-      exports2.Alert = class Alert3 extends BaseDialog {
+      exports.Alert = class Alert extends BaseDialog {
         constructor(args) {
           super("Alert", args);
           this.args.type = "notification";
@@ -913,14 +1488,14 @@
                 </div>
             </div>`);
         }
-        on_close_handler = (event2) => {
+        on_close_handler = (event) => {
           this.logger.info(`Hiding component.`);
           this.close_btn.removeEventListener("click", this.on_close_handler);
           this.dialog.remove();
-          const redirect_url = this.args.urls && this.args.urls.redirect ? this.args.urls.redirect : null;
+          const redirect_url = this.args.url;
           if (redirect_url) {
             this.logger.info(`Redirecting to '${redirect_url}'`);
-            nd.util.navigate_to(redirect_url);
+            nd.fetcher.redirect(redirect_url);
           }
         };
         show() {
@@ -934,11 +1509,8 @@
             this.close_btn.click();
           }, TOAST_DELAY_MS);
         }
-        static create_from_args(args) {
-          return new Alert3(args);
-        }
       };
-      exports2.Toast = class Toast3 extends BaseDialog {
+      exports.Toast = class Toast extends BaseDialog {
         constructor(args) {
           super("Toast", args);
           this.args.type = "notification";
@@ -959,10 +1531,10 @@
           this.close_btn.removeEventListener("click", this.on_close_handler);
           this.dialog.remove();
           this.dialog.remove();
-          const redirect_url = this.args.urls && this.args.urls.redirect ? this.args.urls.redirect : null;
+          const redirect_url = this.args.url;
           if (redirect_url) {
             this.logger.info(`Redirecting to '${redirect_url}'`);
-            nd.util.navigate_to(redirect_url);
+            nd.fetcher.redirect(redirect_url);
           }
         };
         show() {
@@ -976,466 +1548,17 @@
             this.close_btn.click();
           }, TOAST_DELAY_MS);
         }
-        static create_from_args(args) {
-          return new Toast3(args);
-        }
-      };
-      var { Alert: Alert2, Toast: Toast2, OneButtonDialog, TwoButtonDialog: TwoButtonDialog2, ThreeButtonDialog, ConfirmDialog: ConfirmDialog2, CustomDialog } = require_dialogs();
-      exports2.DialogFactory = class DialogFactory2 {
-        static LOGGER = new Logger3("DialogFactory", true);
-        constructor() {
-          if (!!DialogFactory2._instance) {
-            return DialogFactory2._instance;
-          }
-          this.logger = DialogFactory2.LOGGER;
-        }
-        create(type, args) {
-          this.logger.info(`Create a new dialog. Type: '${type}'. Arguments: ${args ? JSON.stringify(args) : "none"}.`);
-          switch (type) {
-            case "alert":
-              return Alert2.create_from_args(args);
-            case "toast":
-              return Toast2.create_from_args(args);
-            case "one-button":
-              return OneButtonDialog.create_from_args(args);
-            case "two-button":
-              return TwoButtonDialog2.create_from_args(args);
-            case "three-button":
-              return ThreeButtonDialog.create_from_args(args);
-            case "confirm":
-              return ConfirmDialog2.create_from_args(args);
-            case "custom":
-              return CustomDialog.create_from_args(args);
-          }
-          return null;
-        }
-      };
-    }
-  });
-
-  // src/server/static/js/modules/link.js
-  var require_link = __commonJS({
-    "src/server/static/js/modules/link.js"(exports, module) {
-      var { Logger } = require_logger();
-      var { TwoButtonDialog } = require_dialogs();
-      exports.Link = class _Link {
-        static LOGGER = new Logger("Link", true);
-        constructor(element) {
-          this.logger = _Link.LOGGER;
-          this.element = element;
-          this.url = null;
-          this.confirm = null;
-          this.action = null;
-          this.data = null;
-          this.targets = [];
-          element.removeAttribute("data-ndtrack");
-          const href = element.getAttribute("href");
-          this.url = href ? href : element.getAttribute("nd-url");
-          this.confirm = element.getAttribute("nd-confirm");
-          this.action = element.getAttribute("nd-action");
-          this.data = element.getAttribute("nd-data");
-          if (!this.url) {
-            this.logger.error(`No <nd-url> defined on element`, element);
-            return;
-          }
-          const append = false;
-          const selector2 = element.getAttribute("nd-target");
-          this.targets = selector2 ? nd.util.get_targets(selector2) : [];
-          if (!this.targets.length && selector2 && selector2.toLowerCase() !== TARGET_NONE) {
-            this.logger.error(`No <nd-target> defined on element`, element);
-          }
-          nd.tracker.add_listener(element, "click", this._click_handler);
-          this.logger.info(`New Link created (${element.getAttribute("data-ndtrack")}).`);
-        }
-        _click_handler = async (event) => {
-          event.preventDefault();
-          let do_proceed = true;
-          let request_context = null;
-          if (this.data) {
-          }
-          if (this.confirm) {
-            const args = nd.util.as_json(this.confirm);
-            do_proceed = await TwoButtonDialog.create_from_args(args).run() === "accept";
-          }
-          if (do_proceed) {
-            this.action ? eval(this.action) : () => {
-            };
-            nd.fetcher.fetch_data(this.url).then((data) => {
-              if (data) {
-                this.targets.forEach((t) => {
-                  if (t.tagName === "INPUT") {
-                    t.value = data;
-                  } else {
-                    const fragment = nd.util.create_fragment(data);
-                    nd.util.insert_fragment(t, fragment, false, true);
-                  }
-                });
-              }
-            });
-          }
-        };
-      };
-    }
-  });
-
-  // src/server/static/js/modules/select.js
-  var require_select = __commonJS({
-    "src/server/static/js/modules/select.js"(exports2) {
-      var { Logger: Logger3 } = require_logger();
-      var { Link } = require_link();
-      exports2.Select = class Select {
-        constructor(element) {
-          this.logger = new Logger3("Select");
-          this.selector = element;
-          this.targets = [];
-          const nd_targets = element.getAttribute("nd-target");
-          const nd_options_url = element.getAttribute("nd-url");
-          if (element.tagName !== "SELECT") {
-            this.logger.error(`'nd-select' only apply to 'select' tags. Error element:`, element);
-            return;
-          }
-          const targets = Array();
-          if (nd_targets) {
-            nd_targets.split(" ").forEach((target) => {
-              if (target) {
-                this.logger.info(`Processing switch element with class or id '${target}'`);
-                document.querySelectorAll(target).forEach((t) => {
-                  if (t.hasAttribute("nd-show-for") || t.hasAttribute("nd-hide-for")) {
-                    t.hidden = true;
-                  }
-                  this.logger.info(`Found target identified by '${target}' (class or id) :`, t);
-                  this.targets.push(t);
-                });
-              }
-            });
-          }
-          nd.tracker.add_listener(element, "change", this._update_targets);
-          if (nd_options_url) {
-            this.logger.info(`Getting select option from url '${nd_options_url}'.`);
-            nd.fetcher.fetch_data(nd_options_url).then((data) => {
-              const fragment = nd.util.create_fragment(data);
-              nd.util.insert_fragment(element, fragment);
-              this._setup();
-              return;
-            });
-          }
-          this._setup();
-        }
-        _setup = () => {
-          this.selector.selectedIndex = 0;
-          this.selector.dispatchEvent(new Event("change"));
-        };
-        _update_targets = (event2) => {
-          if (this.selector.selectedIndex < 0)
-            return;
-          const option = this.selector.options[this.selector.selectedIndex];
-          const value = option.getAttribute("value");
-          const link = option.getAttribute("nd-url");
-          this.targets.forEach((target) => {
-            const nd_show_for = target.getAttribute("nd-show-for");
-            const nd_hide_for = target.getAttribute("nd-hide-for");
-            const nd_follow = target.hasAttribute("nd-follow");
-            const nd_sync = target.hasAttribute("nd-sync");
-            const nd_activate = target.hasAttribute("nd-activate");
-            if ([nd_follow, nd_sync, nd_activate].filter(Boolean).length > 1) {
-              this.logger.error("'nd-sync', 'nd-follow' or 'nd-activate' are mutually exclusive !", target);
-              return;
-            }
-            const nd_url = target.getAttribute("nd-url");
-            const has_nd_url = nd_url ? true : false;
-            const show_targets = nd_show_for ? nd_show_for.split(" ") : [];
-            const hide_targets = nd_hide_for ? nd_hide_for.split(" ") : [];
-            if (nd_activate) {
-              target.innerHTML = value;
-              target.setAttribute("nd-link", "");
-              target.setAttribute("nd-url", link);
-              new Link(target);
-              nd.util.refresh(target);
-            }
-            if (nd_sync) {
-              if (has_nd_url && value) {
-                const url = `${nd_url}/${value}`;
-                nd.fetcher.fetch_data(url).then((data) => {
-                  const fragment = nd.util.create_fragment(data);
-                  nd.util.insert_fragment(target, fragment);
-                });
-              } else {
-                target.innerText = value ? value : "";
-              }
-            }
-            if (nd_follow && link) {
-              nd.fetcher.fetch_data(link).then((data) => {
-                const fragment = nd.util.create_fragment(data);
-                nd.util.insert_fragment(target, fragment, false, true);
-              });
-            }
-            if (show_targets.includes("*")) {
-              target.hidden = value ? false : true;
-              show_targets.splice(show_targets.indexOf("*"), 1);
-            }
-            if (hide_targets.includes("*")) {
-              target.hidden = value ? true : false;
-              hide_targets.splice(hide_targets.indexOf("*"), 1);
-            }
-            if (show_targets.length)
-              target.hidden = !show_targets.includes(value);
-            if (hide_targets.length)
-              target.hidden = hide_targets.includes(value);
-          });
-        };
-      };
-    }
-  });
-
-  // src/server/static/js/modules/select_handler.js
-  var require_select_handler = __commonJS({
-    "src/server/static/js/modules/select_handler.js"(exports2) {
-      var { BaseHandler } = require_base_handler();
-      var { Select } = require_select();
-      exports2.SelectHandler = class SelectHandler extends BaseHandler {
-        constructor() {
-          super();
-        }
-        process(fragment) {
-          if (document.querySelectorAll("[nd-select]").length == 0)
-            return;
-          fragment.querySelectorAll("[nd-select]").forEach((element) => {
-            new Select(element);
-          });
-        }
-        postprocess() {
-        }
-      };
-    }
-  });
-
-  // src/server/static/js/modules/poll_handler.js
-  var require_poll_handler = __commonJS({
-    "src/server/static/js/modules/poll_handler.js"(exports2) {
-      var { POLL_DEFAULT_INTERVAL_MS } = require_constants();
-      var { BaseHandler } = require_base_handler();
-      exports2.PollHandler = class PollHandler extends BaseHandler {
-        constructor() {
-          super();
-          this._timers = [];
-        }
-        /**
-         * Process a given fragment.
-         */
-        process(fragment) {
-          if (document.querySelectorAll("[nd-poll]").length == 0)
-            return;
-          this._process(fragment);
-        }
-        /**
-         * Clean the DOM (remove unused timers)
-         */
-        postprocess() {
-          const timers_to_clear = [];
-          this._timers.forEach((timer, index) => {
-            if (document.querySelectorAll(`[data-nduuid="${timer.uuid}"]`).length == 0) {
-              clearTimeout(timer.id);
-              timers_to_clear.push(timer);
-            }
-          });
-          timers_to_clear.forEach((timer) => {
-            const index = this._timers.indexOf(timer);
-            this._timers.splice(index, 1);
-            this.logger.info(`Cleared and removed timer ${timer.id} for ${timer.uuid}.`);
-          });
-        }
-        /**
-         * Process (internal) a given fragment (HTML element)
-         */
-        _process(fragment) {
-          fragment.querySelectorAll(`[nd-poll]`).forEach((element) => {
-            const url = element.getAttribute("nd-url");
-            const selector2 = element.getAttribute("nd-target");
-            const targets = selector2 ? nd.util.get_targets(selector2) : [element];
-            let interval_ms = element.getAttribute("nd-interval");
-            const uuid2 = nd.util.set_uuid(element);
-            if (!url) {
-              this.logger.error(`No <nd-url> defined on element`, Object(element));
-            }
-            if (!interval_ms || isNaN(interval_ms)) {
-              interval_ms = POLL_DEFAULT_INTERVAL_MS;
-            } else {
-              interval_ms = Number(interval_ms);
-              interval_ms = interval_ms < 1e3 ? 1e3 : interval_ms;
-            }
-            if (url)
-              this._poll(uuid2, url, targets, interval_ms);
-          });
-        }
-        /**
-         * Polling function
-         */
-        _poll(uuid2, url, targets, interval_ms) {
-          const timeout_id = setTimeout(() => {
-            clearTimeout(timeout_id);
-            const result = this._timers.find(({ id, uuid: uuid3 }) => id === timeout_id);
-            const index = this._timers.indexOf(result);
-            this._timers.splice(index, 1);
-            this.logger.info(`Removed timer ${result.id} for ${result.uuid}. Active timers : ${this._timers.length}`);
-            if (!document.hidden) {
-              nd.fetcher.fetch_data(url).then((data) => {
-                targets.forEach((t) => {
-                  const fragment = nd.util.create_fragment(data);
-                  nd.util.insert_fragment(t, fragment, false, true);
-                });
-              });
-            }
-            this._poll(uuid2, url, targets, interval_ms);
-          }, interval_ms);
-          this._timers.push({ id: timeout_id, uuid: uuid2 });
-          this.logger.info(`Added timer ${timeout_id} (${interval_ms}ms) for ${uuid2}. Active timers : ${this._timers.length}`);
-        }
-      };
-    }
-  });
-
-  // src/server/static/js/modules/source_handler.js
-  var require_source_handler = __commonJS({
-    "src/server/static/js/modules/source_handler.js"(exports2) {
-      var { BaseHandler } = require_base_handler();
-      exports2.SourceHandler = class SourceHandler extends BaseHandler {
-        constructor() {
-          super();
-        }
-        process_init(fragment) {
-          if (document.querySelectorAll("[nd-init]").length == 0)
-            return;
-          fragment.querySelectorAll(`[nd-init]`).forEach((element) => {
-            const url = element.getAttribute("nd-init");
-            this.logger.info(`Processing element`, element);
-            if (url === "/") {
-              this.logger.error(`'nd-init' cannot be the root url (/) !`);
-              return;
-            }
-            if (!url) {
-              this.logger.error(`No valid url defined in 'nd-init' on element`, Object(element));
-              element.innerHTML = `<span style="color: red">Error: no valid url defined in 'nd-init' on element &lt;${element.tagName.toLowerCase()} data-nduuid="${uuid}"&gt;</span>`;
-              return;
-            }
-            this.logger.info(`nd-init: Fetching data from '${url}'...`);
-            nd.fetcher.fetch_data(url).then((data) => {
-              if (data) {
-                const fragment2 = nd.util.create_fragment(data);
-                nd.util.insert_fragment(element, fragment2, false, true);
-              } else {
-                this.logger.error(`Url '${url}' returned no data !`);
-                element.innerHTML = `<span style="color: red">Error: url '${url}' returned no data for element ${nd.util.as_text(element)}</span>`;
-              }
-            });
-            element.removeAttribute("nd-init");
-          });
-        }
-        /**
-         * Process a given fragment.
-         */
-        process(fragment) {
-          this.process_init(fragment);
-          if (document.querySelectorAll("[nd-source]").length == 0)
-            return;
-          fragment.querySelectorAll(`[nd-source]`).forEach((element) => {
-            const url = element.getAttribute("nd-source");
-            this.logger.info(`Processing element`, element);
-            if (url === "/") {
-              this.logger.error(`<nd-source cannot be the root url (/) !`);
-              return;
-            }
-            const uuid2 = nd.util.set_uuid(element);
-            if (!url) {
-              this.logger.error(`No valid url defined in 'nd-source' on element`, Object(element));
-              element.innerHTML = `<span style="color: red">Error: no valid url defined in 'nd-source' on element &lt;${element.tagName.toLowerCase()} data-nduuid="${uuid2}"&gt;</span>`;
-              return;
-            }
-            this.logger.info(`Fetching data from '${url}' for element with uuid '${uuid2}'...`);
-            nd.fetcher.fetch_data(url).then((data) => {
-              if (data) {
-                const fragment2 = nd.util.create_fragment(data);
-                nd.util.insert_fragment(element, fragment2, false, true);
-              } else {
-                this.logger.error(`Url '${url}' returned no data !`);
-                element.innerHTML = `<span style="color: red">Error: url '${url}' returned no data for element ${nd.util.as_text(element)}</span>`;
-              }
-            });
-          });
-        }
-        /**
-         * Clean the DOM
-         */
-        postprocess() {
-        }
-      };
-    }
-  });
-
-  // src/server/static/js/modules/version_handler.js
-  var require_version_handler = __commonJS({
-    "src/server/static/js/modules/version_handler.js"(exports2) {
-      var { BaseHandler } = require_base_handler();
-      exports2.VersionHandler = class VersionHandler extends BaseHandler {
-        constructor() {
-          super();
-        }
-        /**
-         * Process a given fragment.
-         */
-        process(fragment) {
-          if (document.querySelectorAll("[nd-version]").length == 0)
-            return;
-          fragment.querySelectorAll(`[nd-version]`).forEach((element) => {
-            this.logger.info(`Processing element`, element);
-            element.textContent = nd.version;
-          });
-        }
-        /**
-         * Clean the DOM
-         */
-        postprocess() {
-        }
-      };
-    }
-  });
-
-  // src/server/static/js/modules/link_handler.js
-  var require_link_handler = __commonJS({
-    "src/server/static/js/modules/link_handler.js"(exports2) {
-      var { BaseHandler } = require_base_handler();
-      var { Link } = require_link();
-      exports2.LinkHandler = class LinkHandler extends BaseHandler {
-        constructor() {
-          super();
-        }
-        /**
-         * Process a given fragment.
-         */
-        process(fragment) {
-          if (fragment.querySelectorAll("[nd-link]").length == 0)
-            return;
-          this.logger.info(`Processing fragment`, fragment);
-          fragment.querySelectorAll("[nd-link]").forEach((element) => {
-            this.logger.info(`Processing 'nd-link' element`, element);
-            new Link(element);
-          });
-        }
-        /**
-         * Clean the DOM (remove unused handlers)
-         */
-        postprocess() {
-        }
       };
     }
   });
 
   // src/server/static/js/components/download.js
   var require_download = __commonJS({
-    "src/server/static/js/components/download.js"(exports2) {
-      var { Logger: Logger3 } = require_logger();
-      exports2.Download = class Download {
+    "src/server/static/js/components/download.js"(exports) {
+      var { Logger: Logger2 } = require_logger();
+      exports.Download = class Download {
         constructor(blob, out_filename, preview = false) {
-          this.logger = new Logger3("Download");
+          this.logger = new Logger2("Download");
           this.blob = blob;
           this.id = crypto.randomUUID();
           this.href = URL.createObjectURL(blob);
@@ -1473,17 +1596,17 @@
 
   // src/server/static/js/modules/event_handler.js
   var require_event_handler = __commonJS({
-    "src/server/static/js/modules/event_handler.js"(exports2) {
+    "src/server/static/js/modules/event_handler.js"(exports) {
       var { ND_EVENTS } = require_constants();
-      var { OneButtonDialog, TwoButtonDialog: TwoButtonDialog2, ThreeButtonDialog, ConfirmDialog: ConfirmDialog2, Toast: Toast2, Alert: Alert2 } = require_dialogs();
+      var { OneButtonDialog, TwoButtonDialog, ThreeButtonDialog, ConfirmDialog: ConfirmDialog2, Toast: Toast2, Alert: Alert2 } = require_dialogs();
       var { Download } = require_download();
-      var { Logger: Logger3 } = require_logger();
-      exports2.EventHandler = class EventHandler2 {
+      var { Logger: Logger2 } = require_logger();
+      exports.EventHandler = class EventHandler2 {
         constructor() {
           if (!!EventHandler2._instance) {
             return EventHandler2._instance;
           }
-          this.logger = new Logger3("EventHandler");
+          this.logger = new Logger2("EventHandler");
           const notification_events = [
             ND_EVENTS.ALERT,
             ND_EVENTS.TOAST,
@@ -1508,12 +1631,12 @@
         // Todo : remove
         postprocess() {
         }
-        _event_handler = async (event2) => {
-          this.logger.info(`Event received: ${event2.type}.`);
-          this.logger.info(`Event detail: ${JSON.stringify(event2.detail)}.`);
-          const detail = event2.detail;
+        _event_handler = async (event) => {
+          this.logger.info(`Event received: ${event.type}.`);
+          this.logger.info(`Event detail: ${JSON.stringify(event.detail)}.`);
+          const detail = event.detail;
           let data = null;
-          switch (event2.type) {
+          switch (event.type) {
             case ND_EVENTS.TITLE:
               document.title = detail.title;
               break;
@@ -1530,7 +1653,7 @@
               new OneButtonDialog(detail).show();
               break;
             case ND_EVENTS.TWO_BUTTON_DIALOG:
-              new TwoButtonDialog2(detail).show();
+              new TwoButtonDialog(detail).show();
               break;
             case ND_EVENTS.THREE_BUTTON_DIALOG:
               new ThreeButtonDialog(detail).show();
@@ -1557,12 +1680,12 @@
 
   // src/server/static/js/modules/zone_handler.js
   var require_zone_handler = __commonJS({
-    "src/server/static/js/modules/zone_handler.js"(exports2) {
+    "src/server/static/js/modules/zone_handler.js"(exports) {
       var { ND_EVENTS } = require_constants();
-      var { Logger: Logger3 } = require_logger();
-      exports2.ZoneHandler = class ZoneHandler {
+      var { Logger: Logger2 } = require_logger();
+      exports.ZoneHandler = class ZoneHandler {
         constructor() {
-          this.logger = new Logger3("ZoneHandler");
+          this.logger = new Logger2("ZoneHandler");
           this.logger.info(`Adding a listener to handle '${ND_EVENTS.ZONE}' events.`);
           document.addEventListener(ND_EVENTS.ZONE, this._event_handler);
         }
@@ -1580,11 +1703,11 @@
             element.focus();
           }
         };
-        _event_handler = (event2) => {
-          this.logger.info(`Event: ${event2.type}. Zone: '${event2.detail.name}'. Fields: ${event2.detail.fields.length}. Action: '${event2.detail.action}'.`);
-          const zone_name = event2.detail.name;
-          const action = event2.detail.action;
-          const zone_fields = event2.detail.fields;
+        _event_handler = (event) => {
+          this.logger.info(`Event: ${event.type}. Zone: '${event.detail.name}'. Fields: ${event.detail.fields.length}. Action: '${event.detail.action}'.`);
+          const zone_name = event.detail.name;
+          const action = event.detail.action;
+          const zone_fields = event.detail.fields;
           const zone = document.querySelector(`[nd-zone="${zone_name}"]`);
           if (!zone) {
             this.logger.error(`Zone '${zone_name}' not found.`);
@@ -1637,11 +1760,12 @@
 
   // src/server/static/js/modules/context_handler.js
   var require_context_handler = __commonJS({
-    "src/server/static/js/modules/context_handler.js"(exports2) {
+    "src/server/static/js/modules/context_handler.js"(exports) {
       var { ND_EVENTS } = require_constants();
-      var { Logger: Logger3 } = require_logger();
-      exports2.ContextHandler = class ContextHandler2 {
-        static LOGGER = new Logger3("ContextHandler", true);
+      var { Logger: Logger2 } = require_logger();
+      exports.ContextHandler = class ContextHandler2 {
+        static LOGGER = new Logger2("ContextHandler", true);
+        static CONTEXT_ACTIONS = ["show", "hide", "remove"];
         constructor() {
           this.logger = ContextHandler2.LOGGER;
           this.contexts = [];
@@ -1651,14 +1775,15 @@
         _update_document = () => {
           this.logger.info("Updating document.");
           document.querySelectorAll("[nd-context]").forEach((e) => {
-            const attribute = e.getAttribute("nd-context");
-            if (!attribute) {
+            let context_value = e.getAttribute("nd-context");
+            if (!context_value) {
               this.logger.error(`No context specified in element`, e);
               return;
             }
-            const [context, action = "show"] = attribute.split(":");
-            if (!["show", "hide"].includes(action)) {
-              this.logger.error(`Unsupported context action: '${action}. Allowed actions are 'show' or 'hide'.`);
+            context_value = context_value.replaceAll(" ", "");
+            const [context, action = "show"] = context_value.split(":");
+            if (!ContextHandler2.CONTEXT_ACTIONS.includes(action)) {
+              this.logger.error(`Unsupported context action: '${action}. Allowed actions are ${ContextHandler2.CONTEXT_ACTIONS.join(" or ")}.`);
               return;
             }
             switch (action) {
@@ -1667,6 +1792,13 @@
                 break;
               case "hide":
                 e.hidden = this.contexts.includes(context) ? true : false;
+                break;
+              case "remove":
+                if (this.contexts.includes(context)) {
+                  nd.util.clear_node(e);
+                  nd.tracker.postprocess();
+                  e.hidden != e.hidden;
+                }
                 break;
             }
           });
@@ -1677,9 +1809,9 @@
         postprocess = () => {
           this._update_document();
         };
-        _event_handler = (event2) => {
-          this.logger.info(`Event: ${event2.type}. Context: '${event2.detail.context}'. Action: '${event2.detail.action}'`);
-          const { context, action } = event2.detail;
+        _event_handler = (event) => {
+          this.logger.info(`Event: ${event.type}. Context: '${event.detail.context}'. Action: '${event.detail.action}'`);
+          const { context, action } = event.detail;
           switch (action) {
             case "set":
               if (this.contexts.includes(context)) {
@@ -1711,11 +1843,11 @@
 
   // src/server/static/js/modules/environment_handler.js
   var require_environment_handler = __commonJS({
-    "src/server/static/js/modules/environment_handler.js"(exports2) {
+    "src/server/static/js/modules/environment_handler.js"(exports) {
       var { ND_EVENTS } = require_constants();
-      var { Logger: Logger3 } = require_logger();
-      exports2.EnvironmentHandler = class EnvironmentHandler2 {
-        static LOGGER = new Logger3("EnvironmentHandler", true);
+      var { Logger: Logger2 } = require_logger();
+      exports.EnvironmentHandler = class EnvironmentHandler2 {
+        static LOGGER = new Logger2("EnvironmentHandler", true);
         constructor() {
           if (!!EnvironmentHandler2._instance) {
             return EnvironmentHandler2._instance;
@@ -1747,9 +1879,9 @@
         postprocess = () => {
           this._update_document();
         };
-        _event_handler = (event2) => {
-          this.logger.info(`Event: ${event2.type}. Data: '${JSON.stringify(event2.detail)}'.`);
-          const data = event2.detail;
+        _event_handler = (event) => {
+          this.logger.info(`Event: ${event.type}. Data: '${JSON.stringify(event.detail)}'.`);
+          const data = event.detail;
           switch (data.action) {
             case "set":
               const result = this.envs.find((env) => env.key === data.key);
@@ -1773,61 +1905,88 @@
 
   // src/server/static/js/modules/handler_tracker.js
   var require_handler_tracker = __commonJS({
-    "src/server/static/js/modules/handler_tracker.js"(exports2) {
-      var { Logger: Logger3 } = require_logger();
-      exports2.HandlerTracker = class HandlerTracker2 {
-        static LOGGER = new Logger3("HandlerTracker", true);
+    "src/server/static/js/modules/handler_tracker.js"(exports) {
+      var { Logger: Logger2 } = require_logger();
+      var TrackedItem = class {
+        constructor(weakref, trackid, event, handler, use_capture) {
+          this.weakref = weakref;
+          this.trackid = trackid;
+          this.event = event;
+          this.handler = handler;
+          this.use_capture = use_capture;
+        }
+      };
+      exports.HandlerTracker = class HandlerTracker2 {
+        static LOGGER = new Logger2("HandlerTracker", true);
         constructor() {
           if (!!HandlerTracker2._instance) {
             return HandlerTracker2._instance;
           }
           this.logger = HandlerTracker2.LOGGER;
-          this.handlers = [];
+          this.tracked_handlers = [];
           HandlerTracker2._instance = this;
         }
-        _register_listener = (element, event2, handler, use_capture = null) => {
+        /**
+         * Registers an event listener on an element and keeps track of it.
+         * It uses a WeakRef to keep track of the element without preventing it from being garbage collected.
+         * The element must have a 'data-ndtrack' attribute to be tracked. If it doesn't have one, it will be generated automatically.
+         *
+         * @param {Element} element - The element to which the event listener is added.
+         * @param {string} event - The event to listen for.
+         * @param {function} handler - The event handler function.
+         * @param {boolean} use_capture - The use_capture flag for the event listener.
+         */
+        _register_listener = (element, event, handler, use_capture = false) => {
           const weakref = new WeakRef(element);
-          use_capture === true ? weakref.deref().addEventListener(event2, handler, use_capture) : weakref.deref().addEventListener(event2, handler);
-          const item = {
-            weakref,
-            trackid: element.dataset.ndtrack,
-            event: event2,
-            handler,
-            use_capture
-          };
-          this.handlers.push(item);
-          this.logger.info(`Tracking '${event2}' handler on element '${element.tagName.toLowerCase()}' (${element.dataset.ndtrack}).`);
+          weakref.deref().addEventListener(event, handler, use_capture);
+          const tracked_item = new TrackedItem(weakref, element.dataset.ndtrack, event, handler, use_capture);
+          this.tracked_handlers.push(tracked_item);
+          this.logger.info(`Tracking '${event}' handler on element '${element.tagName.toLowerCase()}' (${element.dataset.ndtrack}).`);
         };
         process(fragment) {
         }
+        /**
+         * Postprocess method to be called after each DOM update to remove event listeners from elements that are no longer in the DOM.
+         * It checks each tracked handler and if the element is no longer in the DOM, it removes the event listener and removes the handler from the tracked list.
+         * It also logs the number of handlers removed and kept after the postprocessing.
+         */
         postprocess() {
-          this.logger.info(`Postprocessing : ${this.handlers.length} handler(s) to check.`);
-          if (this.handlers.length === 0)
+          this.logger.info(`Postprocessing : ${this.tracked_handlers.length} handler(s) to check.`);
+          if (this.tracked_handlers.length === 0)
             return;
           let deleted_count = 0;
-          this.handlers.slice().forEach((tracker) => {
-            const uuid2 = tracker.trackid;
+          this.tracked_handlers.slice().forEach((item) => {
+            const uuid2 = item.trackid;
             const selector2 = `[data-ndtrack="${uuid2}"]`;
             if (document.querySelector(selector2))
               return;
-            const element = tracker.weakref.deref();
+            const element = item.weakref.deref();
             if (element) {
-              this.logger.info(`Cleaning '${tracker.event}' handler on '${element.tagName.toLowerCase()}' (${uuid2}).`);
-              element.removeEventListener(tracker.event, tracker.handler);
+              this.logger.info(`Cleaning '${item.event}' handler on '${element.tagName.toLowerCase()}' (${uuid2}).`);
+              element.removeEventListener(item.event, item.handler, item.use_capture);
             } else {
               this.logger.info(`Element '${uuid2}' already went to garbage (GC).`);
             }
-            const index = this.handlers.findIndex(({ trackid }) => trackid === uuid2);
-            this.handlers.splice(index, 1);
+            const index = this.tracked_handlers.findIndex(({ trackid }) => trackid === uuid2);
+            this.tracked_handlers.splice(index, 1);
             deleted_count++;
           });
-          this.logger.info(`Postprocessing : ${deleted_count} handler(s) removed. ${this.handlers.length} handlers(s) kept.`);
+          this.logger.info(`Postprocessing : ${deleted_count} handler(s) removed. ${this.tracked_handlers.length} handlers(s) kept.`);
         }
-        add_listener = (element, event2, handler) => {
+        /**
+         * Adds an event listener to an element and tracks it. It uses the _register_listener method to register the event listener and track it.
+         * If the element doesn't have a 'data-ndtrack' attribute, it will be generated automatically.
+         *
+         * @param {*} element
+         * @param {*} event
+         * @param {*} handler
+         * @param {*} use_capture
+         */
+        add_listener = (element, event, handler, use_capture = false) => {
           if (!element.hasAttribute("data-ndtrack")) {
             element.dataset.ndtrack = crypto.randomUUID();
           }
-          this._register_listener(element, event2, handler);
+          this._register_listener(element, event, handler, use_capture);
         };
       };
     }
@@ -1835,113 +1994,56 @@
 
   // src/server/static/js/modules/form.js
   var require_form = __commonJS({
-    "src/server/static/js/modules/form.js"(exports2) {
-      var { Logger: Logger3 } = require_logger();
-      exports2.Form = class Form {
-        static ACTIONS = ["nd-accept", "nd-apply", "nd-dismiss", "nd-revert", "nd-clear"];
-        static REQUIRED_ACTIONS = ["nd-accept"];
+    "src/server/static/js/modules/form.js"(exports) {
+      var { Logger: Logger2 } = require_logger();
+      var { ND_EVENTS } = require_constants();
+      exports.Form = class Form {
         constructor(form) {
-          this.logger = new Logger3("Form");
+          this.logger = new Logger2("Form");
           this.form = form;
           this.form_str = nd.util.serialize_form(this.form);
           this.is_dirty = false;
           this.confirm_dialog = null;
           this.accept_url = null;
           this.dismiss_url = null;
-          this.event_listeners = [];
-          nd.util.set_uuid(this.form);
-          this.confirm_dialog = this.get_confirm_dialog(this.form);
-          Form.ACTIONS.forEach((action) => {
-            const element = form.querySelector(`[${action}]`);
-            switch (action) {
-              case "nd-accept":
-                if (element) {
-                  element.addEventListener("click", this.accept);
-                  this.event_listeners.push({ element, event: "click", handler: this.accept });
-                  this.accept_url = element.getAttribute("nd-url") || null;
-                }
-                break;
-              case "nd-apply":
-                if (element) {
-                  element.addEventListener("click", this.apply);
-                  this.event_listeners.push({ element, event: "click", handler: this.apply });
-                }
-                break;
-              case "nd-dismiss":
-                if (element) {
-                  element.addEventListener("click", this.dismiss);
-                  this.event_listeners.push({ element, event: "click", handler: this.dismiss });
-                  this.dismiss_url = element.getAttribute("nd-url") || null;
-                }
-                break;
-              case "nd-revert":
-                if (element) {
-                  element.addEventListener("click", this.revert);
-                  this.event_listeners.push({ element, event: "click", handler: this.revert });
-                }
-                break;
-              case "nd-clear":
-                if (element) {
-                  element.addEventListener("click", this.clear);
-                  this.event_listeners.push({ element, event: "click", handler: this.clear });
-                }
-                break;
-            }
+          const form_actions = [
+            { name: "nd-accept", element: form.querySelector("[nd-accept]"), handler: this.accept, required: true },
+            { name: "nd-apply", element: form.querySelector("[nd-apply]"), handler: this.apply, required: false },
+            { name: "nd-dismiss", element: form.querySelector("[nd-dismiss]"), handler: this.dismiss, required: false },
+            { name: "nd-revert", element: form.querySelector("[nd-revert]"), handler: this.revert, required: false },
+            { name: "nd-clear", element: form.querySelector("[nd-clear]"), handler: this.clear, required: false }
+          ];
+          const template_id = form.getAttribute("nd-confirm");
+          console.log("TID", template_id);
+          if (template_id) {
+            this.confirm_dialog = nd.dialog.get(template_id);
+            console.log("Confirm", this.confirm_dialog);
+          }
+          form_actions.forEach((a) => {
+            a.required && !a.element ? this.logger.error(`Required element with an '${a.name}' attribute is required !`) : () => {
+            };
+            a.element ? nd.tracker.add_listener(a.element, "click", a.handler) : () => {
+            };
+            a.name === "nd-accept" && a.element ? this.accept_url = a.element.getAttribute("nd-url") : () => {
+            };
+            a.name === "nd-dismiss" && a.element ? this.dismiss_url = a.element.getAttribute("nd-url") : () => {
+            };
           });
           form.querySelectorAll("[name]").forEach((field) => {
-            field.addEventListener("change", this.on_change);
-            this.event_listeners.push({ element: field, event: "change", handler: this.on_change });
+            nd.tracker.add_listener(field, "change", this.on_change);
           });
-          this.form.addEventListener("submit", this.on_submit);
-          this.event_listeners.push({ element: this.form, event: "submit", handler: this.on_submit });
+          nd.tracker.add_listener(this.form, "submit", this.on_submit);
+          nd.tracker.add_listener(this.form, ND_EVENTS.FORM_RESET, this.on_reset_request);
         }
-        get_confirm_dialog = (form) => {
-          const nd_confirm = form.querySelector("[nd-confirm]");
-          let args = {};
-          if (nd_confirm) {
-            args.title = nd_confirm.getAttribute("nd-title") || "No title";
-            args.message = nd_confirm.getAttribute("nd-message") || "No message";
-            if (nd_confirm.querySelector("[nd-button"))
-              args.buttons = [];
-            nd_confirm.querySelectorAll("[nd-button]").forEach((btn) => {
-              const dict = {};
-              dict.action = btn.getAttribute("nd-action") || "dismiss";
-              dict.label = btn.getAttribute("nd-label") || dict.action;
-              dict.url = btn.getAttribute("nd-url") || null;
-              args.buttons.push(dict);
-            });
-          } else {
-            args = {
-              title: "Approval needed",
-              message: "Apply form changes ?",
-              buttons: [
-                { action: "accept", label: "Yes" },
-                { action: "dismiss", label: "No" }
-              ]
-            };
-          }
-          return nd.dialog_factory.create("two-button", args);
-        };
-        close = (reason) => {
+        close = async (reason) => {
           this.logger.info(`Closing form. Reason: '${reason}.'`);
-          const nd_dialog = this.form.closest("[nd-dialog]");
-          this.logger.info(`Removing attached event listeners (${this.event_listeners.length}).`);
-          this.event_listeners.forEach((listener) => {
-            listener.element.removeEventListener(listener.event, listener.handler);
-          });
-          this.form.remove();
-          if (nd_dialog) {
-            const dialog_id = nd_dialog.id;
-            this.logger.info(`Closing the containing dialog (${dialog_id}).`);
-            document.dispatchEvent(new Event(`nd:close:${dialog_id}`));
-          }
           switch (reason) {
             case "accept":
-              this.accept_url ? nd.util.navigate_to(this.accept_url) : () => {
+              this.accept_url ? await nd.fetcher.fetch_data(this.accept_url) : () => {
               };
               break;
             case "dismiss":
-              this.dismiss_url ? nd.util.navigate_to(this.dismiss_url) : () => {
+              this.dismiss_url ? await nd.fetcher.fetch_data(this.dismiss_url) : () => {
               };
               break;
           }
@@ -1951,25 +2053,29 @@
           this.form_str = nd.util.serialize_form(this.form);
           this.is_dirty = false;
         };
+        on_reset_request = (event) => {
+          this.form.reset();
+          const first_input = this.form.querySelector("input");
+          first_input ? first_input.focus() : () => {
+          };
+        };
         on_change = () => {
           this.is_dirty = this.form_str !== nd.util.serialize_form(this.form);
         };
-        on_submit = (event2) => {
-          this.logger.info("Submit event !");
-          event2.preventDefault();
+        on_submit = (event) => {
+          event.preventDefault();
         };
         confirm = async () => {
-          const result = await this.confirm_dialog.run();
-          return result === "accept";
+          return this.confirm_dialog ? await this.confirm_dialog.run() === "accept" : true;
         };
-        accept = () => {
+        accept = async () => {
           if (!this.form.reportValidity())
             return;
           this.logger.info(`Submit: submitting. Form is valid.`);
-          nd.fetcher.send_form(this.form);
+          await nd.fetcher.send_form(this.form);
           this.close("accept");
         };
-        apply = () => {
+        apply = async () => {
           if (!this.is_dirty) {
             this.logger.info("Apply: no changes.");
             return;
@@ -1977,23 +2083,23 @@
           if (!this.form.reportValidity())
             return;
           this.logger.info(`Apply: submitting. Form is valid.`);
-          nd.fetcher.send_form(this.form);
+          await nd.fetcher.send_form(this.form);
           this.save_state();
         };
         dismiss = async () => {
           this.logger.info("Dismissing, dirty form: ", this.is_dirty);
-          let do_proceed2 = true;
+          let do_proceed = true;
           if (this.is_dirty)
-            do_proceed2 = await this.confirm();
-          do_proceed2 ? this.close("dismiss") : () => {
+            do_proceed = await this.confirm();
+          do_proceed ? this.close("dismiss") : () => {
           };
         };
         clear = async () => {
           this.logger.info("Clearing, dirty form: ", this.is_dirty);
-          let do_proceed2 = true;
+          let do_proceed = true;
           if (this.is_dirty)
-            do_proceed2 = await this.confirm();
-          do_proceed2 ? this.form.reset() : () => {
+            do_proceed = await this.confirm();
+          do_proceed ? this.form.reset() : () => {
           };
         };
         revert = async () => {
@@ -2016,12 +2122,12 @@
 
   // src/server/static/js/modules/form_handler.js
   var require_form_handler = __commonJS({
-    "src/server/static/js/modules/form_handler.js"(exports2) {
-      var { Logger: Logger3 } = require_logger();
+    "src/server/static/js/modules/form_handler.js"(exports) {
+      var { Logger: Logger2 } = require_logger();
       var { Form } = require_form();
-      exports2.FormHandler = class FormHandler {
+      exports.FormHandler = class FormHandler {
         constructor() {
-          this.logger = new Logger3("FormHandler");
+          this.logger = new Logger2("FormHandler");
           this.forms = [];
         }
         /**
@@ -2033,16 +2139,6 @@
           fragment.querySelectorAll("[nd-form]").forEach((element) => {
             if (element.tagName !== "FORM") {
               this.logger.error(`The 'nd-form' attribute can only be on a <form> element !`);
-              return;
-            }
-            let ok_count = 0;
-            Form.REQUIRED_ACTIONS.forEach((action) => {
-              element.querySelector(`[${action}]`) ? ok_count++ : () => {
-              };
-            });
-            if (ok_count !== Form.REQUIRED_ACTIONS.length) {
-              this.logger.error(`Please ensure that ${Form.REQUIRED_ACTIONS.join(" and ")} action elements (e. g. <button>, <a>, ...) are set.
-  Element:`, element);
               return;
             }
             new Form(element);
@@ -2060,12 +2156,13 @@
 
   // src/server/static/js/modules/fetcher.js
   var require_fetcher = __commonJS({
-    "src/server/static/js/modules/fetcher.js"(exports2) {
+    "src/server/static/js/modules/fetcher.js"(exports) {
       var { ND_EVENTS, VERSION } = require_constants();
       var { Download } = require_constants();
-      var { Logger: Logger3 } = require_logger();
-      exports2.Fetcher = class Fetcher2 {
-        static LOGGER = new Logger3("Fetcher", true);
+      var { Logger: Logger2 } = require_logger();
+      exports.Fetcher = class Fetcher2 {
+        static LOGGER = new Logger2("Fetcher", true);
+        static METHODS = ["get", "post", "nav"];
         // Singleton constructor !
         constructor() {
           if (!!Fetcher2._instance) {
@@ -2073,8 +2170,13 @@
           }
           this.logger = Fetcher2.LOGGER;
           Fetcher2._instance = this;
+          this.main_container = null;
           this.events = [];
         }
+        set_main_container = (element) => {
+          this.logger.info(`The main container is `, element);
+          this.main_container = element;
+        };
         _process_headers = (headers) => {
           let headers_dump = [];
           headers.forEach((v, k) => {
@@ -2101,18 +2203,23 @@ ${headers_dump.join("\n")}`);
         // Dispatch received events !
         _process_events = (payload) => {
           this.logger.info(`Processing events...`);
-          this.events.forEach((event2) => {
-            this.logger.info(`Event: `, event2);
-            const type = event2.type;
-            switch (type) {
-              case "nd:download":
-                event2.detail.data = payload;
-                break;
-              default:
-                break;
+          this.events.forEach((event) => {
+            this.logger.info(`Event: `, event);
+            const type = event.type;
+            let target = document;
+            if (type === ND_EVENTS.DOWNLOAD)
+              event.detail.data = payload;
+            if (type === ND_EVENTS.FORM_RESET) {
+              const form_id = event.detail.form_id;
+              target = document.querySelector(`[data-ndtrack="${form_id}"]`);
             }
-            this.logger.info(`Dispatching event '${type}'. Detail: '${JSON.stringify(event2.detail)}'.`);
-            document.dispatchEvent(new CustomEvent(type, { detail: event2.detail }));
+            const detail = JSON.stringify(event.detail);
+            if (target) {
+              this.logger.info(`Dispatching event '${type}'. Detail: '${detail}'.`);
+              target.dispatchEvent(new CustomEvent(type, { detail: event.detail }));
+            } else {
+              this.logger.warn(`No target found for event '${type}'. Detail: '${detail}'.`);
+            }
           });
           return payload;
         };
@@ -2123,7 +2230,7 @@ ${headers_dump.join("\n")}`);
           let data = null;
           request.headers.append("X-Nd-Version", `"${VERSION}"`);
           request.headers.append("X-Nd-Url", `"${request.url}"`);
-          request.headers.append("X-Nd-Environment", `"${JSON.stringify(nd.environment)}"`);
+          request.headers.append("X-Nd-Environment", `${JSON.stringify(nd.environment)}`);
           document.dispatchEvent(new CustomEvent(ND_EVENTS.FETCH_BEFORE, { detail: { url, data: null, status } }));
           try {
             const response = await fetch(request);
@@ -2145,26 +2252,307 @@ ${headers_dump.join("\n")}`);
             return null;
           }
         }
-        send_form(form) {
+        async send_form(form) {
           if (!(form instanceof HTMLFormElement)) {
             this.logger.error("send_form: subitted data is not an HTMLFormElement.");
             return;
           }
-          return this.execute_fetch(
+          const body = new FormData(form);
+          body.append("form_id", form.dataset.ndtrack);
+          return await this.execute_fetch(
             new Request(form.action, {
               method: form.method,
-              body: new FormData(form)
+              body
             })
           );
         }
+        _redirect_to = async (url) => {
+          if (!url.startsWith("/")) {
+            this.logger.error(`Cannot navigate to '${url}'. Only relative URLs are allowed !`);
+            return;
+          }
+          if (url === "/") {
+            this.logger.error(`Navigation to '/' is not allowed !`);
+            return;
+          }
+          if (!this.main_container) {
+            this.logger.error(`Cannot navigate to '${url}'. No main contais defined !`);
+            return;
+          }
+          const request = new Request(url);
+          this.logger.info(`Fetching '${url}' in a 'get' request.`);
+          const data = await this.execute_fetch(request);
+          if (data) {
+            nd.util.clear_node(this.main_container);
+            const fragment = nd.util.create_fragment(data);
+            nd.util.insert_fragment(this.main_container, fragment, false, true);
+          }
+        };
         /**
          * fetch_data - fetch data from server as text
          */
         async fetch_data(url) {
-          this.logger.info(`fetch_data | Url: '${url}'.`);
-          const request = new Request(url);
-          return this.execute_fetch(request);
+          let [_method, _url] = ["get", url];
+          if (url.includes("::")) {
+            [_method, _url] = url.split("::");
+            if (!Fetcher2.METHODS.includes(_method)) {
+              this.logger.error(`Only ${Fetcher2.METHODS.join(" or ")} URL modifiers are allowed. Supplied method was '${_method}:'.`);
+              return;
+            }
+          }
+          if (_method === "nav") {
+            await this._redirect_to(_url);
+            return;
+          }
+          const request = new Request(_url, { method: _method });
+          this.logger.info(`Fetching '${_url}' in a '${_method}' request.`);
+          return await this.execute_fetch(request);
         }
+        redirect = async (url) => {
+          if (!url)
+            return;
+          url.startsWith("nav::") ? () => {
+          } : url = "nav::" + url;
+          return await this.fetch_data(url);
+        };
+      };
+    }
+  });
+
+  // src/server/static/js/modules/notification.js
+  var require_notification = __commonJS({
+    "src/server/static/js/modules/notification.js"(exports) {
+      var { Logger: Logger2 } = require_logger();
+      var { Alert: Alert2, Toast: Toast2 } = require_dialogs();
+      var MODE = "mode";
+      var MODES = ["alert", "toast"];
+      var PARAMS_ALERT = [
+        { name: "mode", required: true, defaut: null },
+        { name: "severity", required: true, default: "primary" },
+        { name: "message", required: true, default: "Missing message !" },
+        { name: "url", required: false, default: null }
+      ];
+      var PARAMS_TOAST = [
+        { name: "mode", required: true, defaut: null },
+        { name: "title", required: true, default: "No title defined !" },
+        { name: "message", required: true, default: "Missing message !" },
+        { name: "url", required: false, default: null }
+      ];
+      exports.Notification = class Notification2 {
+        static LOGGER = new Logger2("Notification", true);
+        constructor() {
+          if (!!Notification2._instance) {
+            return Notification2._instance;
+          }
+          this.logger = Notification2.LOGGER;
+          Notification2._instance = this;
+        }
+        get_dict = (template) => {
+          const result = {};
+          const warnings = [];
+          const errors = [];
+          const mode = template.content.querySelector('[name="mode"]').value.toLowerCase();
+          let checklist = null;
+          switch (mode) {
+            case "alert":
+              checklist = PARAMS_ALERT;
+              break;
+            case "toast":
+              checklist = PARAMS_TOAST;
+              break;
+          }
+          checklist.forEach((item) => {
+            const param = template.content.querySelector(`[name="${item.name}"]`);
+            if (!param) {
+              if (item.required) {
+                errors.push(`${mode} : required parameter '${item.name}' is missing in template with 'id=${template.id}'.`);
+              } else {
+                warnings.push(`${mode} : optional parameter '${item.name}' is missing in template with 'id=${template.id}'.`);
+              }
+            }
+            result[item.name] = param ? param.value : item.default;
+          });
+          if (errors) {
+            errors.forEach((error) => {
+              this.logger.error(error);
+            });
+          }
+          if (warnings) {
+            warnings.forEach((warning) => {
+              this.logger.info(warning);
+            });
+          }
+          return result;
+        };
+        get = (template_id) => {
+          const template = document.getElementById(template_id);
+          if (!template) {
+            this.logger.error(`Template with 'id=${template_id}' not found.`);
+            return;
+          }
+          const param_names = [];
+          template.content.querySelectorAll("param").forEach((p) => {
+            param_names.push(p.name);
+          });
+          if (!param_names.includes(MODE)) {
+            this.logger.error(`Parameter '${MODE}' is missing in template with 'id=${template_id}'.`);
+            return;
+          }
+          const mode = template.content.querySelector('[name="mode"]').value.toLowerCase();
+          if (!MODES.includes(mode)) {
+            this.logger.error(`Parameter '${MODE}' must be ${MODES.join(" or ")} in template with 'id=${template_id}'.`);
+            return;
+          }
+          const dict = this.get_dict(template);
+          switch (dict.mode) {
+            case "alert":
+              return new Alert2(dict);
+            case "toast":
+              return new Toast2(dict);
+          }
+        };
+        show = (template_id) => {
+          const dialog = this.get(template_id);
+          if (dialog)
+            dialog.show();
+        };
+      };
+    }
+  });
+
+  // src/server/static/js/modules/dialog.js
+  var require_dialog = __commonJS({
+    "src/server/static/js/modules/dialog.js"(exports) {
+      var { Logger: Logger2 } = require_logger();
+      var { OneButtonDialog, TwoButtonDialog, ThreeButtonDialog, ConfirmDialog: ConfirmDialog2 } = require_dialogs();
+      var MODE = "mode";
+      var MODES = ["info", "choice", "options", "secure"];
+      var PARAMS_INFO = [
+        { name: "mode", required: true, defaut: null },
+        { name: "title", required: true, default: "Missing title !" },
+        { name: "message", required: true, default: "Missing message !" },
+        { name: "accept", required: true, default: "OK" },
+        { name: "accept_url", required: false, default: null }
+      ];
+      var PARAMS_CHOICE = [
+        { name: "mode", required: true, defaut: null },
+        { name: "title", required: true, default: "Missing title !" },
+        { name: "message", required: true, default: "Missing message !" },
+        { name: "accept", required: true, default: "OK" },
+        { name: "accept_url", required: false, default: null },
+        { name: "dismiss", required: true, default: "Cancel" },
+        { name: "dismiss_url", required: false, default: null }
+      ];
+      var PARAMS_SECURE = [
+        { name: "mode", required: true, defaut: null },
+        { name: "title", required: true, default: "Missing title !" },
+        { name: "message", required: true, default: "Missing message !" },
+        { name: "confirm", required: true, default: "Please confirm" },
+        { name: "accept", required: true, default: "OK" },
+        { name: "accept_url", required: false, default: null },
+        { name: "dismiss", required: true, default: "Cancel" },
+        { name: "dismiss_url", required: false, default: null }
+      ];
+      var PARAMS_OPTIONS = [
+        { name: "mode", required: true, defaut: null },
+        { name: "title", required: true, default: "Missing title !" },
+        { name: "message", required: true, default: "Missing message !" },
+        { name: "accept", required: true, default: "OK" },
+        { name: "accept_url", required: false, default: null },
+        { name: "apply", required: true, default: "OK" },
+        { name: "apply_url", required: false, default: null },
+        { name: "dismiss", required: true, default: "Cancel" },
+        { name: "dismiss_url", required: false, default: null }
+      ];
+      exports.Dialog = class Dialog2 {
+        static LOGGER = new Logger2("Dialog", true);
+        constructor() {
+          if (!!Dialog2._instance) {
+            return Dialog2._instance;
+          }
+          this.logger = Dialog2.LOGGER;
+          Dialog2._instance = this;
+        }
+        get_dict = (template) => {
+          const result = {};
+          const warnings = [];
+          const errors = [];
+          const mode = template.content.querySelector('[name="mode"]').value.toLowerCase();
+          let checklist = null;
+          switch (mode) {
+            case "info":
+              checklist = PARAMS_INFO;
+              break;
+            case "choice":
+              checklist = PARAMS_CHOICE;
+              break;
+            case "options":
+              checklist = PARAMS_OPTIONS;
+              break;
+            case "secure":
+              checklist = PARAMS_SECURE;
+              break;
+          }
+          checklist.forEach((item) => {
+            const param = template.content.querySelector(`[name="${item.name}"]`);
+            if (!param) {
+              if (item.required) {
+                errors.push(`${mode} : required parameter '${item.name}' is missing in template with 'id=${template.id}'.`);
+              } else {
+                warnings.push(`${mode} : optional parameter '${item.name}' is missing in template with 'id=${template.id}'.`);
+              }
+            }
+            result[item.name] = param ? param.value : item.default;
+          });
+          if (errors) {
+            errors.forEach((error) => {
+              this.logger.error(error);
+            });
+          }
+          if (warnings) {
+            warnings.forEach((warning) => {
+              this.logger.info(warning);
+            });
+          }
+          return result;
+        };
+        get = (template_id) => {
+          const template = document.getElementById(template_id);
+          if (!template) {
+            this.logger.error(`Template with 'id=${template_id}' not found.`);
+            return;
+          }
+          const param_names = [];
+          template.content.querySelectorAll("param").forEach((p) => {
+            param_names.push(p.name);
+          });
+          if (!param_names.includes(MODE)) {
+            this.logger.error(`Parameter '${MODE}' is missing in template with 'id=${template_id}'.`);
+            return;
+          }
+          const mode = template.content.querySelector('[name="mode"]').value.toLowerCase();
+          if (!MODES.includes(mode)) {
+            this.logger.error(`Parameter '${MODE}' must be ${MODES.join(" or ")} in template with 'id=${template_id}'.`);
+            return;
+          }
+          const dict = this.get_dict(template);
+          switch (dict.mode) {
+            case "info":
+              return new OneButtonDialog(dict);
+            case "choice":
+              return new TwoButtonDialog(dict);
+            case "options":
+              return new ThreeButtonDialog(dict);
+            case "secure":
+              return new ConfirmDialog2(dict);
+          }
+          return null;
+        };
+        show = (template_id) => {
+          const dialog = this.get(template_id);
+          if (dialog)
+            dialog.show();
+        };
       };
     }
   });
@@ -2172,9 +2560,9 @@ ${headers_dump.join("\n")}`);
   // src/server/static/js/main.js
   var { INFOS, DIALOG_CONTAINER, NOTIFICATION_CONTAINER } = require_constants();
   var { Debug } = require_debug();
-  var { Logger: Logger2 } = require_logger();
+  var { Logger } = require_logger();
   var PROG_INFO = `${INFOS.PROGNAME} ${INFOS.VERSION}`;
-  var core_logger = new Logger2("Core", true);
+  var core_logger = new Logger("Core", true);
   core_logger.info(`${PROG_INFO} : initializing...`);
   var { Util } = require_util();
   var { Events } = require_events();
@@ -2190,7 +2578,9 @@ ${headers_dump.join("\n")}`);
   var { HandlerTracker } = require_handler_tracker();
   var { FormHandler } = require_form_handler();
   var { Fetcher } = require_fetcher();
-  var { Alert, DialogFactory, ConfirmDialog, Toast } = require_dialogs();
+  var { Notification } = require_notification();
+  var { Dialog } = require_dialog();
+  var { Alert, ConfirmDialog, Toast } = require_dialogs();
   if (typeof bootstrap === "undefined")
     throw new Error("Bootstrap library not present !");
   var bs_version = bootstrap.Tooltip.VERSION;
@@ -2210,8 +2600,10 @@ ${headers_dump.join("\n")}`);
         fetcher: new Fetcher(),
         core_logger,
         // The 'Core' logger
-        dialog_factory: new DialogFactory(),
+        // dialog_factory: new DialogFactory(),
         tracker: new HandlerTracker(),
+        notification: new Notification(),
+        dialog: new Dialog(),
         dialog_container: null,
         notification_container: null,
         environment: [],
@@ -2275,6 +2667,12 @@ ${headers_dump.join("\n")}`);
         on_dom_ready: () => {
           nd.dialog_container = document.querySelector(`[${DIALOG_CONTAINER}]`);
           nd.notification_container = document.querySelector(`[${NOTIFICATION_CONTAINER}]`);
+          const nd_init2 = document.querySelector("[nd-init]");
+          if (nd_init2) {
+            nd.fetcher.set_main_container(nd_init2);
+          } else {
+            core_logger.warn(`No 'nd-init' element found in the document !`);
+          }
           core_logger.info(`Creating handlers...`);
           nd.create_handlers();
           core_logger.info(`Refreshing the document...`);
@@ -2284,16 +2682,16 @@ ${headers_dump.join("\n")}`);
       resolve(nd_core);
     });
   };
-  navigation.addEventListener("navigate", (event2) => {
-    const url = new URL(event2.destination.url);
-    const is_download = event2.sourceElement.hasAttribute("download");
+  navigation.addEventListener("navigate", (event) => {
+    const url = new URL(event.destination.url);
+    const is_download = event.sourceElement.hasAttribute("download");
     if (!is_download) {
-      event2.preventDefault();
-      core_logger.info(`Prevented navigation to '${event2.destination.url}'.`);
+      event.preventDefault();
+      core_logger.info(`Prevented navigation to '${event.destination.url}'.`);
     }
   });
-  document.addEventListener("submit", (event2) => {
-    console.log("Submit", event2);
+  document.addEventListener("submit", (event) => {
+    console.log("Submit", event);
   });
   var on_dom_loaded = async () => {
     nd.on_dom_ready();

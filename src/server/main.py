@@ -7,7 +7,7 @@ from flask import render_template, request
 import lorem
 from packages.src.flask_spa import FlaskSpa
 from packages.src.flask_spa.event_factory import Button
-from packages.src.flask_spa.types import ButtonAction, ZoneField, Zone
+from packages.src.flask_spa.types import ButtonAction, ZoneField, Zone, ContextAction
 
 PROD_MODE = False
 
@@ -63,10 +63,52 @@ def forms():
     return render_template("tests/forms.html")
 
 
+# =======================================================================
+# ICC tests
+@app.route("/icc")
+def icc():
+    app.title("ICC")
+    return render_template("tests/icc.html")
+
+
+@app.route("/icc/<string:brand>")
+def icc_models(brand=""):
+    result = []
+
+    match brand:
+        case "volkswagen":
+            result.append('<option value="polo">Polo</option>')
+            result.append('<option value="passat">Passat</option>')
+            result.append('<option value="golf">Golf</option>')
+        case "mercedes":
+            result.append('<option value="class_a">Classe A</option>')
+            result.append('<option value="gle">GLE</option>')
+            result.append('<option value="eqc">EQC</option>')
+
+    return "".join(result)
+
+
 @app.route("/environment")
 def environment():
     app.title("Environment")
-    app.get_env("key_name")
+    x = app.get_env("key_name").str()
+    print("X", x, type(x))
+
+    x = app.get_env("integer").int()
+    print("X", x, type(x))
+
+    x = app.get_env("float").float()
+    print("X", x, type(x))
+
+    x = app.get_env("float").int()
+    print("X", x, type(x))
+
+    x = app.get_env("bool").bool()
+    print("X", x, type(x))
+
+    x = app.get_env("bool").str()
+    print("X", x, type(x))
+
     return render_template("tests/environment.html")
 
 
@@ -75,6 +117,9 @@ def environment():
 @app.route("/environment/set")
 def set_env():
     app.set_env("key_name", "Testor was here !")
+    app.set_env("integer", 1)
+    app.set_env("float", 1243.333)
+    app.set_env("bool", 0)
     return ""
 
 
@@ -91,26 +136,28 @@ def websession_endpoint(arg=""):
     VALID_USERS = {"user@test.com", "admin@test.com", "superadmin@test.com"}
 
     if request.method == "POST":
-        # Get the email from the POSTed data
+        # Get the email and the form id from the POSTed data
         email = request.form.get("email", None)
+        form_id = request.form.get("form_id", "")
 
         if email in VALID_USERS:
+            # Trigger a success alert and set the context to 'authenticated'
             app.alert("success", f"You are logged in ! Your email is <strong>{email}</strong>.")
-            app.set_context("authenticated")  # Set the context to 'authenticated'
-            app.zone("forms", "remove")  # Remove the sign-up form from the DOM
+            app.context("authenticated", "set")
         else:
+            # Trigger an alert and reset the form
             app.alert("danger", "Login failed !")
-            app.zone("forms", "clear")  # Clear the sign-up form
+            app.reset_form(form_id)
 
     if request.method == "GET":
         if arg == "login":
-            # Get the login form.
-            # It will be injected into the <div id="forms" ...> element via the nd-target="#forms" attrtibute in the
+            # Provide the login form.
+            # It will be injected into the <div id="forms" .../> element via the nd-target="#forms" attrtibute in the
             # <a ... nd-target="#forms" ...>Login</a> element.
             return render_template("/partials/login_form.html")
         if arg == "logout":
             app.alert("success", "You are logged out !")
-            app.reset_context("authenticated")  # Remove 'authenticated' context
+            app.context("authenticated", "reset")  # Remove 'authenticated' context
 
     return ""
 
@@ -122,14 +169,14 @@ def websession_endpoint(arg=""):
 @app.route("/context_test/<string:action>/<string:context>")
 def context_test(action="", context=""):
     if action == "clear":
-        app.clear_context()
+        app.context("", "clear")
         return ""
 
     if context:
         if action == "set":
-            app.set_context(context)
+            app.context(context, "set")
         if action == "reset":
-            app.reset_context(context)
+            app.context(context, "reset")
     return ""
 
 
@@ -171,13 +218,13 @@ def zone_test(zone="", action="update"):
     return f"ZONES {now}"
 
 
-@app.route("/posted/<string:arg>", methods=["GET", "POST"])
+@app.route("/form/<string:arg>", methods=["GET", "POST"])
 def posted(arg: str):
     if request.method == "POST":
-        app.alert("primary", "posted : POST !")
+        app.alert("primary", f"POST with arg={arg}")
 
     if request.method == "GET":
-        app.alert("primary", "posted : GET !")
+        app.alert("primary", f"GET with arg={arg}")
 
     return ""
 
@@ -201,8 +248,8 @@ def lorem_ipsum(arg="-1"):
 def sse(arg="No arg"):
 
     if request.method == "POST":
-        print(request.form)
-        app.alert("success", "A form was posted !")
+        print("POST:", request.form)
+        app.alert("success", f"A form was posted ! arg={arg}")
         return ""
 
     arg = arg.strip().lower()
@@ -221,7 +268,7 @@ def sse(arg="No arg"):
                 Button(ButtonAction.ACCEPT, "Oh oui", "/_accept"),
                 Button(ButtonAction.DISMISS, "Non merci", "/_dismiss"),
             ]
-            app.button_dialog("This is a one button dialog", "And this is my <b>message</b>", buttons)
+            app.button_dialog("This is a two button dialog", "And this is my <b>message</b>", buttons)
         case "three_button":
             buttons = [
                 Button(ButtonAction.ACCEPT, "Oh oui", "/_accept"),
@@ -277,15 +324,15 @@ def poll_raw():
 
 @app.route("/pollpoll")
 def pollpoll():
-    return '<div nd-poll nd-url="/poll" nd-interval="1000" class="mb-3 border p-1 text-danger">New poller !</div>'
+    return '<div nd-poll nd-url="/poll" nd-interval="1000" class="Xmb-3 Xborder Xp-1 text-danger">New poller !</div>'
 
 
 # =======================================================================
 # SSE Links
-@app.route("/linktest")
-def link_test():
+@app.route("/links")
+def links():
     app.title("Links")
-    return render_template("tests/link-test.html")
+    return render_template("tests/links.html")
 
 
 # =======================================================================
@@ -294,12 +341,6 @@ def link_test():
 def selects():
     app.title("Selects")
     return render_template("tests/selects.html")
-
-
-@app.route("/selects/enhanced")
-def selects_enhanced():
-    app.title("Enhanced Selects")
-    return render_template("tests/selects_enhanced.html")
 
 
 @app.route("/select-options")

@@ -22,14 +22,24 @@
 <!-- Menu -->
 <div class="border-bottom border-top pb-2 pt-2 mt-3">
     <!-- Items that are always shown -->
-    <a href="/websession" nd-link class="border-end ps-2 pe-2">Welcome</a>
-    <a href="/websession" nd-link class="border-end ps-2 pe-2">News</a>
-    <a href="/websession" nd-link class="border-end ps-2 pe-2">Contact</a>
+    <a nd-link nd-action="alert('Welcome Page')" class="border-end ps-2 pe-2">Welcome</a>
+    <a nd-link nd-action="alert('News Page')" class="border-end ps-2 pe-2">News</a>
+    <a nd-link nd-action="alert('Contact Page')" class="border-end ps-2 pe-2">Contact</a>
     <!-- Context dependent items -->
-    <a nd-context="authenticated" href="/websession/admin" nd-link class="border-end ps-2 pe-2">My Account</a>
-    <a nd-context="authenticated:hide" href="/websession/login" nd-link nd-target="#forms" class="border-end ps-2 pe-2">Login</a>
-    <a nd-context="authenticated" href="/websession/logout" nd-link class="border-end ps-2 pe-2">Logout</a>
+    <a nd-link nd-context="authenticated" nd-action="alert('My Account Page')" class="border-end ps-2 pe-2">My Account</a>
+    <a nd-link nd-context="authenticated:hide" href="/websession/login" nd-target="#forms" class="border-end ps-2 pe-2">Login</a>
+    <a nd-link nd-context="authenticated" nd-confirm="logout_dialog" href="/websession/logout" class="border-end ps-2 pe-2">Logout</a>
 </div>
-<div id="forms" nd-context="authenticated:hide" nd-zone="forms">
+<div id="forms" nd-context="authenticated:remove">
     <!-- Form will be updated by SSE -->
 </div>
+
+<!-- The logout confirmation dialog template -->
+<template id="logout_dialog">
+    <param name="mode" value="choice">
+    <param name="title" value="Logout">
+    <param name="message" value="Do you want to close this session ?">
+    <param name="confirm" value=""> <!-- Not relevant here ! -->
+    <param name="accept" value="Yes">
+    <param name="dismiss" value="No">
+</template>

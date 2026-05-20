@@ -20,7 +20,7 @@ Date: 2024-06
 from io import BytesIO
 from typing import List
 
-from .types import Alert, Button, ConfirmDialog, ContextAction, Title, EnvironmentAction, CustomDialog, Dialog, Download, DownloadMode, Event, ZoneAction, EventSeverity, EventType, Stream, Toast, Urls, ZoneField, Zone
+from .types import Alert, Button, ContextAction, Title, EnvironmentAction, CustomDialog, Download, DownloadMode, Event, ZoneAction, EventSeverity, EventType, Stream, Toast, Urls, ZoneField, Zone
 
 
 class EventFactory:
@@ -32,7 +32,7 @@ class EventFactory:
         return result
 
     @staticmethod
-    def environment(action: EnvironmentAction, key: str = "", value: str = "") -> Event:
+    def environment(action: EnvironmentAction, key: str = "", value="") -> Event:
         result = Event(EventType.ENVIRONMENT)
         result.detail = dict(action=action, key=key, value=value)
 
@@ -76,12 +76,18 @@ class EventFactory:
     @staticmethod
     def confirm(title: str, message: str, confirm_label: str, buttons: List[Button]) -> Event:
         result = Event(EventType.CONFIRM)
-        result.detail = ConfirmDialog(title, message, buttons, confirm_label).as_dict()
+        result.detail = {
+            "title": title,
+            "message": message,
+            "confirm": confirm_label,
+        }
+        [result.detail.update(b.as_dict()) for b in buttons]
 
         return result
 
     @staticmethod
     def button_dialog(title: str, message: str, buttons: List[Button]) -> Event:
+
         result = Event(EventType.NONE)
         # Dialog type
         match len(buttons):
@@ -91,7 +97,12 @@ class EventFactory:
                 result = Event(EventType.TWO_BUTTON)
             case 3:
                 result = Event(EventType.THREE_BUTTON)
-        result.detail = Dialog(title, message, buttons).as_dict()
+
+        result.detail = {
+            "title": title,
+            "message": message,
+        }
+        [result.detail.update(b.as_dict()) for b in buttons]
 
         return result
 
@@ -107,5 +118,12 @@ class EventFactory:
         result = Event(EventType.DOWNLOAD)
         result.detail = Download(True, mimetype, filename, mode).as_dict()
         result.stream = Stream(filename, mimetype, data)
+
+        return result
+
+    @staticmethod
+    def reset_form(form_id: str) -> Event:
+        result = Event(EventType.RESET_FORM)
+        result.detail = dict(form_id=form_id)
 
         return result

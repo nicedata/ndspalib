@@ -4,6 +4,7 @@ const { Logger } = require("./logger.js");
 
 exports.Fetcher = class Fetcher {
     static LOGGER = new Logger("Fetcher", true);
+    static METHODS = ["get", "post", "nav"];
     // Singleton constructor !
     constructor() {
         if (!!Fetcher._instance) {
@@ -11,8 +12,14 @@ exports.Fetcher = class Fetcher {
         }
         this.logger = Fetcher.LOGGER;
         Fetcher._instance = this;
+        this.main_container = null;
         this.events = [];
     }
+
+    set_main_container = (element) => {
+        this.logger.info(`The main container is `, element);
+        this.main_container = element;
+    };
 
     _process_headers = (headers) => {
         let headers_dump = [];
@@ -43,17 +50,22 @@ exports.Fetcher = class Fetcher {
         this.events.forEach((event) => {
             this.logger.info(`Event: `, event);
             const type = event.type;
+            let target = document;
 
-            switch (type) {
-                case "nd:download":
-                    event.detail.data = payload;
-                    break;
-                default:
-                    break;
+            if (type === ND_EVENTS.DOWNLOAD) event.detail.data = payload;
+            if (type === ND_EVENTS.FORM_RESET) {
+                // Find the form
+                const form_id = event.detail.form_id;
+                target = document.querySelector(`[data-ndtrack="${form_id}"]`);
             }
 
-            this.logger.info(`Dispatching event '${type}'. Detail: '${JSON.stringify(event.detail)}'.`);
-            document.dispatchEvent(new CustomEvent(type, { detail: event.detail }));
+            const detail = JSON.stringify(event.detail);
+            if (target) {
+                this.logger.info(`Dispatching event '${type}'. Detail: '${detail}'.`);
+                target.dispatchEvent(new CustomEvent(type, { detail: event.detail }));
+            } else {
+                this.logger.warn(`No target found for event '${type}'. Detail: '${detail}'.`);
+            }
         });
         return payload;
     };
@@ -67,7 +79,7 @@ exports.Fetcher = class Fetcher {
         // Add our own headers
         request.headers.append("X-Nd-Version", `"${VERSION}"`);
         request.headers.append("X-Nd-Url", `"${request.url}"`);
-        request.headers.append("X-Nd-Environment", `"${JSON.stringify(nd.environment)}"`);
+        request.headers.append("X-Nd-Environment", `${JSON.stringify(nd.environment)}`);
 
         // Trigger before fetch event
         document.dispatchEvent(new CustomEvent(ND_EVENTS.FETCH_BEFORE, { detail: { url: url, data: null, status: status } }));
@@ -102,27 +114,80 @@ exports.Fetcher = class Fetcher {
         }
     }
 
-    send_form(form) {
+    async send_form(form) {
         if (!(form instanceof HTMLFormElement)) {
             this.logger.error("send_form: subitted data is not an HTMLFormElement.");
             return;
         }
 
+        const body = new FormData(form);
+        body.append("form_id", form.dataset.ndtrack);
         // Build a new Request object
-        return this.execute_fetch(
+        return await this.execute_fetch(
             new Request(form.action, {
                 method: form.method,
-                body: new FormData(form),
+                body: body,
             }),
         );
     }
+
+    _redirect_to = async (url) => {
+        if (!url.startsWith("/")) {
+            this.logger.error(`Cannot navigate to '${url}'. Only relative URLs are allowed !`);
+            return;
+        }
+
+        if (url === "/") {
+            this.logger.error(`Navigation to '/' is not allowed !`);
+            return;
+        }
+
+        if (!this.main_container) {
+            this.logger.error(`Cannot navigate to '${url}'. No main contais defined !`);
+            return;
+        }
+
+        const request = new Request(url);
+        this.logger.info(`Fetching '${url}' in a 'get' request.`);
+        const data = await this.execute_fetch(request);
+        if (data) {
+            nd.util.clear_node(this.main_container);
+            const fragment = nd.util.create_fragment(data);
+            nd.util.insert_fragment(this.main_container, fragment, false, true);
+        }
+    };
 
     /**
      * fetch_data - fetch data from server as text
      */
     async fetch_data(url) {
-        this.logger.info(`fetch_data | Url: '${url}'.`);
-        const request = new Request(url);
-        return this.execute_fetch(request);
+        // Default method is GET !
+        let [_method, _url] = ["get", url];
+
+        // Handle URL prefxes
+        if (url.includes("::")) {
+            [_method, _url] = url.split("::");
+            if (!Fetcher.METHODS.includes(_method)) {
+                this.logger.error(`Only ${Fetcher.METHODS.join(" or ")} URL modifiers are allowed. Supplied method was '${_method}:'.`);
+                return;
+            }
+        }
+
+        if (_method === "nav") {
+            await this._redirect_to(_url);
+            return;
+        }
+
+        const request = new Request(_url, { method: _method });
+
+        this.logger.info(`Fetching '${_url}' in a '${_method}' request.`);
+
+        return await this.execute_fetch(request);
     }
+
+    redirect = async (url) => {
+        if (!url) return;
+        url.startsWith("nav::") ? () => {} : (url = "nav::" + url);
+        return await this.fetch_data(url);
+    };
 };

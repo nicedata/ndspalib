@@ -22,15 +22,15 @@ import mimetypes
 from io import BytesIO
 from os import PathLike
 from pathlib import Path
-from typing import List
+from typing import List, Dict, Any
 
 from flask import Flask
 
 from .event_factory import Button, EventFactory
 from .middleware import FlaskMiddleware
-from .types import Event, EventSeverity, ZoneAction, ZoneField
+from .types import Event, EventSeverity, ZoneAction, ZoneField, EnvValue, ContextAction
 
-__version__ = "0.1.10"
+__version__ = "0.1.11"
 
 
 class FlaskSpa(Flask):
@@ -73,6 +73,15 @@ class FlaskSpa(Flask):
         """
         self._middleware.add_event(event)
 
+    def _get_env_key(self, key: str) -> Dict[str, Any] | None:
+        json_str = self._middleware._request.headers.get("X-Nd-Environment") or '"[]"'
+        env = json.loads(json_str)
+
+        # Search
+        result = next((sub for sub in env if sub["key"] == key), None)
+
+        return result if result else None
+
     def is_spa_request(self) -> bool:
         return self._middleware.is_spa_request()
 
@@ -80,7 +89,7 @@ class FlaskSpa(Flask):
         self._send(EventFactory.title(value))
 
     # Environment
-    def set_env(self, key: str, value) -> None:
+    def set_env(self, key: str, value: Any) -> None:
         self._send(EventFactory.environment("set", key, value))
 
     def unset_env(self, key: str) -> None:
@@ -89,28 +98,21 @@ class FlaskSpa(Flask):
     def clear_env(self) -> None:
         self._send(EventFactory.environment("unset"))
 
-    def get_env(self, key: str) -> str:
-        json_str = self._middleware._request.headers.get("X-Nd-Environment") or '"[]"'
-        # Strip first and last " character
-        env = json.loads(json_str[1:-1])
-
-        # Search
-        res = next((sub for sub in env if sub["key"] == key), None)
-
-        return res["value"] if res else ""
+    def get_env(self, key: str) -> EnvValue:
+        result = self._get_env_key(key)
+        return EnvValue(result["value"]) if result else EnvValue(None)
 
     # Context
-    def set_context(self, context: str) -> None:
-        self._send(EventFactory.context(context, "set"))
-
-    def reset_context(self, context: str) -> None:
-        self._send(EventFactory.context(context, "reset"))
-
-    def clear_context(self) -> None:
-        self._send(EventFactory.context("", "clear"))
+    def context(self, context: str, action: ContextAction) -> None:
+        if action == "clear":
+            context = ""
+        self._send(EventFactory.context(context, action))
 
     def zone(self, zone: str, action: ZoneAction, fields: List[ZoneField] = []) -> None:
         self._send(EventFactory.zone(zone, action, fields))
+
+    def reset_form(self, form_id: str) -> None:
+        self._send(EventFactory.reset_form(form_id))
 
     def redirect_to(self, url: str = "") -> None:
         """Redirect the client to a specified URL.

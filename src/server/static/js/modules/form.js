@@ -1,9 +1,7 @@
 const { Logger } = require("./logger.js");
+const { ND_EVENTS } = require("../constants.js");
 
 exports.Form = class Form {
-    static ACTIONS = ["nd-accept", "nd-apply", "nd-dismiss", "nd-revert", "nd-clear"];
-    static REQUIRED_ACTIONS = ["nd-accept"];
-
     constructor(form) {
         this.logger = new Logger("Form");
         this.form = form;
@@ -12,140 +10,66 @@ exports.Form = class Form {
         this.confirm_dialog = null;
         this.accept_url = null;
         this.dismiss_url = null;
-        this.event_listeners = [];
 
-        // Set an UUID
-        nd.util.set_uuid(this.form);
+        const form_actions = [
+            { name: "nd-accept", element: form.querySelector("[nd-accept]"), handler: this.accept, required: true },
+            { name: "nd-apply", element: form.querySelector("[nd-apply]"), handler: this.apply, required: false },
+            { name: "nd-dismiss", element: form.querySelector("[nd-dismiss]"), handler: this.dismiss, required: false },
+            { name: "nd-revert", element: form.querySelector("[nd-revert]"), handler: this.revert, required: false },
+            { name: "nd-clear", element: form.querySelector("[nd-clear]"), handler: this.clear, required: false },
+        ];
 
-        // Attach a confirmation dialog
-        this.confirm_dialog = this.get_confirm_dialog(this.form);
+        const template_id = form.getAttribute("nd-confirm");
+        console.log("TID", template_id);
+        if (template_id) {
+            this.confirm_dialog = nd.dialog.get(template_id);
+            console.log("Confirm", this.confirm_dialog);
+        }
 
-        // Attach action button click event listeners
-        Form.ACTIONS.forEach((action) => {
-            const element = form.querySelector(`[${action}]`);
-            switch (action) {
-                case "nd-accept":
-                    if (element) {
-                        element.addEventListener("click", this.accept);
-                        // Save for nice cleaning
-                        this.event_listeners.push({ element: element, event: "click", handler: this.accept });
-                        this.accept_url = element.getAttribute("nd-url") || null;
-                    }
-                    break;
-                case "nd-apply":
-                    if (element) {
-                        element.addEventListener("click", this.apply);
-                        // Save for nice cleaning
-                        this.event_listeners.push({ element: element, event: "click", handler: this.apply });
-                    }
-                    break;
-                case "nd-dismiss":
-                    if (element) {
-                        element.addEventListener("click", this.dismiss);
-                        // Save for nice cleaning
-                        this.event_listeners.push({ element: element, event: "click", handler: this.dismiss });
-                        this.dismiss_url = element.getAttribute("nd-url") || null;
-                    }
-                    break;
-                case "nd-revert":
-                    if (element) {
-                        element.addEventListener("click", this.revert);
-                        // Save for nice cleaning
-                        this.event_listeners.push({ element: element, event: "click", handler: this.revert });
-                    }
-                    break;
-                case "nd-clear":
-                    if (element) {
-                        element.addEventListener("click", this.clear);
-                        // Save for nice cleaning
-                        this.event_listeners.push({ element: element, event: "click", handler: this.clear });
-                    }
-                    break;
-            }
+        form_actions.forEach((a) => {
+            a.required && !a.element ? this.logger.error(`Required element with an '${a.name}' attribute is required !`) : () => {};
+            a.element ? nd.tracker.add_listener(a.element, "click", a.handler) : () => {};
+            a.name === "nd-accept" && a.element ? (this.accept_url = a.element.getAttribute("nd-url")) : () => {};
+            a.name === "nd-dismiss" && a.element ? (this.dismiss_url = a.element.getAttribute("nd-url")) : () => {};
         });
 
         // Add 'change' listeners to all fields
         // This is done to track changes and set the dirty flag
         form.querySelectorAll("[name]").forEach((field) => {
-            field.addEventListener("change", this.on_change);
-            // Save for nice cleaning
-            this.event_listeners.push({ element: field, event: "change", handler: this.on_change });
+            nd.tracker.add_listener(field, "change", this.on_change);
         });
 
         // Add  a form 'submit' listener
-        this.form.addEventListener("submit", this.on_submit);
-        // Save for nice cleaning
-        this.event_listeners.push({ element: this.form, event: "submit", handler: this.on_submit });
+        nd.tracker.add_listener(this.form, "submit", this.on_submit);
+
+        // Add a listener for server sent 'nd:form:reset'
+        nd.tracker.add_listener(this.form, ND_EVENTS.FORM_RESET, this.on_reset_request);
     }
 
-    get_confirm_dialog = (form) => {
-        // Check for a confirmation dialog
-        const nd_confirm = form.querySelector("[nd-confirm]");
-        let args = {};
-        if (nd_confirm) {
-            args.title = nd_confirm.getAttribute("nd-title") || "No title";
-            args.message = nd_confirm.getAttribute("nd-message") || "No message";
-            // Get the buttons
-            if (nd_confirm.querySelector("[nd-button")) args.buttons = [];
-            nd_confirm.querySelectorAll("[nd-button]").forEach((btn) => {
-                const dict = {};
-                dict.action = btn.getAttribute("nd-action") || "dismiss";
-                dict.label = btn.getAttribute("nd-label") || dict.action;
-                dict.url = btn.getAttribute("nd-url") || null;
-                args.buttons.push(dict);
-            });
-        } else {
-            // Default dialog
-            args = {
-                title: "Approval needed",
-                message: "Apply form changes ?",
-                buttons: [
-                    { action: "accept", label: "Yes" },
-                    { action: "dismiss", label: "No" },
-                ],
-            };
-        }
-        return nd.dialog_factory.create("two-button", args);
-    };
-
-    close = (reason) => {
+    close = async (reason) => {
         this.logger.info(`Closing form. Reason: '${reason}.'`);
-
-        // Find a dialog containig this form
-        const nd_dialog = this.form.closest("[nd-dialog]");
-
-        // Remove event listeners
-        this.logger.info(`Removing attached event listeners (${this.event_listeners.length}).`);
-        this.event_listeners.forEach((listener) => {
-            listener.element.removeEventListener(listener.event, listener.handler);
-        });
-
-        // Remove the form from the DOM
-        this.form.remove();
-
-        // Close the containing dialog
-        if (nd_dialog) {
-            const dialog_id = nd_dialog.id;
-            this.logger.info(`Closing the containing dialog (${dialog_id}).`);
-            document.dispatchEvent(new Event(`nd:close:${dialog_id}`));
-        }
 
         // Finally perfom redirections (if any)
         switch (reason) {
             case "accept":
-                this.accept_url ? nd.util.navigate_to(this.accept_url) : () => {};
+                this.accept_url ? await nd.fetcher.fetch_data(this.accept_url) : () => {};
                 break;
             case "dismiss":
-                this.dismiss_url ? nd.util.navigate_to(this.dismiss_url) : () => {};
+                this.dismiss_url ? await nd.fetcher.fetch_data(this.dismiss_url) : () => {};
                 break;
         }
     };
 
     save_state = () => {
         this.logger.info("Saving form state.");
-        // this.formdata = new FormData(this.form);
         this.form_str = nd.util.serialize_form(this.form);
         this.is_dirty = false;
+    };
+
+    on_reset_request = (event) => {
+        this.form.reset();
+        const first_input = this.form.querySelector("input");
+        first_input ? first_input.focus() : () => {};
     };
 
     on_change = () => {
@@ -154,29 +78,28 @@ exports.Form = class Form {
     };
 
     on_submit = (event) => {
-        this.logger.info("Submit event !");
+        // Trap the default handling !
         event.preventDefault();
     };
 
     confirm = async () => {
-        const result = await this.confirm_dialog.run();
-        return result === "accept";
+        return this.confirm_dialog ? (await this.confirm_dialog.run()) === "accept" : true;
     };
 
-    accept = () => {
+    accept = async () => {
         // Submit the form
         // Check vaidity
         if (!this.form.reportValidity()) return;
 
         this.logger.info(`Submit: submitting. Form is valid.`);
-        nd.fetcher.send_form(this.form);
+        await nd.fetcher.send_form(this.form);
 
         // Close the form
 
         this.close("accept");
     };
 
-    apply = () => {
+    apply = async () => {
         // Check whether the form has been changed
         if (!this.is_dirty) {
             this.logger.info("Apply: no changes.");
@@ -188,7 +111,7 @@ exports.Form = class Form {
 
         // Submit the form
         this.logger.info(`Apply: submitting. Form is valid.`);
-        nd.fetcher.send_form(this.form);
+        await nd.fetcher.send_form(this.form);
 
         // Save the current state
         this.save_state();

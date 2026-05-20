@@ -1,24 +1,60 @@
 <h1>Polling</h1>
 
-
+<!-- Pollers -->
 <div nd-poll nd-url="/poll" nd-target=".target" nd-interval="3000"></div>
-
 <div nd-poll nd-url="/poll" nd-target="#target-c" nd-interval="5000"></div>
 
-Target self (no <code>nd-target</code> attribute, every 10 secs [default])
-<div nd-poll nd-url="/poll" class="mb-3 border p-1">...</div>
+<div class="row">
+    <div class="col">
+        Target A (every 3 secs)
+        <div id="target-a" class="target border mb-2 p-1">...</div>
+    </div>
+    <div class="col">
+        Target B (every 3 secs)
+        <div id="target-b" class="target border mb-2 p-1">...</div>
+    </div>
+    <div class="col">
+        Target C (every 5 secs)
+        <div id="target-c" class="border mb-2 p-1">...</div>
+    </div>
+    <div class="col">
+        Target self every 10 secs [default]
+        <div nd-poll nd-url="/poll" class="mb-3 border p-1">...</div>
+    </div>
+</div>
+<div class="row">
+    <div class="col">
+        Test recursive. Interval : 5s.
+        <div nd-poll nd-url="/pollpoll" nd-interval="5000" class="mb-3 border p-1">...</div>
+    </div>
+    <div class="col">
+        Test action (no url). Interval : 5s.
+        <div id="test-action" nd-poll nd-action="do_something('Martin','Klaus', arguments)" nd-interval="5000" class="mb-3 border p-1">...</div>
+    </div>
+    <div class="col">
+        Test action (before). Interval : 7s.
+        <div nd-poll nd-url="/poll" nd-action="before::do_something(arguments)" nd-interval="7000" class="mb-3 border p-1">...</div>
+    </div>
+    <div class="col">
+        Test action (after). Interval : 9s.
+        <div nd-poll nd-url="/poll" nd-action="after::do_something(arguments)" nd-interval="9000" class="mb-3 border p-1">...</div>
+    </div>
+</div>
 
-No poll at all
-<div nd-poll class="border p-1 mb-2"><code>This content will never be updated, event though it has an nd-poll attribute !</code></div>
+<script>
+    do_something = (...args) => {
+        // Get the arguments as a dictionary
+        const result = nd.util.action_detail_dict(args);
 
-Test recursive
-<div nd-poll nd-url="/pollpoll" nd-interval="5000" class="mb-3">...</div>
+        console.log(result)
 
+        // Debug
+        const source = result.detail.source;
+        if (source.id === 'test-action') {
+            console.log('Debug:', source);
+            source.innerHTML = `<code>${crypto.randomUUID().replaceAll('-', '').toUpperCase()}</code>`
+        }
 
-Target A (every 3 secs)
-<div id="target-a" class="target border mb-2 p-1">...</div>
-Target B (every 3 secs)
-<div id="target-b" class="target border mb-2 p-1">...</div>
-Target C (every 5 secs)
-<div id="target-c" class="border mb-2 p-1">...</div>
-{# endblock #}
+        // Handle the datail, if any
+    }
+</script>

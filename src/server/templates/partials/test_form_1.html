@@ -1,11 +1,5 @@
 <form nd-form method="post" action="/sse/form">
 
-    <!-- Confirmation dialog -->
-    <div nd-confirm nd-title="Approbation nécessaire" nd-message="Effectuer l'opération ?">
-        <div nd-button nd-label="Oh oui" nd-action="accept"></div>
-        <div nd-button nd-label="Non merci" nd-action="dismiss"></div>
-    </div>
-
     <!-- Form fields -->
     <div class="mb-3">
         <label for="id_email" class="form-label">Email address</label>
@@ -24,9 +18,9 @@
     <!-- Buttons with possible actions -->
     <div class="text-center">
         <!-- Button with action : after submission, redirect to /posted -->
-        <button type="button" class="btn btn-outline-secondary col-2" nd-accept nd-url="get:/posted/get">Submit</button>
+        <button type="button" class="btn btn-outline-secondary col-2" nd-accept nd-url="post:/posted/post">Submit</button>
         <!-- Button with action : after cancelling, redirect to /not_posted -->
-        <button type="button" class="btn btn-outline-secondary col-2" nd-dismiss nd-url="post:/posted/post">Dismiss</button>
+        <button type="button" class="btn btn-outline-secondary col-2" nd-dismiss nd-url="get:/posted/get">Dismiss</button>
         <!-- Buttons acting on the form itself -->
         <button type="button" class="btn btn-outline-secondary col-2" nd-apply>Apply</button>
         <button type="button" class="btn btn-outline-secondary col-2" nd-revert>Revert</button>
@@ -34,3 +28,8 @@
     </div>
 
 </form>
+<!-- Confirmation dialog -->
+<div nd-confirm nd-title="Formulaire modifié !" nd-message="Effectuer l'opération ?">
+    <div nd-button nd-label="Oh oui" nd-action="accept"></div>
+    <div nd-button nd-label="Non merci" nd-action="dismiss"></div>
+</div>

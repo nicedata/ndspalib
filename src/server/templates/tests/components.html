@@ -1,33 +1,38 @@
 <h1>Components</h1>
 
+<!-- 
 <h2>Notifications</h2>
 <table class="table table-sm table-borderless">
     <thead>
         <tr>
             <th>Description</th>
-            <th class="text-center">Javascript class</th>
-            <th>Open with JS</th>
+            <th>Open with <code>onclick</code></th>
+            <th>Open with <code>nd-action</code></th>
             <th>Open with SSE</th>
-            <th>Result body</th>
+            <th>Server data</th>
         </tr>
     </thead>
     <tbody>
         <tr>
             <td>Alert (auto closes after a while)</td>
-            <td class="text-center"><code>Alert</code></td>
             <td>
-                <button onclick="spa_alert()" class="btn btn-outline-primary btn-sm w-50">JS</button>
+                <button onclick="nd.notification.show('spa-alert')" class="btn btn-outline-primary btn-sm w-50">Click</button>
             </td>
             <td>
-                <button class="btn btn-outline-primary btn-sm w-50" nd-link nd-url="/sse/alert" nd-target="#a_target_1">SSE</button>
+                <button nd-link nd-action="nd.notification.show('spa-alert')" class="btn btn-outline-primary btn-sm w-50">Action</button>
+            </td>
+            <td>
+                <button nd-link nd-url="/sse/alert" nd-target="#a_target_1" class="btn btn-outline-primary btn-sm w-50">SSE</button>
             </td>
             <td id="a_target_1"></td>
         </tr>
         <tr>
             <td>Toast (auto closes after a while)</td>
-            <td class="text-center"><code>Toast</code></td>
             <td>
-                <button onclick="spa_toast()" class="btn btn-outline-primary btn-sm w-50">JS</button>
+                <button onclick="nd.notification.show('spa-toast')" class="btn btn-outline-primary btn-sm w-50">Click</button>
+            </td>
+            <td>
+                <button onclick="nd.notification.show('spa-toast')" class="btn btn-outline-primary btn-sm w-50">Action</button>
             </td>
             <td>
                 <button class="btn btn-outline-primary btn-sm w-50" nd-link nd-url="/sse/toast" nd-target="#a_target_2">SSE</button>
@@ -37,13 +42,30 @@
     </tbody>
 </table>
 
+<template id="spa-alert">
+    <param name="mode" value="alert">
+    <param name="severity" value="danger">
+    <param name="message" value="New arguments have been set !">
+    <param name="url" value="/tata/index">
+</template>
+
+
+<template id="spa-toast">
+    <param name="mode" value="toast">
+    <param name="title" value="Toast from HTML">
+    <param name="message" value="Arguments set from an HTML template">
+    <param name="url" value="nav:/_new">
+</template>
+-->
+
 <h2>Dialogs</h2>
 <table class="table table-sm table-borderless">
     <thead>
         <tr>
             <th>Description</th>
             <th class="text-center">Javascript class</th>
-            <th>Open with JS</th>
+            <th>Open with <code>onclick</code></th>
+            <th>Open with <code>nd-action</code></th>
             <th>Open with SSE</th>
             <th>Result body</th>
         </tr>
@@ -53,7 +75,10 @@
             <td>Simple information dialog</td>
             <td class="text-center"><code>OneButtonDialog</code></td>
             <td>
-                <button onclick="spa_one_button()" class="btn btn-outline-primary btn-sm w-50">JS</button>
+                <button onclick="nd.dialog.show('spa-info')" class="btn btn-outline-primary btn-sm w-50">Click</button>
+            </td>
+            <td>
+                <button nd-link nd-action="nd.dialog.show('spa-info')" class="btn btn-outline-primary btn-sm w-50">Action</button>
             </td>
             <td>
                 <button class="btn btn-outline-primary btn-sm w-50" nd-link nd-url="/sse/one_button" nd-target="#b_target_3">SSE</button>
@@ -64,7 +89,10 @@
             <td>Accept and dismiss dialog</td>
             <td class="text-center"><code>TwoButtonDialog</code></td>
             <td>
-                <button onclick="spa_two_button()" class="btn btn-outline-primary btn-sm w-50">JS</button>
+                <button onclick="nd.dialog.show('spa-choice')" class="btn btn-outline-primary btn-sm w-50">Click</button>
+            </td>
+            <td>
+                <button nd-link nd-action="nd.dialog.show('spa-choice')" class="btn btn-outline-primary btn-sm w-50">Action</button>
             </td>
             <td>
                 <button class="btn btn-outline-primary btn-sm w-50" nd-link nd-url="/sse/two_button" nd-target="#b_target_4" nd-confirm>SSE</button>
@@ -75,7 +103,10 @@
             <td>Accept, Apply and dismiss dialog</td>
             <td class="text-center"><code>ThreeButtonDialog</code></td>
             <td>
-                <button onclick="spa_three_button()" class="btn btn-outline-primary btn-sm w-50">JS</button>
+                <button onclick="nd.dialog.show('spa-options')" class="btn btn-outline-primary btn-sm w-50">Click</button>
+            </td>
+            <td>
+                <button nd-link nd-action="nd.dialog.show('spa-options')" class="btn btn-outline-primary btn-sm w-50">Action</button>
             </td>
             <td>
                 <button class="btn btn-outline-primary btn-sm w-50" nd-link nd-url="/sse/three_button" nd-target="#b_target_5">SSE</button>
@@ -86,7 +117,10 @@
             <td>Secure confirm dialog</td>
             <td class="text-center"><code>ConfirmDialog</code></td>
             <td>
-                <button onclick="spa_confirm()" class="btn btn-outline-primary btn-sm w-50">JS</button>
+                <button onclick="nd.dialog.show('spa-secure')" class="btn btn-outline-primary btn-sm w-50">Click</button>
+            </td>
+            <td>
+                <button nd-link nd-action="nd.dialog.show('spa-secure')" class="btn btn-outline-primary btn-sm w-50">Action</button>
             </td>
             <td>
                 <button class="btn btn-outline-primary btn-sm w-50" nd-link nd-url="/sse/confirm" nd-target="#b_target_6">SSE</button>
@@ -95,6 +129,47 @@
         </tr>
     </tbody>
 </table>
+
+<template id="spa-info">
+    <param name="mode" value="info">
+    <param name="title" value="This is an 'info' dialog">
+    <param name="message" value="You saved your data !">
+    <param name="accept" value="OK">
+    <param name="accept_url" value="nav::/_new">
+</template>
+
+<template id="spa-choice">
+    <param name="mode" value="choice">
+    <param name="title" value="This is an 'choice' dialog">
+    <param name="message" value="Do you want to quit ?">
+    <param name="accept" value="Yes">
+    <param name="accept_url" value="nav::/_accept">
+    <param name="dismiss" value="No">
+    <param name="dismiss_url" value="nav::/_dismiss">
+</template>
+
+<template id="spa-options">
+    <param name="mode" value="options">
+    <param name="title" value="This is an 'options' dialog">
+    <param name="message" value="Choose the action !">
+    <param name="accept" value="Save">
+    <param name="accept_url" value="nav::/_accept">
+    <param name="apply" value="Apply">
+    <param name="apply_url" value="nav::/_apply">
+    <param name="dismiss" value="Cancel">
+    <param name="dismiss_url" value="nav::/_dismiss">
+</template>
+
+<template id="spa-secure">
+    <param name="mode" value="secure">
+    <param name="title" value="This is an 'secure' dialog">
+    <param name="message" value="Do you really want to do this ?">
+    <param name="confirm" value="Please confirm !">
+    <param name="accept" value="Yes">
+    <param name="accept_url" value="nav::/_accept">
+    <param name="dismiss" value="No">
+    <param name="dismiss_url" value="nav::/_dismiss">
+</template>
 
 <h2>Data tranfer</h2>
 <table class="table table-sm table-borderless">
@@ -135,89 +210,8 @@
     </tbody>
 </table>
 
-
-<script>
-    spa_alert = () => {
-        var args = {
-            "severity": "primary",
-            "message": "New arguments have been set !",
-            "urls": {
-                "redirect": "/_new",
-            },
-        }
-        console.log(nd.dialog_dialog_factory)
-        nd.dialog_factory.create('alert', args).show();
-    }
-
-    spa_toast = () => {
-        var args = {
-            "title": "Toast from JS",
-            "message": "Arguments set from a JS script !",
-            "urls": {
-                "redirect": "/_new",
-            },
-        }
-        nd.dialog_factory.create('toast', args).show();
-    }
-
-    spa_one_button = () => {
-        var args = {
-            "title": "This is a one button dialog (JS)",
-            "message": "And this is my <b>message</b>",
-            "buttons": [
-                { "action": "accept", "label": "Got it !", "url": "/_accept" },
-            ]
-        }
-        nd.dialog_factory.create('one-button', args).show();
-    }
-
-    spa_two_button = () => {
-        var args = {
-            "title": "This is a one button dialog (JS)",
-            "message": "And this is my <b>message</b>",
-            "buttons": [
-                { "action": "accept", "label": "Oh oui", "url": "/_accept" },
-                { "action": "dismiss", "label": "Non merci", "url": "/_dismiss" },
-            ],
-        };
-        nd.dialog_factory.create('two-button', args).show();
-    }
-
-    spa_three_button = () => {
-        var args = {
-            "title": "This is a one button dialog (JS)",
-            "message": "And this is my <b>message</b>",
-            "buttons": [
-                { "action": "accept", "label": "Oh oui", "url": "/_accept" },
-                { "action": "apply", "label": "Appliquer", "url": "/apply" },
-                { "action": "dismiss", "label": "Non merci", "url": "/_dismiss" },
-            ],
-        };
-        nd.dialog_factory.create('three-button', args).show();
-    }
-
-    spa_confirm = () => {
-        var args = {
-            "title": "Confirmation sécurisée (JS)",
-            "message": "Ceci est un message envoyé par le serveur !",
-            "confirm": "Autoriser",
-            "buttons": [
-                { "action": "accept", "label": "OK", "url": "/_accept" },
-                { "action": "dismiss", "label": "Quitter", "url": "/_dismiss" },
-            ],
-        }
-
-
-
-
-
-
-
-
-
-
-
-
-        nd.dialog_factory.create('confirm', args).show();
-    }
-</script>
+<template id="spa_alert">
+    <param name="severity" value="primary">
+    <param name="message" value="New arguments have been set !">
+    <param name="url" value="nav:/_new">
+</template>

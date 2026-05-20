@@ -1,62 +1,6 @@
-/**
- * dialogs.js - This module defines the dialog components for the application.
- *
- * It includes the base dialog class and specific dialog types like Alert, Toast, ConfirmDialog, OneButtonDialog, TwoButtonDialog,
- * ThreeButtonDialog and CustomDialog.
- *
- */
 const { Logger } = require("../modules/logger.js");
 const { TOAST_DELAY_MS, DIALOG_CONTAINER } = require("../constants.js");
 
-// const DEFAULT_ARGS = {
-//     type: "notification | dialog",
-//     severity: "danger", // Severity
-//     title: "No title defined !", // The dialog's title
-//     message: "No message defined !", // The dialog's body
-//     buttons: {
-//         accept: "OK", // The 'accept' button's label
-//         dismiss: "Cancel", // The 'dismiss' button's label
-//         apply: "Apply", // The 'apply' button's label
-//     },
-//     confirm: "Please, confirm the operation", // Confirm checkbox label
-//     urls: {
-//         redirect: "/_redirect", // The redirect URL
-//         accept: "/_accept", // The 'accept' url
-//         dismiss: "/_dismiss", // The 'dismiss' url
-//         apply: "/_apply", // The 'apply' url
-//     },
-//     actions: {
-//         accept: "js_accept", // The 'accept' action
-//         dismiss: "js_dismiss", // The 'dismiss' action
-//         apply: "js_apply", // The 'apply' action
-//     },
-//     payload: {
-//         data: "this is my data stream",
-//         mimetype: "application/pdf",
-//         filename: "my_document.pdf",
-//         mode: "preview",
-//     },
-//     custom: {
-//         html: "<p>This is HTML</p>",
-//         width_pc: 50,
-//     },
-// };
-
-/**
- * BaseDialog class
- * This class is the base class for all dialogs. It defines the common properties and methods for all dialogs.
- * The child classes must implement the show() method to display the dialog and the on_close_handler() method to handle the close event.
- * The create_from_args() static method must also be implemented in child classes to create a dialog from arguments.
- *
- * Dialog types:
- * - notification : A simple notification with a message and a close button. It can be used for alerts and toasts.
- * - dialog : A modal dialog with a message, a title and buttons. It can be used for confirmations and forms.
- *
- * Button types:
- * - accept : The accept button. It is used to accept an action or a confirmation.
- * - dismiss : The dismiss button. It is used to dismiss an action or a confirmation.
- * - apply : The apply button. It is used to apply an action without closing the dialog.
- */
 class BaseDialog {
     constructor(logger_name, args) {
         this.logger = new Logger(logger_name); // The dialog's logger
@@ -153,42 +97,6 @@ class BaseDialog {
         });
     };
 
-    static create_from_args(args = null) {
-        // Factory : Create a dialog from arguments.
-        // Must be implemented in child classes.
-        throw new Error("Method create_from_args() is not implemented !");
-    }
-
-    escape_key_handler = (event) => {
-        // Trap the ESC key effect
-        if (event.key === "Escape") {
-            event.stopImmediatePropagation();
-            event.preventDefault();
-        }
-    };
-
-    get_redirect_url = () => {
-        let redirect_url = null;
-
-        if (this.args.urls) {
-            switch (this.dialog.returnValue) {
-                case "accept":
-                    redirect_url = this.args.urls.accept ? this.args.urls.accept : null;
-                    break;
-                case "apply":
-                    redirect_url = this.args.urls.dismiss ? this.args.urls.dismiss : null;
-                    break;
-                case "dismiss":
-                    redirect_url = this.args.urls.dismiss ? this.args.urls.dismiss : null;
-                    break;
-                case "":
-                    redirect_url = this.args.urls.redirect ? this.args.urls.redirect : null;
-                    break;
-            }
-        }
-        return redirect_url;
-    };
-
     on_close_handler = () => {
         this.logger.error("Method on_close_handler() is not implemented !");
     };
@@ -199,9 +107,6 @@ exports.ConfirmDialog = class ConfirmDialog extends BaseDialog {
         super("ConfirmDialog", args);
         this.args.type = "dialog";
 
-        console.log(args.buttons.find(({ action }) => action === "accept"));
-        console.log(args.buttons.find(({ action }) => action === "dismiss"));
-
         // Close event
         this.close_event = `nd:close:${this.id}`;
 
@@ -210,22 +115,16 @@ exports.ConfirmDialog = class ConfirmDialog extends BaseDialog {
         this.btn_accept = null; // Accept button
         this.cb_confirm = null; // The confirmation checkbox
 
-        const accept_button_obj = args.buttons.find(({ action }) => action === "accept");
-        const dismiss_button_obj = args.buttons.find(({ action }) => action === "dismiss");
-
-        const accept_url = accept_button_obj ? accept_button_obj.url : null;
-        const dismiss_url = dismiss_button_obj ? dismiss_button_obj.url : null;
-
         const css_class = `nd-modal`;
         const css_style = `width: 30%`;
 
         // Build buttons
         const buttons = nd.util.compress(`
             <button nd-dismiss class="btn btn-secondary" style="width: 7rem">
-                ${dismiss_button_obj ? dismiss_button_obj.label : "???"}
+                ${this.args.dismiss}
             </button>
             <button nd-accept class="btn btn-secondary" style="width: 7rem" disabled>
-                ${accept_button_obj ? accept_button_obj.label : "???"}
+                ${this.args.accept}
             </button>`);
 
         this.html = nd.util.compress(`
@@ -262,6 +161,22 @@ exports.ConfirmDialog = class ConfirmDialog extends BaseDialog {
 
         // Remove dialog from DOM tree
         this.dialog.remove();
+
+        let redirect_url = null;
+        switch (this.return_value) {
+            case "accept":
+                redirect_url = this.args.accept_url;
+                break;
+            case "dismiss":
+                redirect_url = this.args.dismiss_url;
+                break;
+        }
+
+        // Redirect if an url is specified
+        if (redirect_url) {
+            this.logger.info(`Redirecting to '${redirect_url}'`);
+            nd.fetcher.redirect(redirect_url);
+        }
     };
 
     action_handler = (event) => {
@@ -309,31 +224,21 @@ exports.ConfirmDialog = class ConfirmDialog extends BaseDialog {
         // Show the dialog
         this.dialog.style.display = "block";
     };
-
-    static create_from_args(args) {
-        return new ConfirmDialog(args);
-    }
 };
 
 exports.OneButtonDialog = class OneButtonDialog extends BaseDialog {
     constructor(args) {
         super("OneButtonDialog", args);
         this.args.type = "dialog";
-
-        // Close event
-        this.close_event = `nd:close:${this.id}`;
-
-        // Buttons
+        this.close_event = `nd:close:${this.id}`; // Close event to listen to
         this.btn_accept = null; // Accept button
-
-        const accept_button_obj = args.buttons.find(({ action }) => action === "accept");
 
         const css_class = `nd-modal`;
         const css_style = `width: 30%`;
 
         const buttons = nd.util.compress(`
             <button nd-accept class="btn btn-primary" style="width: 7rem">
-                    ${accept_button_obj ? accept_button_obj.label : "???"}
+                    ${this.args.accept}
             </button>`);
 
         // Set the HTML content of the dialog
@@ -359,6 +264,13 @@ exports.OneButtonDialog = class OneButtonDialog extends BaseDialog {
 
         // Remove dialog from DOM tree
         this.dialog.remove();
+
+        // Redirect if an url is specified
+        const redirect_url = this.args.accept_url;
+        if (redirect_url) {
+            this.logger.info(`Redirecting to '${redirect_url}'`);
+            nd.fetcher.redirect(redirect_url);
+        }
     };
 
     action_handler = (event) => {
@@ -372,7 +284,7 @@ exports.OneButtonDialog = class OneButtonDialog extends BaseDialog {
 
     // Show the dialog
     show() {
-        // Inject the dialog into the DOM tree (returns a booleam)
+        // Inject the dialog into the DOM tree (returns a boolean)
         if (!this.inject()) return;
 
         this.logger.info("Showing component");
@@ -389,10 +301,6 @@ exports.OneButtonDialog = class OneButtonDialog extends BaseDialog {
         // Show the dialog
         this.dialog.style.display = "block";
     }
-
-    static create_from_args(args) {
-        return new OneButtonDialog(args);
-    }
 };
 
 exports.TwoButtonDialog = class TwoButtonDialog extends BaseDialog {
@@ -406,19 +314,16 @@ exports.TwoButtonDialog = class TwoButtonDialog extends BaseDialog {
         this.btn_dismiss = null; // Dismiss button
         this.btn_accept = null; // Accept button
 
-        const accept_button_obj = args.buttons.find(({ action }) => action === "accept");
-        const dismiss_button_obj = args.buttons.find(({ action }) => action === "dismiss");
-
         const css_class = `nd-modal`;
         const css_style = `width: 30%`;
 
         // Build buttons
         const buttons = nd.util.compress(`
             <button nd-accept class="btn btn-primary me-2" style="width: 7rem">
-                ${accept_button_obj ? accept_button_obj.label : "???"}
+                ${this.args.accept}
             </button>
             <button nd-dismiss class="btn btn-danger" style="width: 7rem">
-                ${dismiss_button_obj ? dismiss_button_obj.label : "???"}
+                ${this.args.dismiss}
             </button>`);
 
         // Set the HTML content of the dialog
@@ -445,6 +350,22 @@ exports.TwoButtonDialog = class TwoButtonDialog extends BaseDialog {
 
         // Remove dialog from DOM tree
         this.dialog.remove();
+
+        let redirect_url = null;
+        switch (this.return_value) {
+            case "accept":
+                redirect_url = this.args.accept_url;
+                break;
+            case "dismiss":
+                redirect_url = this.args.dismiss_url;
+                break;
+        }
+
+        // Redirect if an url is specified
+        if (redirect_url) {
+            this.logger.info(`Redirecting to '${redirect_url}'`);
+            nd.fetcher.redirect(redirect_url);
+        }
     };
 
     action_handler = (event) => {
@@ -480,18 +401,12 @@ exports.TwoButtonDialog = class TwoButtonDialog extends BaseDialog {
         // Show the dialog
         this.dialog.style.display = "block";
     }
-
-    static create_from_args = (args) => {
-        return new TwoButtonDialog(args);
-    };
 };
 
 exports.ThreeButtonDialog = class ThreeButtonDialog extends BaseDialog {
     constructor(args) {
         super("ThreeButtonDialog", args);
         this.args.type = "dialog";
-
-        console.log(args);
 
         // Close event
         this.close_event = `nd:close:${this.id}`;
@@ -501,23 +416,19 @@ exports.ThreeButtonDialog = class ThreeButtonDialog extends BaseDialog {
         this.btn_dismiss = null; // Dismiss button
         this.btn_accept = null; // Accept button
 
-        const accept_button_obj = args.buttons.find(({ action }) => action === "accept");
-        const apply_button_obj = args.buttons.find(({ action }) => action === "apply");
-        const dismiss_button_obj = args.buttons.find(({ action }) => action === "dismiss");
-
         const css_class = `nd-modal`;
         const css_style = `width: 30%`;
 
         // Build buttons HTML
         const buttons = nd.util.compress(`
             <button nd-accept class="btn btn-success me-2" style="width: 7rem">
-                ${accept_button_obj ? accept_button_obj.label : "???"}
+                ${this.args.accept}
             </button>
             <button nd-apply class="btn btn-secondary me-2" style="width: 7rem">
-                ${apply_button_obj ? apply_button_obj.label : "???"}
+                ${this.args.apply}
             </button>
             <button nd-dismiss class="btn btn-danger me-2" style="width: 7rem">
-                ${dismiss_button_obj ? dismiss_button_obj.label : "???"}
+                ${this.args.dismiss}
             </button>`);
 
         // Set the HTML content of the dialog
@@ -545,6 +456,25 @@ exports.ThreeButtonDialog = class ThreeButtonDialog extends BaseDialog {
 
         // Remove dialog from DOM tree
         this.dialog.remove();
+
+        let redirect_url = null;
+        switch (this.return_value) {
+            case "accept":
+                redirect_url = this.args.accept_url;
+                break;
+            case "apply":
+                redirect_url = this.args.accept_url;
+                break;
+            case "dismiss":
+                redirect_url = this.args.dismiss_url;
+                break;
+        }
+
+        // Redirect if an url is specified
+        if (redirect_url) {
+            this.logger.info(`Redirecting to '${redirect_url}'`);
+            nd.fetcher.redirect(redirect_url);
+        }
     };
 
     action_handler = (event) => {
@@ -585,18 +515,12 @@ exports.ThreeButtonDialog = class ThreeButtonDialog extends BaseDialog {
         // Show the dialog
         this.dialog.style.display = "block";
     }
-
-    static create_from_args(args) {
-        return new ThreeButtonDialog(args);
-    }
 };
 
 exports.CustomDialog = class CustomDialog extends BaseDialog {
     constructor(args) {
         super("CustomDialog", args);
         this.args.type = "dialog";
-
-        console.log(this.args);
 
         // Close event
         this.close_event = `nd:close:${this.id}`;
@@ -638,10 +562,6 @@ exports.CustomDialog = class CustomDialog extends BaseDialog {
         // Show the dialog
         this.dialog.style.display = "block";
     }
-
-    static create_from_args(args) {
-        return new CustomDialog(args);
-    }
 };
 
 exports.Alert = class Alert extends BaseDialog {
@@ -673,12 +593,12 @@ exports.Alert = class Alert extends BaseDialog {
         this.dialog.remove();
 
         // Get the URL associated with the action
-        const redirect_url = this.args.urls && this.args.urls.redirect ? this.args.urls.redirect : null;
+        const redirect_url = this.args.url;
 
         // Redirect if an url is specified
         if (redirect_url) {
             this.logger.info(`Redirecting to '${redirect_url}'`);
-            nd.util.navigate_to(redirect_url);
+            nd.fetcher.redirect(redirect_url);
         }
     };
 
@@ -699,10 +619,6 @@ exports.Alert = class Alert extends BaseDialog {
         setTimeout(() => {
             this.close_btn.click();
         }, TOAST_DELAY_MS);
-    }
-
-    static create_from_args(args) {
-        return new Alert(args);
     }
 };
 
@@ -739,12 +655,12 @@ exports.Toast = class Toast extends BaseDialog {
         this.dialog.remove();
 
         // Get the URL associated with the action
-        const redirect_url = this.args.urls && this.args.urls.redirect ? this.args.urls.redirect : null;
+        const redirect_url = this.args.url;
 
         // Redirect if an url is specified
         if (redirect_url) {
             this.logger.info(`Redirecting to '${redirect_url}'`);
-            nd.util.navigate_to(redirect_url);
+            nd.fetcher.redirect(redirect_url);
         }
     };
 
@@ -765,42 +681,5 @@ exports.Toast = class Toast extends BaseDialog {
         setTimeout(() => {
             this.close_btn.click();
         }, TOAST_DELAY_MS);
-    }
-
-    static create_from_args(args) {
-        return new Toast(args);
-    }
-};
-
-const { Alert, Toast, OneButtonDialog, TwoButtonDialog, ThreeButtonDialog, ConfirmDialog, CustomDialog } = require("./dialogs.js");
-exports.DialogFactory = class DialogFactory {
-    static LOGGER = new Logger("DialogFactory", true);
-    constructor() {
-        // This class ia a singleton class
-        if (!!DialogFactory._instance) {
-            return DialogFactory._instance;
-        }
-        this.logger = DialogFactory.LOGGER;
-    }
-
-    create(type, args) {
-        this.logger.info(`Create a new dialog. Type: '${type}'. Arguments: ${args ? JSON.stringify(args) : "none"}.`);
-        switch (type) {
-            case "alert":
-                return Alert.create_from_args(args);
-            case "toast":
-                return Toast.create_from_args(args);
-            case "one-button":
-                return OneButtonDialog.create_from_args(args);
-            case "two-button":
-                return TwoButtonDialog.create_from_args(args);
-            case "three-button":
-                return ThreeButtonDialog.create_from_args(args);
-            case "confirm":
-                return ConfirmDialog.create_from_args(args);
-            case "custom":
-                return CustomDialog.create_from_args(args);
-        }
-        return null;
     }
 };

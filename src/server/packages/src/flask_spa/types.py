@@ -47,6 +47,7 @@ class EventType(StrEnum):
     CONTEXT = "nd:context"
     ENVIRONMENT = "nd:environ"
     TITLE = "nd:title"
+    RESET_FORM = "nd:form:reset"
 
 
 type EventSeverity = Literal["danger", "warning", "success", "info", "primary"]
@@ -134,6 +135,9 @@ class Button(Base):
     label: str = ""
     url: str = ""
 
+    def as_dict(self) -> Dict[Any, Any]:
+        return {self.action.value: self.label, f"{self.action.value}_url": self.url}
+
 
 @dataclass
 class ZoneField:
@@ -177,7 +181,7 @@ class Urls(Base):
 class Notification(Base):
     severity: str
     message: str
-    redirect_url: str
+    url: str
 
 
 @dataclass
@@ -227,3 +231,43 @@ class Event:
     type: EventType
     detail: Dict[str, str | Dict[Any, Any]] = field(default_factory=dict)
     stream: Optional[Stream] = None
+
+
+@dataclass
+class EnvValue:
+    _value: Any
+
+    def _isnumeric(self) -> bool:
+        try:
+            float(str(self._value))
+            return True
+        except ValueError:
+            print("NAN", self._value)
+        return False
+
+    def _isbool(self) -> bool:
+        try:
+            bool(str(self._value))
+            return True
+        except ValueError:
+            print("Bool", self._value)
+        return False
+
+    def str(self) -> str:
+        if self._value is None:
+            return ""
+        return str(self._value)
+
+    def int(self) -> int | None:
+        if self._isnumeric():
+            return self._value if isinstance(self._value, int) else int(self._value)
+
+    def float(self) -> float | None:
+        if self._isnumeric():
+            return self._value if isinstance(self._value, float) else float(self._value)
+        return None
+
+    def bool(self) -> bool | None:
+        if self._isbool():
+            return self._value if isinstance(self._value, bool) else bool(self._value)
+        return None

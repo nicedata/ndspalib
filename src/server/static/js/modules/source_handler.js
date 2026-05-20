@@ -34,7 +34,7 @@ exports.SourceHandler = class SourceHandler extends BaseHandler {
 
             // Check url
             if (!url) {
-                this.logger.error(`No valid url defined in 'nd-init' on element`, Object(element));
+                this.logger.error(`No valid url defined in 'nd-init' on element ${element.outerHTML}`);
                 element.innerHTML = `<span style="color: red">Error: no valid url defined in 'nd-init' on element &lt;${element.tagName.toLowerCase()} data-nduuid="${uuid}"&gt;</span>`;
                 return;
             }
@@ -77,7 +77,7 @@ exports.SourceHandler = class SourceHandler extends BaseHandler {
 
             // Check url
             if (!url) {
-                this.logger.error(`No valid url defined in 'nd-source' on element`, Object(element));
+                this.logger.error(`No valid url defined in 'nd-source' on element`, element);
                 element.innerHTML = `<span style="color: red">Error: no valid url defined in 'nd-source' on element &lt;${element.tagName.toLowerCase()} data-nduuid="${uuid}"&gt;</span>`;
                 return;
             }

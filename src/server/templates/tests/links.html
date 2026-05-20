@@ -1,0 +1,117 @@
+<h1>Links</h1>
+
+<div class="row mb-3">
+    <div class="col-6">
+        <h2>Simple links</h2>
+
+        <a nd-link href="/poll" nd-target="#target-a" class="btn btn-sm btn-outline-primary">Link A</a>
+        <a nd-link href="/poll" nd-target=".target" class="btn btn-sm btn-outline-primary">Link B</a>
+        <a nd-link href="/poll" nd-target="#target-c" class="btn btn-sm btn-outline-primary">Link C</a>
+
+        <div class="row mt-3">
+            <div class="col-4">
+                Target A
+                <div id="target-a" class="target border mb-2 text-center">...</div>
+            </div>
+            <div class="col-4">
+                Target B
+                <div id="target-b" class="target border mb-2 text-center">...</div>
+            </div>
+            <div class="col-4">
+                Target C
+                <div id="target-c" class="border mb-2 text-center">...</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-1">
+        <h2>Action</h2>
+        <div nd-link snd-url="/poll" nd-action="my_action(arguments)" class="btn btn-sm btn-outline-primary">Action</div>
+    </div>
+    <div class="col-2">
+        <h2>Action before</h2>
+        <div class="row">
+            <div class="col">
+                <div nd-link nd-url="/poll" nd-action="my_action(arguments)" nd-target="#action" class="btn btn-sm btn-outline-primary">Action</div>
+            </div>
+        </div>
+        <div class="row mt-3">
+            <div class="col">
+                Target
+                <div id="action" class="border mb-2 text-center">...</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-3">
+        <h2>Action after</h2>
+        <div class="row">
+            <div class="col">
+                <div nd-link nd-url="https://time.now/developer/api/timezone/Europe/Zurich" nd-action="after::my_action('Zurich', 'Europe', arguments)" Xnd-target="#action-2"
+                    class="btn btn-sm btn-outline-primary">
+                    Action
+                </div>
+            </div>
+        </div>
+        <div class="row mt-3">
+            <div class="col">
+                Target
+                <div id="action-2" class="border mb-2 text-center">...</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<h2>Confirmation</h2>
+<div class="row mt-3">
+    <div class="col-3">Simple confirmation dialog</div>
+    <div class="col-3">Secure confirmation dialog</div>
+</div>
+<div class="row mt-3">
+    <!-- Simple dialog -->
+    <div class="col-1">
+        <button nd-link nd-url="/poll" nd-action="my_action('testor')" nd-target="#confirm-1" nd-confirm="simple_confirm_dialog" class="btn btn-outline-primary btn-sm w-100">Confirm</button>
+    </div>
+    <div class="col-2">
+        <p id="confirm-1" class="form-control form-control-sm w-100">Result here</p>
+    </div>
+
+    <!-- Secured dialog -->
+    <div class="col-1">
+        <button nd-link nd-url="/poll" nd-action="my_action('testor')" nd-target="#confirm-2" nd-confirm="secure_confirm_dialog" class="btn btn-outline-primary btn-sm w-100">Confirm</button>
+    </div>
+    <div class="col-2">
+        <p id="confirm-2" class="form-control form-control-sm w-100">Result here</p>
+    </div>
+</div>
+
+<template id="simple_confirm_dialog">
+    <param name="mode" value="choice">
+    <param name="title" value="Simple Confirmation">
+    <param name="message" value="Do you really want to do this ?">
+    <param name="confirm" value="">
+    <param name="accept" value="Yes">
+    <param name="dismiss" value="No">
+</template>
+
+<template id="secure_confirm_dialog">
+    <param name="mode" value="secure">
+    <param name="title" value="Secure Confirmation">
+    <param name="message" value="Do you really want to do this ?">
+    <param name="confirm" value="Please confirm !">
+    <param name="accept" value="Yes">
+    <param name="dismiss" value="No">
+</template>
+
+<script>
+    my_action = (...args) => {
+        // Get the arguments as a dictionary
+        const result = nd.util.action_detail_dict(args);
+
+        // Debug
+        console.log('Debug:', result);
+
+        // Handle the datail, if any
+        if (result.detail && result.detail.json_data) {
+            document.getElementById('action-2').innerHTML = `<code>${result.detail.json_data.utc_datetime}</code>`;
+        }
+    }
+</script>

@@ -1,3 +1,4 @@
+const { ND_EVENTS } = require("../constants.js");
 const { Logger } = require("./logger.js");
 const { Link } = require("./link.js");
 
@@ -5,46 +6,63 @@ exports.Select = class Select {
     constructor(element) {
         this.logger = new Logger("Select");
         this.selector = element;
+        this.id = element.id || null;
         this.targets = [];
+        this.inform = [];
 
-        const nd_targets = element.getAttribute("nd-target");
-        const nd_options_url = element.getAttribute("nd-url");
-
+        // Basic check
         if (element.tagName !== "SELECT") {
-            this.logger.error(`'nd-select' only apply to 'select' tags. Error element:`, element);
+            this.logger.error(`'nd-select' only applies to 'select' tags. Error element:`, element);
             return;
         }
 
-        const targets = Array();
-        if (nd_targets) {
-            nd_targets.split(" ").forEach((target) => {
-                if (target) {
-                    this.logger.info(`Processing switch element with class or id '${target}'`);
-                    document.querySelectorAll(target).forEach((t) => {
-                        if (t.hasAttribute("nd-show-for") || t.hasAttribute("nd-hide-for")) {
-                            t.hidden = true; // Hide the target. It will be updated by the change events
-                        }
-                        this.logger.info(`Found target identified by '${target}' (class or id) :`, t);
-                        this.targets.push(t);
-                    });
-                }
-            });
-        }
+        // Process the nd-default attribute ans set the initial select content
+        this.nd_default = element.getAttribute("nd-default");
+        this.nd_default = this.nd_default ? `<option>${this.nd_default}</option>` : null;
+        this.nd_default ? (element.innerHTML = this.nd_default) : () => {};
 
-        // Add a tracked 'change' event listener
-        nd.tracker.add_listener(element, "change", this._update_targets);
+        // Find target(s)
+        const nd_target = element.getAttribute("nd-target");
+        nd_target ? this.logger.info(`Target selection: '${nd_target}'`) : () => {};
+        document.querySelectorAll(nd_target).forEach((target) => {
+            // Hide the target. It will be updated by the change events
+            target.hidden = target.hasAttribute("nd-show-for") || target.hasAttribute("nd-hide-for");
+            this.logger.info(`Found target '${target.outerHTML}'`);
+            this.targets.push(target);
+        });
 
+        // Find targets to inform
+        const nd_inform = element.getAttribute("nd-inform");
+        nd_inform ? this.logger.info(`Inform selection: '${nd_inform}'`) : () => {};
+        document.querySelectorAll(nd_inform).forEach((target) => {
+            if (target.tagName !== "SELECT") {
+                this.logger.error(`The 'nd-inform' attribute may reference <select> elements only, not '${target.tagName}' elements.`, target);
+            } else {
+                this.logger.info(`Found inform target '${target.outerHTML}'`);
+                this.inform.push(target);
+            }
+        });
+
+        // Add tracked event listeners
+        // 1.- For the local 'change' event
+        // 2.- For an remote 'change' event
+        nd.tracker.add_listener(element, "change", this._update_targets); // For the local 'change' event
+        nd.tracker.add_listener(element, ND_EVENTS.CHANGE, this._on_nd_inform);
+
+        // Get the options from the server if the 'nd-url' endpoint is specified
+        const nd_options_url = element.getAttribute("nd-url");
         if (nd_options_url) {
             this.logger.info(`Getting select option from url '${nd_options_url}'.`);
             nd.fetcher.fetch_data(nd_options_url).then((data) => {
                 const fragment = nd.util.create_fragment(data);
                 nd.util.insert_fragment(element, fragment);
-
-                // First time update
+                // Do a first time update
                 this._setup();
                 return;
             });
         }
+
+        // Trigger the first "change" event
         this._setup();
     }
 
@@ -55,7 +73,45 @@ exports.Select = class Select {
         this.selector.dispatchEvent(new Event("change"));
     };
 
-    _update_targets = (event) => {
+    _send_event = () => {
+        if (!this.inform) return;
+
+        const option = this.selector.options[this.selector.selectedIndex];
+        const value = option.getAttribute("value") || null;
+        const url = option.getAttribute("nd-url") || null;
+
+        const payload = { source: this.id, value: value, url: url };
+
+        this.inform.forEach((e) => {
+            e.dispatchEvent(new CustomEvent(ND_EVENTS.CHANGE, { detail: payload }));
+        });
+    };
+
+    _on_nd_inform = (event) => {
+        const detail = event.detail;
+        if (!detail.url) {
+            nd.util.clear_node(this.selector);
+            if (this.nd_default) {
+                const fragment = nd.util.create_fragment(this.nd_default);
+                nd.util.insert_fragment(this.selector, fragment, false, true);
+            }
+            this._update_targets();
+        } else {
+            nd.fetcher.fetch_data(detail.url).then((data) => {
+                // Append the data to the first option if any
+                data = this.nd_default ? this.nd_default + data : data;
+                // Clear the <select../> content
+                nd.util.clear_node(this.selector);
+                // Create and insert the new fragment
+                const fragment = nd.util.create_fragment(data);
+                nd.util.insert_fragment(this.selector, fragment, false, true);
+                // Update the targets !
+                this._update_targets();
+            });
+        }
+    };
+
+    _update_targets = () => {
         if (this.selector.selectedIndex < 0) return;
 
         // Get the value
@@ -88,11 +144,7 @@ exports.Select = class Select {
 
             if (nd_activate) {
                 target.innerHTML = value;
-                target.setAttribute("nd-link", "");
-                target.setAttribute("nd-url", link);
-
-                // Activate the  target as a link
-                new Link(target);
+                link ? Link.create_link(target, link) : Link.clear_link(target);
                 // Refresh the fragment
                 nd.util.refresh(target);
             }
@@ -137,5 +189,6 @@ exports.Select = class Select {
             // Specific hides
             if (hide_targets.length) target.hidden = hide_targets.includes(value);
         });
+        this._send_event();
     };
 };

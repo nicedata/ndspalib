@@ -42,6 +42,8 @@ exports.ND_EVENTS = {
     CONTEXT: "nd:context",
     ENVIRONMENT: "nd:environ",
     TITLE: "nd:title",
+    CHANGE: "nd:change",
+    FORM_RESET: "nd:form:reset",
 };
 
 exports.DIALOG_CONTAINER = "nd-dialog-container";

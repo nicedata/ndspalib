@@ -1,6 +1,6 @@
 [project]
 name = "flask-spa"
-version = "0.1.10"
+version = "0.1.11"
 description = "A Flask middleware to support Single Page Application (SPA) features like custom events, dynamic titles, and file streaming."
 authors = [{ name = "Martin Mohnhaupt", email = "martin.mohnhaupt@etik.com" }]
 maintainers = [

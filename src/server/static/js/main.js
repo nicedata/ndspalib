@@ -28,9 +28,11 @@ const { EnvironmentHandler } = require("./modules/environment_handler.js");
 const { HandlerTracker } = require("./modules/handler_tracker.js");
 const { FormHandler } = require("./modules/form_handler.js");
 const { Fetcher } = require("./modules/fetcher.js");
+const { Notification } = require("./modules/notification.js");
+const { Dialog } = require("./modules/dialog.js");
 
 // GUI Components
-const { Alert, DialogFactory, ConfirmDialog, Toast } = require("./components/dialogs.js");
+const { Alert, ConfirmDialog, Toast } = require("./components/dialogs.js");
 
 // Check bootstrap presence and version
 if (typeof bootstrap === "undefined") throw new Error("Bootstrap library not present !");
@@ -52,8 +54,10 @@ const nd_init = () => {
             events: new Events(),
             fetcher: new Fetcher(),
             core_logger: core_logger, // The 'Core' logger
-            dialog_factory: new DialogFactory(),
+            // dialog_factory: new DialogFactory(),
             tracker: new HandlerTracker(),
+            notification: new Notification(),
+            dialog: new Dialog(),
             dialog_container: null,
             notification_container: null,
             environment: [],
@@ -130,6 +134,13 @@ const nd_init = () => {
             on_dom_ready: () => {
                 nd.dialog_container = document.querySelector(`[${DIALOG_CONTAINER}]`);
                 nd.notification_container = document.querySelector(`[${NOTIFICATION_CONTAINER}]`);
+                // Check for an 'nd-init' element (base page)
+                const nd_init = document.querySelector("[nd-init]");
+                if (nd_init) {
+                    nd.fetcher.set_main_container(nd_init);
+                } else {
+                    core_logger.warn(`No 'nd-init' element found in the document !`);
+                }
                 core_logger.info(`Creating handlers...`);
                 nd.create_handlers();
                 core_logger.info(`Refreshing the document...`);

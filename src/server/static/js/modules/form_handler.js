@@ -20,17 +20,6 @@ exports.FormHandler = class FormHandler {
                 this.logger.error(`The 'nd-form' attribute can only be on a <form> element !`);
                 return;
             }
-
-            // Check for required actions
-            let ok_count = 0;
-            Form.REQUIRED_ACTIONS.forEach((action) => {
-                element.querySelector(`[${action}]`) ? ok_count++ : () => {};
-            });
-            if (ok_count !== Form.REQUIRED_ACTIONS.length) {
-                this.logger.error(`Please ensure that ${Form.REQUIRED_ACTIONS.join(" and ")} action elements (e. g. <button>, <a>, ...) are set.\n  Element:`, element);
-                return;
-            }
-
             // Create a new Form instance
             new Form(element);
             this.logger.info("New form instance created.");

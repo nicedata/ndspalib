@@ -1,14 +1,7 @@
 <h1>Test forms</h1>
 
 
-<form nd-form method="post" action="/sse/form">
-
-    <!-- Confirmation dialog -->
-    <div nd-confirm nd-title="Approbation nécessaire" nd-message="Effectuer l'opération ?">
-        <div nd-button nd-label="Oh oui" nd-action="accept"></div>
-        <div nd-button nd-label="Non merci" nd-action="dismiss"></div>
-    </div>
-
+<form nd-form method="post" nd-confirm="confirm_dialog" action="/sse/form">
     <!-- Form fields -->
     <div class="mb-3">
         <label for="id_email" class="form-label">Email address</label>
@@ -26,14 +19,24 @@
 
     <!-- Buttons with possible actions -->
     <div class="text-center">
-        <!-- Button with action : after submission, redirect to /posted -->
-        <button type="button" class="btn btn-outline-secondary col-2" nd-accept nd-url="post:/posted/get">Submit</button>
-        <!-- Button with action : after cancelling, redirect to /not_posted -->
-        <button type="button" class="btn btn-outline-secondary col-2" nd-dismiss nd-url="get:/posted/post">Dismiss</button>
+        <!-- Button with action : after submission, fetch '/form/submit' in a POST request -->
+        <div class="btn btn-outline-secondary col-2" nd-accept nd-url="post::/form/submit">Submit</div>
+        <!-- Button with action : after cancelling, fetch '/form/dismiss' in a GET request -->
+        <button class="btn btn-outline-secondary col-2" nd-dismiss nd-url="get::/form/dismiss">Dismiss</button>
+        <!-- <button class="btn btn-outline-secondary col-2" nd-dismiss nd-url="nav::/icc">Dismiss</button> -->
         <!-- Buttons acting on the form itself -->
-        <button type="button" class="btn btn-outline-secondary col-2" nd-apply>Apply</button>
-        <button type="button" class="btn btn-outline-secondary col-2" nd-revert>Revert</button>
-        <button type="button" class="btn btn-outline-secondary col-2" nd-clear>Clear</button>
+        <button class="btn btn-outline-secondary col-2" nd-apply>Apply</button>
+        <button class="btn btn-outline-secondary col-2" nd-revert>Revert</button>
+        <button class="btn btn-outline-secondary col-2" nd-clear>Clear</button>
     </div>
-
 </form>
+
+<!-- The confirm dialog template -->
+<template id="confirm_dialog">
+    <param name="mode" value="choice">
+    <param name="title" value="Please confirm !">
+    <param name="message" value="Do you really want to do this ?">
+    <param name="confirm" value=""> <!-- Not relevant here ! -->
+    <param name="accept" value="Yes">
+    <param name="dismiss" value="No">
+</template>

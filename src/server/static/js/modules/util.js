@@ -165,10 +165,11 @@ exports.Util = class Util {
 
     navigate_to = async (new_url) => {
         let [method, url] = ["navigate", ""];
-        if (new_url.includes(":")) {
-            [method, url] = new_url.split(":");
+        if (new_url.includes("::")) {
+            [method, url] = new_url.split("::");
+            console.log("Nav", method, url);
             if (!["get", "post"].includes(method)) {
-                this.logger.error(`Only 'get:' or 'post:' url modifiers are allowed. Supplied method was '${method}:'.`);
+                this.logger.error(`Only 'get::' or 'post::' url modifiers are allowed. Supplied method was '${method}:'.`);
                 return;
             }
         } else {
@@ -202,5 +203,20 @@ exports.Util = class Util {
     as_json = (value) => {
         const cleaned_value = value.replaceAll("\\'", "#####").replaceAll("'", '"').replaceAll("#####", "'");
         return JSON.parse(cleaned_value);
+    };
+
+    action_detail_dict = (arr) => {
+        let result = {};
+        if (!(arr instanceof Array)) return result;
+
+        let index = 0;
+        arr.forEach((arg) => {
+            if (arg instanceof Object && arg.length > 0) {
+                result["detail"] = arg[0];
+            } else {
+                result[`arg${index++}`] = arg;
+            }
+        });
+        return result;
     };
 };

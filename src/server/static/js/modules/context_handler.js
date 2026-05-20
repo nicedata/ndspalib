@@ -3,6 +3,7 @@ const { Logger } = require("./logger.js");
 
 exports.ContextHandler = class ContextHandler {
     static LOGGER = new Logger("ContextHandler", true);
+    static CONTEXT_ACTIONS = ["show", "hide", "remove"];
     constructor() {
         this.logger = ContextHandler.LOGGER;
         this.contexts = []; // The current context (initially not set)
@@ -15,18 +16,20 @@ exports.ContextHandler = class ContextHandler {
     _update_document = () => {
         this.logger.info("Updating document.");
         document.querySelectorAll("[nd-context]").forEach((e) => {
-            const attribute = e.getAttribute("nd-context");
-            if (!attribute) {
+            let context_value = e.getAttribute("nd-context");
+            if (!context_value) {
                 this.logger.error(`No context specified in element`, e);
                 return;
             }
+            // Remove whitespaces
+            context_value = context_value.replaceAll(" ", "");
 
             // Handle actions, default is 'show'
-            const [context, action = "show"] = attribute.split(":");
+            const [context, action = "show"] = context_value.split(":");
 
             // Check !
-            if (!["show", "hide"].includes(action)) {
-                this.logger.error(`Unsupported context action: '${action}. Allowed actions are 'show' or 'hide'.`);
+            if (!ContextHandler.CONTEXT_ACTIONS.includes(action)) {
+                this.logger.error(`Unsupported context action: '${action}. Allowed actions are ${ContextHandler.CONTEXT_ACTIONS.join(" or ")}.`);
                 return;
             }
 
@@ -36,6 +39,13 @@ exports.ContextHandler = class ContextHandler {
                     break;
                 case "hide":
                     e.hidden = this.contexts.includes(context) ? true : false;
+                    break;
+                case "remove":
+                    if (this.contexts.includes(context)) {
+                        nd.util.clear_node(e);
+                        nd.tracker.postprocess();
+                        e.hidden != e.hidden;
+                    }
                     break;
             }
         });
