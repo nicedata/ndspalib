@@ -13,6 +13,7 @@ Our `ndspalib` library allows to enhance the native features of this element :
 |        Attribute         | Meaning                                                      |
 | :----------------------: | ------------------------------------------------------------ |
 |       `nd-select`        | Indicates that the `<select ... />` element will be handled by `ndspalib` . |
+|      `nd-selected`       | Set the selection to the given value.                        |
 |       `nd-target`        | A space separated list of HTML targets that will be affected by changes in the selector. |
 |   `nd-url`<sup>1</sup>   | The select options are fetched from the specified server endpoint. |
 |       `nd-inform`        | Like `nd-target`, but refers to one (or more) `<select.../> ` elements.<br />When the actual `<select.../>`changes, the targets defined in `nd-inform` will be reloaded with new options.<br />**Note** : The `nd-inform` target(s) must be `<select.../>` elements ! <br />See a full example below (use cases). |

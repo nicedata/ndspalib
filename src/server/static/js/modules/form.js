@@ -83,7 +83,12 @@ exports.Form = class Form {
     };
 
     confirm = async () => {
-        return this.confirm_dialog ? (await this.confirm_dialog.run()) === "accept" : true;
+        this.form.setAttribute("novalidate", "");
+        const result = this.confirm_dialog ? (await this.confirm_dialog.run()) === "accept" : true;
+        this.form.removeAttribute("novalidate");
+        const first_input = this.form.querySelector("input");
+        first_input ? first_input.focus() : () => {};
+        return result;
     };
 
     accept = async () => {
@@ -122,7 +127,7 @@ exports.Form = class Form {
         let do_proceed = true;
 
         // If form is dirty, run a confirmation dialog (are you sure ?)
-        if (this.is_dirty) do_proceed = await this.confirm();
+        do_proceed = await this.confirm();
 
         // Action: close or noop()
         do_proceed ? this.close("dismiss") : () => {};

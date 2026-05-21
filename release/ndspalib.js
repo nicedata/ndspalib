@@ -638,6 +638,7 @@
           this.nd_default = this.nd_default ? `<option>${this.nd_default}</option>` : null;
           this.nd_default ? element.innerHTML = this.nd_default : () => {
           };
+          this.nd_selected = element.getAttribute("nd-selected");
           const nd_target = element.getAttribute("nd-target");
           nd_target ? this.logger.info(`Target selection: '${nd_target}'`) : () => {
           };
@@ -672,7 +673,9 @@
           this._setup();
         }
         _setup = () => {
-          this.selector.selectedIndex = 0;
+          const nd_selected = this.selector.querySelector(`option[value="${this.nd_selected}"]`);
+          console.log("nd_selected", nd_selected);
+          nd_selected ? this.selector.value = nd_selected.value : this.selector.selectedIndex = 0;
           this.selector.dispatchEvent(new Event("change"));
         };
         _send_event = () => {
@@ -2066,7 +2069,13 @@
           event.preventDefault();
         };
         confirm = async () => {
-          return this.confirm_dialog ? await this.confirm_dialog.run() === "accept" : true;
+          this.form.setAttribute("novalidate", "");
+          const result = this.confirm_dialog ? await this.confirm_dialog.run() === "accept" : true;
+          this.form.removeAttribute("novalidate");
+          const first_input = this.form.querySelector("input");
+          first_input ? first_input.focus() : () => {
+          };
+          return result;
         };
         accept = async () => {
           if (!this.form.reportValidity())
@@ -2089,8 +2098,7 @@
         dismiss = async () => {
           this.logger.info("Dismissing, dirty form: ", this.is_dirty);
           let do_proceed = true;
-          if (this.is_dirty)
-            do_proceed = await this.confirm();
+          do_proceed = await this.confirm();
           do_proceed ? this.close("dismiss") : () => {
           };
         };

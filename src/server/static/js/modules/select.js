@@ -21,6 +21,9 @@ exports.Select = class Select {
         this.nd_default = this.nd_default ? `<option>${this.nd_default}</option>` : null;
         this.nd_default ? (element.innerHTML = this.nd_default) : () => {};
 
+        // Process the nd-selected attribute
+        this.nd_selected = element.getAttribute("nd-selected");
+
         // Find target(s)
         const nd_target = element.getAttribute("nd-target");
         nd_target ? this.logger.info(`Target selection: '${nd_target}'`) : () => {};
@@ -67,8 +70,10 @@ exports.Select = class Select {
     }
 
     _setup = () => {
+        const nd_selected = this.selector.querySelector(`option[value="${this.nd_selected}"]`);
+        console.log("nd_selected", nd_selected);
         // Set the selection to the first option
-        this.selector.selectedIndex = 0;
+        nd_selected ? (this.selector.value = nd_selected.value) : (this.selector.selectedIndex = 0);
         // Initial update !
         this.selector.dispatchEvent(new Event("change"));
     };

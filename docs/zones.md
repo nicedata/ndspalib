@@ -48,3 +48,4 @@ Following actions max be performed on a zone :
 | set    | The zone is set                                              | If elements bearing a `nd-zone-field`  attribute exist, they are updated with specific content. If not, the whole zone content is replaced. The container fragment is reprocessed. | Zone                  |
 | remove | Remove a zone from the DOM                                   | The content of a zone is deleted. The container fragment is reprocessed. | Zone                  |
 | clear  | Clear all fields bearing a `name` attribute, except `csfr` token fields | Removes focus of the `document.activeElement` and set it to the **first** element in the zone bearing an `autofocus` attribute | Zone containing forms |
+|        |                                                              |                                                              |                       |
