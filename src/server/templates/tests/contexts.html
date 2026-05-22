@@ -1,11 +1,22 @@
 <h1>Contexts</h1>
 
-<h2>All Users</h2>
+<h1 nd-context nd-hide-for="*">Visible when no context is set !</h1>
 
-<div nd-context="auth_user">
+
+
+<div nd-context nd-show-for="auth_user">
     <h2>Authenticated user</h2>
 </div>
-<h3 nd-context="super_user">I'm a super user !</h3>
+<h3 nd-context nd-show-for="super_user">I'm a super user !</h3>
+
+<!-- Should be  -->
+<h4 nd-context nd-show-for="auth_user super_user">Visible for Auth and Super User</h4>
+<h4 nd-context nd-show-for="super_user">Visible for Super User</h4>
+<h4 nd-context nd-show-for="auth_user">Visible for Auth User</h4>
+<h4 nd-context nd-hide-for="*" nd-remove-for="auth_user super_user" class="border border-danger">Visible when no context is set !</h4>
+
+<h4 nd-context nd-hide-for="auth_user">Hidden for Auth User</h4>
+
 
 
 
@@ -14,10 +25,11 @@
         <button nd-link nd-url="/context_test/set/auth_user" class="btn btn-sm btn-primary w-100">Set auth_user</button>
     </div>
     <div class="col-2">
-        <button nd-link nd-url="/context_test/set/super_user" class="btn btn-sm btn-primary w-100">Set super_user</button>
-    </div>
-    <div class="col-2">
         <button nd-link nd-url="/context_test/reset/auth_user" class="btn btn-sm btn-primary w-100">Reset auth_user</button>
+    </div>
+    <div class="col-1 text-center">|</div>
+    <div class="col-2">
+        <button nd-link nd-url="/context_test/set/super_user" class="btn btn-sm btn-primary w-100">Set super_user</button>
     </div>
     <div class="col-2">
         <button nd-link nd-url="/context_test/reset/super_user" class="btn btn-sm btn-primary w-100">Reset super_user</button>

@@ -169,7 +169,7 @@ navigation.addEventListener("navigate", (event) => {
 });
 
 document.addEventListener("submit", (event) => {
-    console.log("Submit", event);
+    // event.preventDefault();
 });
 
 // DOM Content Loaded handler

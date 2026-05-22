@@ -1,10 +1,11 @@
 const { ND_EVENTS, VERSION } = require("../constants.js");
 const { Download } = require("../constants.js");
 const { Logger } = require("./logger.js");
+const { Form } = require("./form.js");
 
 exports.Fetcher = class Fetcher {
     static LOGGER = new Logger("Fetcher", true);
-    static METHODS = ["get", "post", "nav"];
+    static METHODS = ["get", "post", "delete", "nav"];
     // Singleton constructor !
     constructor() {
         if (!!Fetcher._instance) {
@@ -114,21 +115,16 @@ exports.Fetcher = class Fetcher {
         }
     }
 
-    async send_form(form) {
-        if (!(form instanceof HTMLFormElement)) {
-            this.logger.error("send_form: subitted data is not an HTMLFormElement.");
-            return;
-        }
+    async send_form(form, operation = "accept") {
+        const formdata = new FormData(form);
+        formdata.append("nd-form_id", form.dataset.ndtrack);
+        formdata.append("nd-form_operation", operation);
 
-        const body = new FormData(form);
-        body.append("form_id", form.dataset.ndtrack);
-        // Build a new Request object
-        return await this.execute_fetch(
-            new Request(form.action, {
-                method: form.method,
-                body: body,
-            }),
-        );
+        const request = new Request(form.action, {
+            method: form.method,
+            body: formdata,
+        });
+        return await this.execute_fetch(request);
     }
 
     _redirect_to = async (url) => {

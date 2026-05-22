@@ -8,6 +8,7 @@ HTML forms bearing the `nd-form` attribute will be handled (and enhanced) by our
 | :----------: | ------------------------------------------------------------ |
 |  `nd-form`   | Indicates that the `<form ... />` element will be handled by `ndspalib`.<br>In particular the native `submit` event. |
 | `nd-confirm` | A reference to a confirmation dialog template.               |
+| `nd-target`  | The target is updated with the submit event response.        |
 
 When the form data is changed, and before a destructive operation, a confirmation dialog is displayed. It is possible to override the default confirmation dialog by adding an `nd-confirm` element reference. This element is a `<template.../>` element that cold look like this:
 
@@ -22,6 +23,39 @@ When the form data is changed, and before a destructive operation, a confirmatio
 </template>
 ```
 
+## Form fields reserved names
+
+When the form is sent to the server, following fields are added :
+
+1.  `nd-form_id` : (string) : the form's unique id. This name can be used by the server to trigger events on this form (like a  form`reset()`).
+2.  `nd-form_operation` : (string, `accept` or `apply`) : the operation (accept or submit) that was asked.
+
+These names must not be used as form field names !
+
+### How to use them in a backend
+
+The backend can use these reserved names to perform specific actions. Here is an example :
+
+```python
+@app.route("/sse/<string:arg>", methods=["GET", "POST"])
+def sse(arg="No arg"):
+    now = datetime.datetime.now().strftime("%d.%m.%Y %H:%M:%S")
+
+    if request.method == "POST":
+        form_id = request.form.get("nd-form_id", "")
+        form_operation = request.form.get("nd-form_operation", "")
+        match form_operation:
+            case "accept":
+                app.alert("success", f"A form was posted, id={form_id}, operation: {form_operation}")
+                ...
+            case "apply":
+                app.toast("info", "Form operation", f"A form was posted, id={form_id}, operation: {form_operation}")
+                ...
+
+        return f"A form was posted, id={form_id}, operation: {form_operation}, stamp: {now}"
+    ...
+```
+
 ## Form elements
 
 In the form itself five `nd-` elements be defined (`<button.../>`, `<a.../>``, ...) specific actions :
@@ -33,8 +67,6 @@ In the form itself five `nd-` elements be defined (`<button.../>`, `<a.../>``, .
 |    `nd-apply`     | The form is submitted (if checks are OK) and remains open.   |    No    |
 |    `nd-revert`    | The form content is reverted to the last saved state.        |    No    |
 |    `nd-clear`     | The form is cleared.                                         |    No    |
-
-
 
 ## A simple example
 

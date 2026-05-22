@@ -74,7 +74,7 @@ exports.Action = class Action {
 
         // If no URL is present, excecute before the fetch by default.
         // If a URL is present, the action will be executed according to the specified modifier (before or after).
-        this.details.url ? () => {} : (this.when = "before");
+        this.details.url ? {} : (this.when = "before");
 
         // Create the action function from the code string.
         // The function will be called with the action details when executed.

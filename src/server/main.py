@@ -63,6 +63,12 @@ def forms():
     return render_template("tests/forms.html")
 
 
+@app.route("/dialogs", methods=["GET", "POST"])
+def dialogs():
+    app.title("Dialogs")
+    return render_template("tests/dialogs.html")
+
+
 # =======================================================================
 # ICC tests
 @app.route("/icc")
@@ -138,7 +144,7 @@ def websession_endpoint(arg=""):
     if request.method == "POST":
         # Get the email and the form id from the POSTed data
         email = request.form.get("email", None)
-        form_id = request.form.get("form_id", "")
+        form_id = request.form.get("nd-form_id", "")
 
         if email in VALID_USERS:
             # Trigger a success alert and set the context to 'authenticated'
@@ -246,14 +252,22 @@ def lorem_ipsum(arg="-1"):
 
 @app.route("/sse/<string:arg>", methods=["GET", "POST"])
 def sse(arg="No arg"):
+    now = datetime.datetime.now().strftime("%d.%m.%Y %H:%M:%S")
 
     if request.method == "POST":
-        print("POST:", request.form)
-        app.alert("success", f"A form was posted ! arg={arg}")
-        return ""
+        form_id = request.form.get("nd-form_id", "")
+        form_operation = request.form.get("nd-form_operation", "")
+        match form_operation:
+            case "accept":
+                app.alert("success", f"A form was posted, id={form_id}, operation: {form_operation}")
+                ...
+            case "apply":
+                app.toast("info", "Form operation", f"A form was posted, id={form_id}, operation: {form_operation}")
+                ...
+
+        return f"A form was posted, id={form_id}, operation: {form_operation}, stamp: {now}"
 
     arg = arg.strip().lower()
-    now = datetime.datetime.now().strftime("%d.%m.%Y %H:%M:%S")
 
     match arg:
         case "toast":

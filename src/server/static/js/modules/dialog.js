@@ -105,7 +105,21 @@ exports.Dialog = class Dialog {
         return result;
     };
 
-    get = (template_id) => {
+    get = (dialog_str) => {
+        const [template_id, title, title_text] = dialog_str.split("::");
+
+        console.log("A", template_id, title, title_text);
+        if (title) {
+            if (title !== "title") {
+                this.logger.error(`Only the '::title' modifier is allowed in template with 'id=${template_id}.`);
+                return;
+            }
+            if (!title_text) {
+                this.logger.error(`A '::title::argument' must be defined in template with 'id=${template_id}.`);
+                return;
+            }
+        }
+
         // Check if template exists
         const template = document.getElementById(template_id);
         if (!template) {
@@ -134,6 +148,8 @@ exports.Dialog = class Dialog {
 
         const dict = this.get_dict(template);
 
+        dict.title = title_text ? title_text : dict.title;
+
         switch (dict.mode) {
             case "info":
                 return new OneButtonDialog(dict);
@@ -147,8 +163,8 @@ exports.Dialog = class Dialog {
         return null;
     };
 
-    show = (template_id) => {
-        const dialog = this.get(template_id);
+    show = (dialog_str) => {
+        const dialog = this.get(dialog_str);
         if (dialog) dialog.show();
     };
 };

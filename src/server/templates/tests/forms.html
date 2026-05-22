@@ -1,7 +1,7 @@
 <h1>Test forms</h1>
 
 
-<form nd-form method="post" nd-confirm="confirm_dialog" action="/sse/form">
+<form nd-form method="post" nd-confirm="confirm_dialog" nd-target="#results" action="/sse/form">
     <!-- Form fields -->
     <div class="mb-3">
         <label for="id_email" class="form-label">Email address</label>
@@ -30,6 +30,8 @@
         <button class="btn btn-outline-secondary col-2" nd-clear>Clear</button>
     </div>
 </form>
+
+<p id="results">Results</p>
 
 <!-- The confirm dialog template -->
 <template id="confirm_dialog">

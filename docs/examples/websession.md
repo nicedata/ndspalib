@@ -1,6 +1,6 @@
 # Login / Logout using `ndspalib` and SSE
 
-This example implements a simple a web session cycle :
+This example implements a simple a web session cycle : 
 
 - A user authenticates
 - An authenticated user logs out
@@ -15,17 +15,17 @@ The HTML source code is this one :
     <a nd-link nd-action="alert('News Page')" class="border-end ps-2 pe-2">News</a>
     <a nd-link nd-action="alert('Contact Page')" class="border-end ps-2 pe-2">Contact</a>
     <!-- Context dependent items -->
-    <a nd-link nd-context="authenticated" nd-action="alert('My Account Page')" class="border-end ps-2 pe-2">My Account</a>
-    <a nd-link nd-context="authenticated:hide" href="/websession/login" nd-target="#forms" class="border-end ps-2 pe-2">Login</a>
-    <a nd-link nd-context="authenticated" nd-confirm="logout_dialog" href="/websession/logout" class="border-end ps-2 pe-2">Logout</a>
+    <a nd-link nd-context nd-show-for="authenticated" nd-action="alert('My Account Page')" class="border-end ps-2 pe-2">My Account</a>
+    <a nd-link nd-context nd-hide-for="authenticated" href="/websession/login" nd-target="#forms" class="border-end ps-2 pe-2">Login</a>
+    <a nd-link nd-context nd-show-for="authenticated" nd-confirm="logout_dialog" href="/websession/logout" class="border-end ps-2 pe-2">Logout</a>
 </div>
-<div id="forms" nd-context="authenticated:remove">
+<div id="forms" nd-context nd-hide-for="authenticated" nd-remove-for="authenticated">
     <!-- Form will be updated by SSE -->
 </div>
 
 <!-- The logout confirmation dialog template -->
 <template id="logout_dialog">
-    <param name="mode" value="simple">
+    <param name="mode" value="choice">
     <param name="title" value="Logout">
     <param name="message" value="Do you want to close this session ?">
     <param name="confirm" value=""> <!-- Not relevant here ! -->
@@ -115,7 +115,7 @@ def websession_endpoint(arg=""):
     if request.method == "POST":
         # Get the email and the form id from the POSTed data
         email = request.form.get("email", None)
-        form_id = request.form.get("form_id", "")
+        form_id = request.form.get("nd-form_id", "")
 
         if email in VALID_USERS:
             # Trigger a success alert and set the context to 'authenticated'
@@ -144,3 +144,7 @@ def websession_endpoint(arg=""):
 ## Endnote
 
 This simple example illustrates what can be done without having one line of user-produced JavaScript.
+
+------
+
+> Updated : 22.05.2026 - MM

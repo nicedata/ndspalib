@@ -94,8 +94,16 @@ The detail will then be available in the function. This allows to do specific op
 
 In some cases, one may want to confirm an operation before executing it. Our  `ndspalib` allows to trigger a modal dialog before an operations. We provide two kinds of dialogs (both modal) :
 
-- A simple dialog with an accept and a dismiss button
-- A secured dialog with an accept (initially disabled) and a dismiss button, and a confirmation checkbox which activates/deactivates the accept button
+- A simple dialog with an accept and a dismiss button.
+- A secured dialog with an accept (initially disabled) and a dismiss button, and a confirmation checkbox which activates/deactivates the accept button.
+
+**➞** The title of such a dialog may be dynamically defined by using the 
+
+```html
+<... nd-confirm="template_id::title::Another title !" .../>
+```
+
+syntax. 
 
 To add a confirmation dialog, we use following code :
 

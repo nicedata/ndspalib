@@ -519,8 +519,7 @@
             this.when = "before";
           }
           this.details.when = this.when;
-          this.details.url ? () => {
-          } : this.when = "before";
+          this.details.url ? {} : this.when = "before";
           this.action = new Function(this.code);
         }
         // Method to set target elements after the action has been created, allowing for dynamic updates to the targets.
@@ -1778,32 +1777,39 @@
         _update_document = () => {
           this.logger.info("Updating document.");
           document.querySelectorAll("[nd-context]").forEach((e) => {
-            let context_value = e.getAttribute("nd-context");
-            if (!context_value) {
-              this.logger.error(`No context specified in element`, e);
+            let nd_show_for = e.getAttribute("nd-show-for");
+            let nd_hide_for = e.getAttribute("nd-hide-for");
+            let nd_remove_for = e.getAttribute("nd-remove-for");
+            nd_show_for ? nd_show_for = nd_show_for.split(" ").join(" ") : nd_show_for = "";
+            nd_hide_for ? nd_hide_for = nd_hide_for.split(" ").join(" ") : nd_hide_for = "";
+            nd_remove_for ? nd_remove_for = nd_remove_for.split(" ").join(" ") : nd_remove_for = "";
+            if (!nd_show_for && !nd_hide_for) {
+              this.logger.error(`At least one of 'nd-show-for' and 'nd-show-for' attribute should be defined on element`, e);
               return;
             }
-            context_value = context_value.replaceAll(" ", "");
-            const [context, action = "show"] = context_value.split(":");
-            if (!ContextHandler2.CONTEXT_ACTIONS.includes(action)) {
-              this.logger.error(`Unsupported context action: '${action}. Allowed actions are ${ContextHandler2.CONTEXT_ACTIONS.join(" or ")}.`);
+            e.hidden = true;
+            const show_for = nd_show_for ? nd_show_for.split(" ") : [];
+            const hide_for = nd_hide_for ? nd_hide_for.split(" ") : [];
+            const remove_for = nd_remove_for ? nd_remove_for.split(" ") : [];
+            if (this.contexts.length === 0 && show_for.length === 0) {
+              e.innerHTML === "" ? e.hidden = true : e.hidden = false;
               return;
             }
-            switch (action) {
-              case "show":
-                e.hidden = this.contexts.includes(context) ? false : true;
-                break;
-              case "hide":
-                e.hidden = this.contexts.includes(context) ? true : false;
-                break;
-              case "remove":
-                if (this.contexts.includes(context)) {
+            this.contexts.forEach((context) => {
+              if (remove_for.includes(context)) {
+                if (e.innerHTML) {
                   nd.util.clear_node(e);
                   nd.tracker.postprocess();
-                  e.hidden != e.hidden;
                 }
-                break;
-            }
+                e.innerHTML === "" ? e.hidden = true : e.hidden = false;
+              }
+              if (hide_for.includes(context) || hide_for.includes("*")) {
+                e.hidden = true;
+              }
+              if (show_for.includes(context) || show_for.includes("*")) {
+                e.hidden = false;
+              }
+            });
           });
         };
         // Todo : remove
@@ -2006,9 +2012,13 @@
           this.form = form;
           this.form_str = nd.util.serialize_form(this.form);
           this.is_dirty = false;
+          this.targets = [];
           this.confirm_dialog = null;
           this.accept_url = null;
           this.dismiss_url = null;
+          const nd_target = form.getAttribute("nd-target");
+          if (nd_target)
+            this.targets = document.querySelectorAll(nd_target);
           const form_actions = [
             { name: "nd-accept", element: form.querySelector("[nd-accept]"), handler: this.accept, required: true },
             { name: "nd-apply", element: form.querySelector("[nd-apply]"), handler: this.apply, required: false },
@@ -2017,10 +2027,8 @@
             { name: "nd-clear", element: form.querySelector("[nd-clear]"), handler: this.clear, required: false }
           ];
           const template_id = form.getAttribute("nd-confirm");
-          console.log("TID", template_id);
           if (template_id) {
             this.confirm_dialog = nd.dialog.get(template_id);
-            console.log("Confirm", this.confirm_dialog);
           }
           form_actions.forEach((a) => {
             a.required && !a.element ? this.logger.error(`Required element with an '${a.name}' attribute is required !`) : () => {
@@ -2081,8 +2089,18 @@
           if (!this.form.reportValidity())
             return;
           this.logger.info(`Submit: submitting. Form is valid.`);
-          await nd.fetcher.send_form(this.form);
+          const reply = await nd.fetcher.send_form(this.form, "accept");
+          this.update_targets(reply);
           this.close("accept");
+        };
+        update_targets = (reply) => {
+          if (reply && this.targets) {
+            const fragment = nd.util.create_fragment(reply);
+            this.targets.forEach((target) => {
+              nd.util.clear_node(target);
+              nd.util.insert_fragment(target, fragment, false, true);
+            });
+          }
         };
         apply = async () => {
           if (!this.is_dirty) {
@@ -2092,7 +2110,8 @@
           if (!this.form.reportValidity())
             return;
           this.logger.info(`Apply: submitting. Form is valid.`);
-          await nd.fetcher.send_form(this.form);
+          const reply = await nd.fetcher.send_form(this.form, "apply");
+          this.update_targets(reply);
           this.save_state();
         };
         dismiss = async () => {
@@ -2168,9 +2187,10 @@
       var { ND_EVENTS, VERSION } = require_constants();
       var { Download } = require_constants();
       var { Logger: Logger2 } = require_logger();
+      var { Form } = require_form();
       exports.Fetcher = class Fetcher2 {
         static LOGGER = new Logger2("Fetcher", true);
-        static METHODS = ["get", "post", "nav"];
+        static METHODS = ["get", "post", "delete", "nav"];
         // Singleton constructor !
         constructor() {
           if (!!Fetcher2._instance) {
@@ -2260,19 +2280,15 @@ ${headers_dump.join("\n")}`);
             return null;
           }
         }
-        async send_form(form) {
-          if (!(form instanceof HTMLFormElement)) {
-            this.logger.error("send_form: subitted data is not an HTMLFormElement.");
-            return;
-          }
-          const body = new FormData(form);
-          body.append("form_id", form.dataset.ndtrack);
-          return await this.execute_fetch(
-            new Request(form.action, {
-              method: form.method,
-              body
-            })
-          );
+        async send_form(form, operation = "accept") {
+          const formdata = new FormData(form);
+          formdata.append("nd-form_id", form.dataset.ndtrack);
+          formdata.append("nd-form_operation", operation);
+          const request = new Request(form.action, {
+            method: form.method,
+            body: formdata
+          });
+          return await this.execute_fetch(request);
         }
         _redirect_to = async (url) => {
           if (!url.startsWith("/")) {
@@ -2524,7 +2540,19 @@ ${headers_dump.join("\n")}`);
           }
           return result;
         };
-        get = (template_id) => {
+        get = (dialog_str) => {
+          const [template_id, title, title_text] = dialog_str.split("::");
+          console.log("A", template_id, title, title_text);
+          if (title) {
+            if (title !== "title") {
+              this.logger.error(`Only the '::title' modifier is allowed in template with 'id=${template_id}.`);
+              return;
+            }
+            if (!title_text) {
+              this.logger.error(`A '::title::argument' must be defined in template with 'id=${template_id}.`);
+              return;
+            }
+          }
           const template = document.getElementById(template_id);
           if (!template) {
             this.logger.error(`Template with 'id=${template_id}' not found.`);
@@ -2544,6 +2572,7 @@ ${headers_dump.join("\n")}`);
             return;
           }
           const dict = this.get_dict(template);
+          dict.title = title_text ? title_text : dict.title;
           switch (dict.mode) {
             case "info":
               return new OneButtonDialog(dict);
@@ -2556,8 +2585,8 @@ ${headers_dump.join("\n")}`);
           }
           return null;
         };
-        show = (template_id) => {
-          const dialog = this.get(template_id);
+        show = (dialog_str) => {
+          const dialog = this.get(dialog_str);
           if (dialog)
             dialog.show();
         };
@@ -2699,7 +2728,6 @@ ${headers_dump.join("\n")}`);
     }
   });
   document.addEventListener("submit", (event) => {
-    console.log("Submit", event);
   });
   var on_dom_loaded = async () => {
     nd.on_dom_ready();

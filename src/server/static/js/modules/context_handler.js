@@ -16,38 +16,52 @@ exports.ContextHandler = class ContextHandler {
     _update_document = () => {
         this.logger.info("Updating document.");
         document.querySelectorAll("[nd-context]").forEach((e) => {
-            let context_value = e.getAttribute("nd-context");
-            if (!context_value) {
-                this.logger.error(`No context specified in element`, e);
+            // Get attributes from element
+            let nd_show_for = e.getAttribute("nd-show-for");
+            let nd_hide_for = e.getAttribute("nd-hide-for");
+            let nd_remove_for = e.getAttribute("nd-remove-for");
+
+            // Clean attributes (remove whitespaces and possibly set an empty value)
+            nd_show_for ? (nd_show_for = nd_show_for.split(" ").join(" ")) : (nd_show_for = "");
+            nd_hide_for ? (nd_hide_for = nd_hide_for.split(" ").join(" ")) : (nd_hide_for = "");
+            nd_remove_for ? (nd_remove_for = nd_remove_for.split(" ").join(" ")) : (nd_remove_for = "");
+
+            // Prform checks
+            if (!nd_show_for && !nd_hide_for) {
+                this.logger.error(`At least one of 'nd-show-for' and 'nd-show-for' attribute should be defined on element`, e);
                 return;
             }
-            // Remove whitespaces
-            context_value = context_value.replaceAll(" ", "");
 
-            // Handle actions, default is 'show'
-            const [context, action = "show"] = context_value.split(":");
+            // Hide by default
+            e.hidden = true;
 
-            // Check !
-            if (!ContextHandler.CONTEXT_ACTIONS.includes(action)) {
-                this.logger.error(`Unsupported context action: '${action}. Allowed actions are ${ContextHandler.CONTEXT_ACTIONS.join(" or ")}.`);
+            // Transform parameters into arrays
+            const show_for = nd_show_for ? nd_show_for.split(" ") : [];
+            const hide_for = nd_hide_for ? nd_hide_for.split(" ") : [];
+            const remove_for = nd_remove_for ? nd_remove_for.split(" ") : [];
+
+            // By default elements with no 'nd-show-for' attribute are shown when no context is set
+            if (this.contexts.length === 0 && show_for.length === 0) {
+                e.innerHTML === "" ? (e.hidden = true) : (e.hidden = false);
                 return;
             }
 
-            switch (action) {
-                case "show":
-                    e.hidden = this.contexts.includes(context) ? false : true;
-                    break;
-                case "hide":
-                    e.hidden = this.contexts.includes(context) ? true : false;
-                    break;
-                case "remove":
-                    if (this.contexts.includes(context)) {
+            // Loop current contexts
+            this.contexts.forEach((context) => {
+                if (remove_for.includes(context)) {
+                    if (e.innerHTML) {
                         nd.util.clear_node(e);
                         nd.tracker.postprocess();
-                        e.hidden != e.hidden;
                     }
-                    break;
-            }
+                    e.innerHTML === "" ? (e.hidden = true) : (e.hidden = false);
+                }
+                if (hide_for.includes(context) || hide_for.includes("*")) {
+                    e.hidden = true;
+                }
+                if (show_for.includes(context) || show_for.includes("*")) {
+                    e.hidden = false;
+                }
+            });
         });
     };
 

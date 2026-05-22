@@ -7,9 +7,14 @@ exports.Form = class Form {
         this.form = form;
         this.form_str = nd.util.serialize_form(this.form); // Store the original form data
         this.is_dirty = false; // Initial form is not dirty !
+        this.targets = [];
         this.confirm_dialog = null;
         this.accept_url = null;
         this.dismiss_url = null;
+
+        // Targets
+        const nd_target = form.getAttribute("nd-target");
+        if (nd_target) this.targets = document.querySelectorAll(nd_target);
 
         const form_actions = [
             { name: "nd-accept", element: form.querySelector("[nd-accept]"), handler: this.accept, required: true },
@@ -20,10 +25,8 @@ exports.Form = class Form {
         ];
 
         const template_id = form.getAttribute("nd-confirm");
-        console.log("TID", template_id);
         if (template_id) {
             this.confirm_dialog = nd.dialog.get(template_id);
-            console.log("Confirm", this.confirm_dialog);
         }
 
         form_actions.forEach((a) => {
@@ -97,11 +100,22 @@ exports.Form = class Form {
         if (!this.form.reportValidity()) return;
 
         this.logger.info(`Submit: submitting. Form is valid.`);
-        await nd.fetcher.send_form(this.form);
+        const reply = await nd.fetcher.send_form(this.form, "accept");
+        this.update_targets(reply);
 
         // Close the form
 
         this.close("accept");
+    };
+
+    update_targets = (reply) => {
+        if (reply && this.targets) {
+            const fragment = nd.util.create_fragment(reply);
+            this.targets.forEach((target) => {
+                nd.util.clear_node(target);
+                nd.util.insert_fragment(target, fragment, false, true);
+            });
+        }
     };
 
     apply = async () => {
@@ -116,7 +130,8 @@ exports.Form = class Form {
 
         // Submit the form
         this.logger.info(`Apply: submitting. Form is valid.`);
-        await nd.fetcher.send_form(this.form);
+        const reply = await nd.fetcher.send_form(this.form, "apply");
+        this.update_targets(reply);
 
         // Save the current state
         this.save_state();
