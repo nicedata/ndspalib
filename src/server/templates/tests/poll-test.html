@@ -46,12 +46,12 @@
         // Get the arguments as a dictionary
         const result = nd.util.action_detail_dict(args);
 
-        console.log(result)
+        // console.log(result)
 
         // Debug
         const source = result.detail.source;
         if (source.id === 'test-action') {
-            console.log('Debug:', source);
+            // console.log('Debug:', source);
             source.innerHTML = `<code>${crypto.randomUUID().replaceAll('-', '').toUpperCase()}</code>`
         }
 

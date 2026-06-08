@@ -1,8 +1,8 @@
 const { Logger } = require("../modules/logger.js");
-const { OneButtonDialog, TwoButtonDialog, ThreeButtonDialog, ConfirmDialog } = require("../components/dialogs.js");
+const { OneButtonDialog, TwoButtonDialog, ThreeButtonDialog, ConfirmDialog, CustomDialog } = require("../components/dialogs.js");
 
 const MODE = "mode";
-const MODES = ["info", "choice", "options", "secure"];
+const MODES = ["info", "choice", "options", "secure", "modal"];
 
 const PARAMS_INFO = [
     { name: "mode", required: true, defaut: null },
@@ -45,6 +45,12 @@ const PARAMS_OPTIONS = [
     { name: "dismiss_url", required: false, default: null },
 ];
 
+const PARAMS_MODAL = [
+    { name: "mode", required: true, defaut: null },
+    { name: "title", required: false, default: null },
+    { name: "width_pc", required: false, default: "30" },
+];
+
 exports.Dialog = class Dialog {
     static LOGGER = new Logger("Dialog", true);
     constructor() {
@@ -78,6 +84,19 @@ exports.Dialog = class Dialog {
             case "secure":
                 checklist = PARAMS_SECURE;
                 break;
+            case "modal":
+                checklist = PARAMS_MODAL;
+                break;
+        }
+
+        if (mode === "modal") {
+            // In a modal dialog, a sub-template containing the HTML elements must be present
+            const sub_template = template.content.querySelector("template");
+            if (!sub_template) {
+                errors.push(`${mode} : required parameter '<template.../>' is missing in template with 'id=${template.id}'.`);
+            } else {
+                result["fragment"] = sub_template.content;
+            }
         }
 
         checklist.forEach((item) => {
@@ -108,7 +127,6 @@ exports.Dialog = class Dialog {
     get = (dialog_str) => {
         const [template_id, title, title_text] = dialog_str.split("::");
 
-        console.log("A", template_id, title, title_text);
         if (title) {
             if (title !== "title") {
                 this.logger.error(`Only the '::title' modifier is allowed in template with 'id=${template_id}.`);
@@ -159,6 +177,8 @@ exports.Dialog = class Dialog {
                 return new ThreeButtonDialog(dict);
             case "secure":
                 return new ConfirmDialog(dict);
+            case "modal":
+                return new CustomDialog(dict);
         }
         return null;
     };

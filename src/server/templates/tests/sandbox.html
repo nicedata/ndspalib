@@ -1,20 +1,61 @@
 <h1>Sandbox</h1>
 
-<h2>Custom dialogs</h2>
 
-<button class="col-1 btn btn-primary btn-sm me-1" onclick="custom_dialog()">JS Open</button>
-<script>
+<p>Make a component modal...</p>
 
-    custom_dialog = async () => {
-        var response = await fetch("/sse/form_1");
-        var data = await response.text();
+<button nd-link nd-url="" nd-confirm="modal_form" class="btn btn-outline-primary">Show</button>
 
-        var args = {
-            "title": "This is a custom dialog !",
-            "html": data,
-            "width_pc": 30,
-        }
-        nd.dialog_factory.create('custom', args).show();
-    }
+<template id="test_me">
+    <param name="mode" value="modal">
+    <param name="width_pc" value="30">
+    <h1>Test me !</h1>
+</template>
 
-</script>
+
+
+<template id="modal_form">
+    <param name="mode" value="modal">
+    <param name="width_pc" value="30">
+    <template>
+        <form nd-form nd-confirm="confirm_dialog" method="post" action="/websession/dummy/login" class="p-3">
+            <!-- Form header -->
+            <div class="row justify-content-center">
+                <h2 class="col text-center">Sign In !</h2>
+            </div>
+            <!-- Form fields (email & password) -->
+            <div class="row justify-content-center mb-3">
+                <div class="col-8">
+                    <label for="id_email" class="form-label">Email address</label>
+                    <input type="email" name="email" class="form-control" id="id_email" autocomplete="email" autofocus required />
+                </div>
+            </div>
+            <div class="row justify-content-center mb-3">
+                <div class="col-8">
+                    <label for="id_password" class="form-label">Password</label>
+                    <input type="password" name="password" class="form-control" id="id_password" autocomplete="off" required />
+                </div>
+            </div>
+            <!-- Form actions (accept, dismiss) -->
+            <div class="row justify-content-center">
+                <div class="col-8 text-center">
+                    <div class="row">
+                        <!-- Submit the form to "/websession/login" (the form action) -->
+                        <button nd-accept class="col btn btn-outline-primary ms-1 me-1">Connexion</button>
+                        <!-- Cancel action : navigate to "/websession" -->
+                        <button nd-dismiss class="col btn btn-outline-danger ms-1 me-1">Abandon</button>
+                        <button nd-apply class="col btn btn-outline-warning ms-1 me-1">Appliquer</button>
+                    </div>
+                </div>
+            </div>
+        </form>
+    </template>
+</template>
+<!-- The confirm dialog template -->
+<template id="confirm_dialog">
+    <param name="mode" value="choice">
+    <param name="title" value="Please confirm !">
+    <param name="message" value="Do you really want to do this ?">
+    <!-- <param name="confirm" value=""> Not relevant here ! -->
+    <param name="accept" value="Yes">
+    <param name="dismiss" value="No">
+</template>

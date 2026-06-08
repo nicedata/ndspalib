@@ -1,43 +1,46 @@
 <h1>Contexts</h1>
 
-<h1 nd-context nd-hide-for="*">Visible when no context is set !</h1>
-
-
-
-<div nd-context nd-show-for="auth_user">
+<h1 id="el_1">Visible when no context is set !</h1>
+<div id="el_2">
     <h2>Authenticated user</h2>
 </div>
-<h3 nd-context nd-show-for="super_user">I'm a super user !</h3>
+<div id="el_3">
+    <h2>Super user</h2>
+</div>
 
-<!-- Should be  -->
-<h4 nd-context nd-show-for="auth_user super_user">Visible for Auth and Super User</h4>
-<h4 nd-context nd-show-for="super_user">Visible for Super User</h4>
-<h4 nd-context nd-show-for="auth_user">Visible for Auth User</h4>
-<h4 nd-context nd-hide-for="*" nd-remove-for="auth_user super_user" class="border border-danger">Visible when no context is set !</h4>
-
-<h4 nd-context nd-hide-for="auth_user">Hidden for Auth User</h4>
+<div id="el_7" class="border border-danger">
+    This will be removed !
+</div>
 
 
 
-
+<!-- Operation triggers -->
 <div class="row justify-content-center gx-3 mt-3 border-top pt-3">
     <div class="col-2">
         <button nd-link nd-url="/context_test/set/auth_user" class="btn btn-sm btn-primary w-100">Set auth_user</button>
     </div>
     <div class="col-2">
-        <button nd-link nd-url="/context_test/reset/auth_user" class="btn btn-sm btn-primary w-100">Reset auth_user</button>
+        <button nd-link nd-url="/context_test/clear" class="btn btn-sm btn-primary w-100">Clear context</button>
     </div>
-    <div class="col-1 text-center">|</div>
     <div class="col-2">
         <button nd-link nd-url="/context_test/set/super_user" class="btn btn-sm btn-primary w-100">Set super_user</button>
     </div>
-    <div class="col-2">
-        <button nd-link nd-url="/context_test/reset/super_user" class="btn btn-sm btn-primary w-100">Reset super_user</button>
-    </div>
 </div>
-<div class="row justify-content-center gx-3 mt-3 border-top pt-3">
-    <div class="col-2">
-        <button nd-link nd-url="/context_test/clear" class="btn btn-sm btn-danger w-100">Clear All Contexts</button>
-    </div>
 
-</div>
+<!-- Contexts -->
+<template nd-context="::none::">
+    <param name="show" nd-target="#el_1">
+    <param name="hide" nd-target="#el_2 #el_3">
+</template>
+<template nd-context="auth_user">
+    <param name="show" nd-target="#el_2">
+    <param name="hide" nd-target="#el_1 #el_3 #el_7">
+    <param name="remove" nd-target="#el_7">
+    <param name="reset" nd-target="">
+</template>
+<template nd-context="super_user">
+    <param name="show" nd-target="#el_3">
+    <param name="hide" nd-target="#el_1 #el_2 #el_7">
+    <param name="remove" nd-target="#el_7">
+    <param name="reset" nd-target="">
+</template>

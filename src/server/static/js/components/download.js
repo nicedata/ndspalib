@@ -1,16 +1,17 @@
 const { Logger } = require("../modules/logger.js");
+const { Util } = require("../modules/util.js");
 exports.Download = class Download {
-    constructor(blob, out_filename, preview = false) {
+    constructor(blob, offset, size, out_filename, mimetype, preview = false) {
         this.logger = new Logger("Download");
 
-        this.blob = blob;
+        const blob_slice = blob.slice(offset, offset + size, mimetype);
         this.id = crypto.randomUUID(); // Give this instance an ID (UUID) !
-        this.href = URL.createObjectURL(blob);
+        this.href = URL.createObjectURL(blob_slice);
         this.out_filename = out_filename;
 
         this.preview = preview;
         this.element = null;
-        this.html = this.preview ? "" : nd.util.compress(`<a data-nduuid="${this.id}" style="display: none" href="${this.href}", download="${this.out_filename}"></a>`);
+        this.html = this.preview ? "" : `<a data-nduuid="${this.id}" style="display: none" href="${this.href}", download="${this.out_filename}"></a>`;
         this.logger.info(this);
     }
 
@@ -31,10 +32,10 @@ exports.Download = class Download {
         this.logger.info("Download mode !");
 
         // Create a fragment
-        const fragment = nd.util.create_fragment(this.html);
+        const fragment = Util.create_fragment(this.html);
 
         // Append to the document
-        nd.util.insert_fragment(document.body, fragment, true, false);
+        Util.insert_fragment(document.body, fragment, true, false);
         this.element = document.querySelector(`[data-nduuid="${this.id}"]`);
 
         // Click to initiate download

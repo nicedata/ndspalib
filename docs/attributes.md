@@ -28,7 +28,8 @@ In `ndspalib`, we use `nd-` prefixed attributes. Some attributes may have a valu
 
 |  Attribute  | Meaning / Purpose                                            |
 | :---------: | ------------------------------------------------------------ |
-|  `nd-init`  | On a section, indicates the endpoint to be fetched when the base page is processed. |
+|  `nd-init`  | On a section, indicates the endpoint to be fetched when the page is processed. This is a one-time process. |
+| `nd-source` | On a section, indicates the endpoint to be fetched when the page is processed. |
 |  `nd-url`   | The endpoint to be fetched (on elements that do not support the `href` attribute) |
 | `nd-target` | The section(s) to be updated with the endpoint data.         |
 

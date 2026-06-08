@@ -29,7 +29,7 @@ exports.LinkHandler = class LinkHandler extends BaseHandler {
      */
     process(fragment) {
         // If there are no links, do nothing
-        if (fragment.querySelectorAll("[nd-link]").length == 0) return;
+        if (fragment.querySelectorAll("[nd-link]").length === 0) return;
 
         this.logger.info(`Processing fragment`, fragment);
 

@@ -1,20 +1,20 @@
 const { Logger } = require("./logger.js");
 const { ND_EVENTS } = require("../constants.js");
+const { Util } = require("./util.js");
 
 exports.Form = class Form {
     constructor(form) {
         this.logger = new Logger("Form");
         this.form = form;
-        this.form_str = nd.util.serialize_form(this.form); // Store the original form data
+        this.form_str = Util.serialize_form(this.form); // Store the original form data
         this.is_dirty = false; // Initial form is not dirty !
-        this.targets = [];
+        this.targets_selector = ""; // Target selector
         this.confirm_dialog = null;
         this.accept_url = null;
         this.dismiss_url = null;
 
         // Targets
-        const nd_target = form.getAttribute("nd-target");
-        if (nd_target) this.targets = document.querySelectorAll(nd_target);
+        this.targets_selector = form.getAttribute("nd-target");
 
         const form_actions = [
             { name: "nd-accept", element: form.querySelector("[nd-accept]"), handler: this.accept, required: true },
@@ -47,6 +47,7 @@ exports.Form = class Form {
 
         // Add a listener for server sent 'nd:form:reset'
         nd.tracker.add_listener(this.form, ND_EVENTS.FORM_RESET, this.on_reset_request);
+        nd.tracker.add_listener(this.form, ND_EVENTS.RESET, this.on_reset_request);
     }
 
     close = async (reason) => {
@@ -55,17 +56,18 @@ exports.Form = class Form {
         // Finally perfom redirections (if any)
         switch (reason) {
             case "accept":
-                this.accept_url ? await nd.fetcher.fetch_data(this.accept_url) : () => {};
+                this.accept_url ? await nd.fetcher.fetch_data(this.accept_url) : {};
                 break;
             case "dismiss":
-                this.dismiss_url ? await nd.fetcher.fetch_data(this.dismiss_url) : () => {};
+                this.dismiss_url ? await nd.fetcher.fetch_data(this.dismiss_url) : {};
                 break;
         }
+        document.dispatchEvent(new CustomEvent("nd:close:custom"));
     };
 
     save_state = () => {
         this.logger.info("Saving form state.");
-        this.form_str = nd.util.serialize_form(this.form);
+        this.form_str = Util.serialize_form(this.form);
         this.is_dirty = false;
     };
 
@@ -77,7 +79,7 @@ exports.Form = class Form {
 
     on_change = () => {
         // Capture the new state and compare to the original one
-        this.is_dirty = this.form_str !== nd.util.serialize_form(this.form);
+        this.is_dirty = this.form_str !== Util.serialize_form(this.form);
     };
 
     on_submit = (event) => {
@@ -104,16 +106,16 @@ exports.Form = class Form {
         this.update_targets(reply);
 
         // Close the form
-
         this.close("accept");
     };
 
     update_targets = (reply) => {
-        if (reply && this.targets) {
-            const fragment = nd.util.create_fragment(reply);
-            this.targets.forEach((target) => {
-                nd.util.clear_node(target);
-                nd.util.insert_fragment(target, fragment, false, true);
+        const targets = Util.get_targets(this.targets_selector);
+        if (reply && targets) {
+            const fragment = Util.create_fragment(reply);
+            targets.forEach((target) => {
+                Util.clear_node(target);
+                Util.insert_fragment(target, fragment, false, true);
             });
         }
     };
@@ -144,8 +146,8 @@ exports.Form = class Form {
         // If form is dirty, run a confirmation dialog (are you sure ?)
         do_proceed = await this.confirm();
 
-        // Action: close or noop()
-        do_proceed ? this.close("dismiss") : () => {};
+        // Action: close
+        do_proceed ? this.close("dismiss") : {};
     };
 
     clear = async () => {
@@ -155,8 +157,8 @@ exports.Form = class Form {
         // If form is dirty, run a confirmation dialog (are you sure ?)
         if (this.is_dirty) do_proceed = await this.confirm();
 
-        // Action: close or noop()
-        do_proceed ? this.form.reset() : () => {};
+        // Action: close
+        do_proceed ? this.form.reset() : {};
     };
 
     revert = async () => {
@@ -170,7 +172,7 @@ exports.Form = class Form {
         // Run a confirmation dialog (are you sure ?)
         if (await this.confirm()) {
             this.logger.info("Revert: restoring previous state.");
-            nd.util.deserialize_form(this.form, this.form_str);
+            Util.deserialize_form(this.form, this.form_str);
             this.is_dirty = false;
         } else {
             this.logger.info("Revert: action cancelled.");

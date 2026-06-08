@@ -3,11 +3,11 @@ import random
 import time
 from pathlib import Path
 
-from flask import render_template, request
+from flask import Response, render_template, request
 import lorem
 from packages.src.flask_spa import FlaskSpa
 from packages.src.flask_spa.event_factory import Button
-from packages.src.flask_spa.types import ButtonAction, ZoneField, Zone, ContextAction
+from packages.src.flask_spa.types import ButtonAction, Field
 
 PROD_MODE = False
 
@@ -39,6 +39,12 @@ def sandbox():
     return render_template("tests/sandbox.html")
 
 
+@app.route("/reset")
+def reset():
+    app.title("Reset")
+    return render_template("tests/reset.html")
+
+
 @app.route("/zones")
 def zones():
     app.title("Zones")
@@ -54,7 +60,31 @@ def contexts():
 @app.route("/websession", methods=["GET", "POST"])
 def websession():
     app.title("SPA Web Session")
+    app.clear_context()
     return render_template("tests/websession.html")
+
+
+@app.route("/transfers", methods=["GET", "POST"])
+def downloads():
+    app.title("Data Xfer")
+    return render_template("tests/transfers.html")
+
+
+@app.route("/transfers/download", methods=["GET", "POST"])
+def downloads_download():
+    now = datetime.datetime.now().strftime("%d.%m.%Y %H:%M:%S")
+    app.alert("primary", f"Sending 2 files ! ({now}).")
+    app.download(Path("Travaux-2026.ods"), "Travaux-2026.ods", False)
+    app.download(Path("GuideOpenSource.pdf"), "book.pdf", False)
+    return ""
+
+
+@app.route("/transfers/preview", methods=["GET", "POST"])
+def downloads_preview():
+    now = datetime.datetime.now().strftime("%d.%m.%Y %H:%M:%S")
+    app.alert("primary", f"Triggering a PDF preview ({now}).")
+    app.download(Path("GuideOpenSource.pdf"), "book.pdf", True)
+    return ""
 
 
 @app.route("/forms", methods=["GET", "POST"])
@@ -63,10 +93,33 @@ def forms():
     return render_template("tests/forms.html")
 
 
-@app.route("/dialogs", methods=["GET", "POST"])
-def dialogs():
-    app.title("Dialogs")
-    return render_template("tests/dialogs.html")
+@app.route("/scanning", methods=["GET", "POST"])
+def scanning():
+    app.title("Scanning")
+    context = {}
+
+    # POST
+    if request.method == "POST":
+        print("Scanner:", request.form.get("scan_device", ""))
+        data = request.form.get("scan_result", "").strip().replace("\r", "").split("\n")
+        if data[0] != "SPC":
+            app.alert("danger", "Scan result is not a QR bill !")
+            app.zone("my_zone", "hide")
+            return ""
+
+        fields = []
+        for i, n in enumerate(data):
+            field = Field(str(i), n)
+            fields.append(field)
+
+        app.alert("success", "A QR bill vas scanned !")
+        app.update("my_zone", fields)
+        app.zone("my_zone", "show")
+
+        return ""
+
+    # GET
+    return render_template("tests/scanning.html", context=context)
 
 
 # =======================================================================
@@ -74,6 +127,7 @@ def dialogs():
 @app.route("/icc")
 def icc():
     app.title("ICC")
+    app.clear_context()
     return render_template("tests/icc.html")
 
 
@@ -92,6 +146,12 @@ def icc_models(brand=""):
             result.append('<option value="eqc">EQC</option>')
 
     return "".join(result)
+
+
+@app.route("/icc/test")
+def icc_test() -> Response:
+    app.set_context("test")
+    return Response("")
 
 
 @app.route("/environment")
@@ -137,6 +197,11 @@ def unset_env():
 
 # =======================================================================
 # Websession tests
+@app.route("/websession/dummy/<string:arg>", methods=["GET", "POST"])
+def websession_dummy_endpoint(arg=""):
+    return ""
+
+
 @app.route("/websession/<string:arg>", methods=["GET", "POST"])
 def websession_endpoint(arg=""):
     VALID_USERS = {"user@test.com", "admin@test.com", "superadmin@test.com"}
@@ -149,7 +214,7 @@ def websession_endpoint(arg=""):
         if email in VALID_USERS:
             # Trigger a success alert and set the context to 'authenticated'
             app.alert("success", f"You are logged in ! Your email is <strong>{email}</strong>.")
-            app.context("authenticated", "set")
+            app.set_context("authenticated")
         else:
             # Trigger an alert and reset the form
             app.alert("danger", "Login failed !")
@@ -163,7 +228,7 @@ def websession_endpoint(arg=""):
             return render_template("/partials/login_form.html")
         if arg == "logout":
             app.alert("success", "You are logged out !")
-            app.context("authenticated", "reset")  # Remove 'authenticated' context
+            app.clear_context()  # Remove 'authenticated' context
 
     return ""
 
@@ -175,14 +240,13 @@ def websession_endpoint(arg=""):
 @app.route("/context_test/<string:action>/<string:context>")
 def context_test(action="", context=""):
     if action == "clear":
-        app.context("", "clear")
+        app.clear_context()
         return ""
 
     if context:
         if action == "set":
-            app.context(context, "set")
-        if action == "reset":
-            app.context(context, "reset")
+            app.set_context(context)
+        return ""
     return ""
 
 
@@ -191,37 +255,32 @@ def context_test(action="", context=""):
 @app.route("/zone_test", methods=["GET", "POST"])
 @app.route("/zone_test/<string:zone>/<string:action>", methods=["GET", "POST"])
 def zone_test(zone="", action="update"):
-    my_zone = None
 
     now = datetime.datetime.now().strftime("%H:%M:%S")
-    if zone in ("zone_1", "zone_2"):
-        my_zone = Zone(zone)
-        options = ['<option value="">-- Select an option --</option>']
-        options += [f'<option value="{v * 100}">{zone}_{v}</option>' for v in range(1, 5)]
-        my_zone.add_fields([ZoneField("random", random.randint(0, 10000)), ZoneField("stamp", now), ZoneField("selector", "".join(options))])
+    if action == "update":
+        if zone in ("zone_1", "zone_2"):
+            options = ['<option value="">-- Select an option --</option>']
+            options += [f'<option value="{v * 100}">{zone}_{v}</option>' for v in range(1, 5)]
+            fields = [Field("random", random.randint(0, 10000)), Field("stamp", now), Field("selector", "".join(options))]
+            app.update(zone, fields)
+        if zone in ("zone_3"):
+            app.zone(zone, "set", render_template("partials/login_form.html"))
+        return ""
 
-    elif zone == "zone_3":
-        my_zone = Zone(zone)
-        my_zone.add_field(ZoneField("form", render_template("partials/login_form.html")))
-        print(my_zone)
-
-    if my_zone:
-        match action:
-            case "update":
-                app.zone(my_zone.name, "set", my_zone.fields)
-            case "show":
-                app.zone(my_zone.name, "show")
-            case "hide":
-                app.zone(my_zone.name, "hide")
-            case "clear":
-                app.zone(my_zone.name, "clear")
-            case "remove":
-                app.zone(my_zone.name, "remove")
+    match action:
+        case "show":
+            app.zone(zone, "show")
+        case "hide":
+            app.zone(zone, "hide")
+        case "clear":
+            app.zone(zone, "clear")
+        case "remove":
+            app.zone(zone, "remove")
 
     if request.method == "POST":
         print(request.form)
 
-    return f"ZONES {now}"
+    return ""
 
 
 @app.route("/form/<string:arg>", methods=["GET", "POST"])
@@ -246,8 +305,21 @@ def echo(arg="-1"):
 
 @app.route("/lorem/<string:arg>")
 def lorem_ipsum(arg="-1"):
-    print(request.url)
     return f"<b>Help for option {arg}</b>: {lorem.sentence()}"
+
+
+@app.route("/manylorem")
+def many_lorem() -> Response:
+    result = []
+    for _ in range(3):
+        result.append(f"<p>{lorem.paragraph()}</p>")
+    return Response("".join(result))
+
+
+@app.route("/lorem_reset")
+def lorem_reset() -> Response:
+    app.clear_context()
+    return Response("")
 
 
 @app.route("/sse/<string:arg>", methods=["GET", "POST"])
@@ -301,13 +373,6 @@ def sse(arg="No arg"):
                 "Autoriser",
                 buttons,
             )
-        case "download":
-            app.alert("primary", f"Sending 2 files ! ({now}).")
-            app.download(Path("Travaux-2026.ods"), "Travaux-2026.ods", False)
-            app.download(Path("GuideOpenSource.pdf"), "book.pdf", False)
-        case "preview":
-            app.alert("primary", f"Triggering a PDF preview ({now}).")
-            app.download(Path("GuideOpenSource.pdf"), "book.pdf", True)
         case "form":
             return render_template("partials/test_form.html")
         case "form_1":

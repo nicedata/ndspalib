@@ -1,3 +1,7 @@
+const { Util } = require("./util.js");
+const { DIALOG_CONTAINER, NOTIFICATION_CONTAINER } = require("../constants.js");
+
+const ND_STYLES = `
     :root {
         --nd-border-radius: 5px;
         --nd-border-color: lightgray solid 1px;
@@ -116,4 +120,27 @@
         margin-left: 20px;
         padding-top: 10px;
         border-top: var(--nd-border-color);
-    }
+`
+    .trim()
+    .replace(/\s+/g, " ")
+    .split(" ")
+    .join(" ");
+
+const containers = `<div ${NOTIFICATION_CONTAINER}></div><div ${DIALOG_CONTAINER}></div>`;
+
+const scripts = ['<script src="https://unpkg.com/html5-qrcode"></script>'];
+
+exports.DocumentSetup = class DocumentSetup {
+    static apply = () => {
+        const html = `<style id="nd-style">${ND_STYLES}</style>`;
+        let fragment = Util.create_fragment(html);
+        document.querySelector("head").lastElementChild.after(fragment);
+        scripts.forEach((script) => {
+            let fragment = Util.create_fragment(script);
+            document.querySelector("head").lastElementChild.before(fragment);
+        });
+
+        fragment = Util.create_fragment(containers);
+        document.querySelector("body").firstElementChild.before(fragment);
+    };
+};

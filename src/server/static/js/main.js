@@ -6,6 +6,7 @@
 const { INFOS, DIALOG_CONTAINER, NOTIFICATION_CONTAINER } = require("./constants.js");
 const { Debug } = require("./modules/debug.js");
 const { Logger } = require("./modules/logger.js");
+const { DocumentSetup } = require("./modules/document_setup.js");
 
 const PROG_INFO = `${INFOS.PROGNAME} ${INFOS.VERSION}`;
 
@@ -15,7 +16,6 @@ core_logger.info(`${PROG_INFO} : initializing...`);
 
 // Other modules
 const { Util } = require("./modules/util.js");
-const { Events } = require("./modules/events.js");
 const { SelectHandler } = require("./modules/select_handler.js");
 const { PollHandler } = require("./modules/poll_handler.js");
 const { SourceHandler } = require("./modules/source_handler.js");
@@ -30,6 +30,7 @@ const { FormHandler } = require("./modules/form_handler.js");
 const { Fetcher } = require("./modules/fetcher.js");
 const { Notification } = require("./modules/notification.js");
 const { Dialog } = require("./modules/dialog.js");
+const { QRScanner } = require("./modules/qr_scanner.js");
 
 // GUI Components
 const { Alert, ConfirmDialog, Toast } = require("./components/dialogs.js");
@@ -51,17 +52,15 @@ const nd_init = () => {
             version: PROG_INFO,
             debug: debug,
             util: new Util(),
-            events: new Events(),
             fetcher: new Fetcher(),
+            QRScanner: QRScanner,
             core_logger: core_logger, // The 'Core' logger
-            // dialog_factory: new DialogFactory(),
             tracker: new HandlerTracker(),
             notification: new Notification(),
             dialog: new Dialog(),
             dialog_container: null,
             notification_container: null,
             environment: [],
-
             // Handlers (will be initialized when DOM is loaded)
             handlers: [],
 
@@ -87,15 +86,15 @@ const nd_init = () => {
                 open: (args) => {
                     const type = args.type;
                     const uuid = args.id;
-                    const fragment = nd.util.create_fragment(args.content);
+                    const fragment = Util.create_fragment(args.content);
 
                     // Get the DOM target
                     switch (type) {
                         case "dialog":
-                            nd.util.insert_fragment(nd.dialog_container, fragment, true, true, true);
+                            Util.insert_fragment(nd.dialog_container, fragment, true, true, true);
                             break;
                         case "notification":
-                            nd.util.insert_fragment(nd.notification_container, fragment, true, true, true);
+                            Util.insert_fragment(nd.notification_container, fragment, true, true, true);
                             break;
                         default:
                             core_logger.error(`Unknown layer type : '${type}'.`);
@@ -103,13 +102,13 @@ const nd_init = () => {
                     }
 
                     // Insert the new fragment (append AND refresh)
-                    nd.util.insert_fragment(nd.dialog_container, fragment, true, true, true);
+                    Util.insert_fragment(nd.dialog_container, fragment, true, true, true);
 
                     // Get the freshly inserted element
                     const new_element = document.querySelector(`[data-nduuid="${uuid}"]`);
 
                     // Refresh it !
-                    nd.util.refresh(new_element);
+                    Util.refresh(new_element);
 
                     return new_element;
                 },
@@ -123,8 +122,8 @@ const nd_init = () => {
                     new LinkHandler(),
                     new SelectHandler(),
                     new EventHandler(),
-                    new ZoneHandler(),
                     new ContextHandler(),
+                    new ZoneHandler(),
                     new FormHandler(),
                     new HandlerTracker(),
                     new EnvironmentHandler(),
@@ -132,6 +131,7 @@ const nd_init = () => {
             },
 
             on_dom_ready: () => {
+                DocumentSetup.apply();
                 nd.dialog_container = document.querySelector(`[${DIALOG_CONTAINER}]`);
                 nd.notification_container = document.querySelector(`[${NOTIFICATION_CONTAINER}]`);
                 // Check for an 'nd-init' element (base page)
@@ -144,7 +144,7 @@ const nd_init = () => {
                 core_logger.info(`Creating handlers...`);
                 nd.create_handlers();
                 core_logger.info(`Refreshing the document...`);
-                nd.util.refresh(document);
+                Util.refresh(document);
             },
         };
         resolve(nd_core);

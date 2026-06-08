@@ -11,7 +11,7 @@ exports.FormHandler = class FormHandler {
      * Process a given fragment.
      */
     process(fragment) {
-        if (document.querySelectorAll("[nd-form]").length == 0) return;
+        // if (document.querySelectorAll("[nd-form]").length == 0) return;
 
         // Process this fragment
         fragment.querySelectorAll("[nd-form]").forEach((element) => {

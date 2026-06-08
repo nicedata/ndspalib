@@ -20,7 +20,7 @@ Date: 2024-06
 from io import BytesIO
 from typing import List
 
-from .types import Alert, Button, ContextAction, Title, EnvironmentAction, CustomDialog, Download, DownloadMode, Event, ZoneAction, EventSeverity, EventType, Stream, Toast, Urls, ZoneField, Zone
+from .types import Alert, Button, CustomDialog, Download, DownloadMode, EnvironmentAction, Event, EventSeverity, EventType, Field, Stream, Title, Toast, Urls, Zone, ZoneAction
 
 
 class EventFactory:
@@ -39,17 +39,23 @@ class EventFactory:
         return result
 
     @staticmethod
-    def context(context: str, action: ContextAction) -> Event:
+    def context(context: str | None) -> Event:
         result = Event(EventType.CONTEXT)
-        result.detail = dict(context=context, action=action)
+        action = "set" if context else "clear"
+        result.detail = dict(context=context or "", action=action)
 
         return result
 
     @staticmethod
-    def zone(zone: str, action: ZoneAction, fields: List[ZoneField] = []) -> Event:
+    def zone(id: str | None, action: ZoneAction, html="") -> Event:
         result = Event(EventType.ZONE)
-        result.detail = Zone(zone, action, fields).as_dict()
+        result.detail = Zone(id, action, [], html).as_dict()
+        return result
 
+    @staticmethod
+    def update(id: str | None, fields: List[Field]) -> Event:
+        result = Event(EventType.UPDATE)
+        result.detail = Zone(id, "set", fields).as_dict()
         return result
 
     @staticmethod
@@ -115,9 +121,10 @@ class EventFactory:
 
     @staticmethod
     def download(data: BytesIO, mimetype: str, filename: str, mode: DownloadMode = "download") -> Event:
+        size = data.getbuffer().nbytes
         result = Event(EventType.DOWNLOAD)
-        result.detail = Download(True, mimetype, filename, mode).as_dict()
-        result.stream = Stream(filename, mimetype, data)
+        result.detail = Download(True, 0, size, mimetype, filename, mode).as_dict()
+        result.stream = Stream(filename, mimetype, data, 0, size)
 
         return result
 

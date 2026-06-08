@@ -9,9 +9,10 @@ exports.EventHandler = class EventHandler {
         if (!!EventHandler._instance) {
             return EventHandler._instance;
         }
-
+        EventHandler._instance = this;
         this.logger = new Logger("EventHandler");
-        const notification_events = [
+
+        const events = [
             ND_EVENTS.ALERT,
             ND_EVENTS.TOAST,
             ND_EVENTS.CONFIRM,
@@ -25,11 +26,10 @@ exports.EventHandler = class EventHandler {
         ];
 
         // Add event listeners (event list)
-        notification_events.forEach((value) => {
-            this.logger.info(`Adding a listener to handle '${value}' events.`);
-            document.addEventListener(value, this._event_handler);
+        events.forEach((event) => {
+            this.logger.info(`Adding a listener to handle '${event}' events.`);
+            document.addEventListener(event, this._event_handler);
         });
-        EventHandler._instance = this;
     }
 
     // Todo : remove
@@ -39,8 +39,7 @@ exports.EventHandler = class EventHandler {
     postprocess() {}
 
     _event_handler = async (event) => {
-        this.logger.info(`Event received: ${event.type}.`);
-        this.logger.info(`Event detail: ${JSON.stringify(event.detail)}.`);
+        this.logger.info(`Event ${event.type}, detail: ${JSON.stringify(event.detail)}.`);
         const detail = event.detail;
         let data = null;
 
@@ -67,18 +66,7 @@ exports.EventHandler = class EventHandler {
                 new ThreeButtonDialog(detail).show();
                 break;
             case ND_EVENTS.DOWNLOAD:
-                new Download(detail.data, detail.filename, detail.mode === "preview").show();
-                break;
-            case ND_EVENTS.REDIRECT:
-                this.logger.info(`Redrect | Url: '${detail.urls.redirect}'...`);
-                data = await nd.fetcher.fetch_data(detail.urls.redirect);
-                this.logger.info(`Redrect | Data: '${nd.util.truncate(data)}.`);
-                const target = document.querySelector("main");
-                if (target) {
-                    const fragment = nd.util.create_fragment(data);
-                    nd.util.insert_fragment(target, fragment, false, true, false);
-                    nd.util.refresh(target);
-                }
+                new Download(detail.data, detail.offset, detail.size, detail.filename, detail.mimetype, detail.mode === "preview").show();
                 break;
         }
     };

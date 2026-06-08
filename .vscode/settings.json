@@ -11,7 +11,7 @@
         "**/.DS_Store": true,
         "**/__pycache__": true,
         "**/venv**": true,
-        "**/docs**": false,
+        "**/docs**": true,
         "**/.cache**": true,
         "**/site**": true,
         "**/ndspalib.js": true,

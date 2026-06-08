@@ -39,7 +39,7 @@ exports.PollHandler = class PollHandler extends BaseHandler {
 
         this.timers.forEach((timer, index) => {
             // find the uuid of elements NOT present in the document
-            if (document.querySelectorAll(`[data-nduuid="${timer.uuid}"]`).length == 0) {
+            if (document.querySelectorAll(`[data-ndtimer="${timer.uuid}"]`).length == 0) {
                 clearTimeout(timer.id);
                 timers_to_clear.push(timer);
             }

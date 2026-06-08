@@ -43,6 +43,7 @@ class EventType(StrEnum):
     CUSTOM_DIALOG = "nd:dialog:custom"
     DOWNLOAD = "nd:download"
     REDIRECT = "nd:redirect"
+    UPDATE = "nd:update"
     ZONE = "nd:zone"
     CONTEXT = "nd:context"
     ENVIRONMENT = "nd:environ"
@@ -140,9 +141,10 @@ class Button(Base):
 
 
 @dataclass
-class ZoneField:
+class Field:
     key: str
     value: Any
+    readonly: bool = False
 
 
 type ZoneAction = Literal["show", "hide", "remove", "clear", "set"]
@@ -150,14 +152,15 @@ type ZoneAction = Literal["show", "hide", "remove", "clear", "set"]
 
 @dataclass
 class Zone(Base):
-    name: str
+    id: str | None
     action: ZoneAction | None = None
-    fields: List[ZoneField] = field(default_factory=list)
+    fields: List[Field] = field(default_factory=list)
+    html: str = ""
 
-    def add_field(self, item: ZoneField):
+    def add_field(self, item: Field):
         self.fields.append(item)
 
-    def add_fields(self, items: List[ZoneField]):
+    def add_fields(self, items: List[Field]):
         self.fields.extend(items)
 
 
@@ -216,11 +219,18 @@ class Stream:
     filename: str
     mimetype: str
     data: BytesIO
+    offset: int
+    size: int
+
+    def close(self) -> None:
+        self.data.close()
 
 
 @dataclass
 class Download(Base):
     data: bool
+    offset: int
+    size: int
     mimetype: str
     filename: str
     mode: DownloadMode
@@ -229,8 +239,8 @@ class Download(Base):
 @dataclass()
 class Event:
     type: EventType
-    detail: Dict[str, str | Dict[Any, Any]] = field(default_factory=dict)
-    stream: Optional[Stream] = None
+    detail: Dict[str, Any | Dict[Any, Any]] = field(default_factory=dict)
+    stream: Stream | None = None
 
 
 @dataclass

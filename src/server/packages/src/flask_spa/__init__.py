@@ -28,9 +28,9 @@ from flask import Flask
 
 from .event_factory import Button, EventFactory
 from .middleware import FlaskMiddleware
-from .types import Event, EventSeverity, ZoneAction, ZoneField, EnvValue, ContextAction
+from .types import Event, EventSeverity, ZoneAction, Field, EnvValue
 
-__version__ = "0.1.11"
+__version__ = "0.1.12"
 
 
 class FlaskSpa(Flask):
@@ -96,20 +96,25 @@ class FlaskSpa(Flask):
         self._send(EventFactory.environment("unset", key))
 
     def clear_env(self) -> None:
-        self._send(EventFactory.environment("unset"))
+        self._send(EventFactory.environment("clear"))
 
     def get_env(self, key: str) -> EnvValue:
         result = self._get_env_key(key)
         return EnvValue(result["value"]) if result else EnvValue(None)
 
     # Context
-    def context(self, context: str, action: ContextAction) -> None:
-        if action == "clear":
-            context = ""
-        self._send(EventFactory.context(context, action))
+    def set_context(self, context: str) -> None:
+        self._send(EventFactory.context(context))
 
-    def zone(self, zone: str, action: ZoneAction, fields: List[ZoneField] = []) -> None:
-        self._send(EventFactory.zone(zone, action, fields))
+    def clear_context(self) -> None:
+        self._send(EventFactory.context(None))
+
+    def zone(self, zone_id: str | None, action: ZoneAction, html="") -> None:
+        self._send(EventFactory.zone(zone_id, action, html))
+
+    def update(self, zone_id: str | None, fields: List[Field]) -> None:
+        """Update elements in the UI."""
+        self._send(EventFactory.update(zone_id, fields))
 
     def reset_form(self, form_id: str) -> None:
         self._send(EventFactory.reset_form(form_id))
@@ -260,10 +265,10 @@ class FlaskSpa(Flask):
 
         # Read the file content into a BytesIO object
         with open(path, "rb") as fh:
-            file = BytesIO(fh.read())
+            data = BytesIO(fh.read())
 
         # Create a download event with the file content, mimetype, filename, and preview flag
-        event = EventFactory.download(file, mimetype or "", filename, "preview" if preview else "download")
+        event = EventFactory.download(data, mimetype or "", filename, "preview" if preview else "download")
 
         # Send the event to the client
         self._send(event)

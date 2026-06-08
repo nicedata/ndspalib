@@ -40,7 +40,7 @@
 <div class="border border-secondary-subtle rounded p-3">
     <div class="row d-flex align-items-center">
         <div class="col-3">
-            <select nd-select nd-target="#my_button" class="form-select mt-3 mb-3" aria-label="Default select example">
+            <select id="my_select" nd-select nd-target="#my_button" class="form-select mt-3 mb-3" aria-label="Default select example">
                 <option>-- Select a template --</option>
                 <option value="New payment" nd-url="/template/0">New payment</option>
                 <option value="Template 1" nd-url="/template/1">Template 1</option>
@@ -49,7 +49,23 @@
         </div>
         <div class="col-2">
             <!-- The button wil be updated from the select options -->
-            <button id="my_button" nd-activate nd-show-for="*" type="button" class="form-control btn btn-outline-primary"></button>
+            <button id="my_button" nd-activate nd-show-for="*" class="form-control btn btn-outline-primary"></button>
         </div>
     </div>
 </div>
+
+<div class="border border-secondary-subtle rounded p-3 mt-3">
+    <div class="row d-flex align-items-center">
+        <div class="col-1">
+            <button nd-link nd-url="/icc/test" class="form-control btn btn-outline-primary">Context</button>
+        </div>
+    </div>
+</div>
+
+<template nd-context="::none::">
+    <!-- Dummy -->
+</template>
+
+<template nd-context="test">
+    <param name="reset" nd-target="#my_select">
+</template>

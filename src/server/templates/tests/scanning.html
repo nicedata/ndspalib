@@ -1,0 +1,141 @@
+<h1>Scanning</h1>
+
+<div class="row">
+    <div class="col-1">
+        <button nd-link nd-dialog="my_scan" class="btn btn-primary btn-sm form-control">Scan&nbsp;!</button>
+    </div>
+</div>
+
+
+<div nd-zone id="my_zone" class="mt-3 mb-3" hidden>
+    <div class="row">
+        <div class="col-5">
+            <table class="table border">
+                <tr>
+                    <td id="0"></td>
+                </tr>
+                <tr>
+                    <td id="1"></td>
+                </tr>
+                <tr>
+                    <td id="2"></td>
+                </tr>
+                <tr>
+                    <td id="3"></td>
+                </tr>
+                <tr>
+                    <td id="4"></td>
+                </tr>
+                <tr>
+                    <td id="5"></td>
+                </tr>
+                <tr>
+                    <td id="6"></td>
+                </tr>
+                <tr>
+                    <td id="7"></td>
+                </tr>
+                <tr>
+                    <td id="8"></td>
+                </tr>
+                <tr>
+                    <td id="9"></td>
+                </tr>
+                <tr>
+                    <td id="10"></td>
+                </tr>
+                <tr>
+                    <td id="11"></td>
+                </tr>
+                <tr>
+                    <td id="12"></td>
+                </tr>
+                <tr>
+                    <td id="13"></td>
+                </tr>
+                <tr>
+                    <td id="14"></td>
+                </tr>
+                <tr>
+                    <td id="15"></td>
+                </tr>
+            </table>
+        </div>
+        <div class="col-5">
+            <table class="table border">
+                <tr>
+                    <td id="16"></td>
+                </tr>
+                <tr>
+                    <td id="17"></td>
+                </tr>
+                <tr>
+                    <td id="18"></td>
+                </tr>
+                <tr>
+                    <td id="19"></td>
+                </tr>
+                <tr>
+                    <td id="20"></td>
+                </tr>
+                <tr>
+                    <td id="21"></td>
+                </tr>
+                <tr>
+                    <td id="22"></td>
+                </tr>
+                <tr>
+                    <td id="23"></td>
+                </tr>
+                <tr>
+                    <td id="24"></td>
+                </tr>
+                <tr>
+                    <td id="25"></td>
+                </tr>
+                <tr>
+                    <td id="26"></td>
+                </tr>
+                <tr>
+                    <td id="27"></td>
+                </tr>
+                <tr>
+                    <td id="28"></td>
+                </tr>
+                <tr>
+                    <td id="29"></td>
+                </tr>
+                <tr>
+                    <td id="30"></td>
+                </tr>
+                <tr>
+                    <td id="31"></td>
+                </tr>
+            </table>
+        </div>
+    </div>
+</div>
+
+
+<template id="my_scan">
+    <param name="mode" value="modal">
+    <param name="width_pc" value="30">
+    <template>
+        <div class="row">
+            <div class="d-inline-flex mb-3">
+                <select id="camera" class="form-select me-2">
+                    <option value="">Sélectionner une caméra</option>
+                </select>
+                <button id="scan" class="btn btn-primary" disabled>OK</button>
+            </div>
+        </div>
+        <div id="canvas" class="mb-3"></div>
+        <div class="text-center">
+            <button id="close" class="btn btn-primary">Fermer</button>
+        </div>
+        <script>
+            var cam_id = 'edb6b34289c890f7cb7e62fd529c1c374367fe83c758a4533b3a74dce7fb0a1b';
+            new nd.QRScanner(cam_id, 'camera', 'scan', 'close', 'canvas', '/scanning    ');
+        </script>
+    </template>
+</template>

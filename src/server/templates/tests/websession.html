@@ -26,11 +26,11 @@
     <a nd-link nd-action="alert('News Page')" class="border-end ps-2 pe-2">News</a>
     <a nd-link nd-action="alert('Contact Page')" class="border-end ps-2 pe-2">Contact</a>
     <!-- Context dependent items -->
-    <a nd-link nd-context nd-show-for="authenticated" nd-action="alert('My Account Page')" class="border-end ps-2 pe-2">My Account</a>
-    <a nd-link nd-context nd-hide-for="authenticated" href="/websession/login" nd-target="#forms" class="border-end ps-2 pe-2">Login</a>
-    <a nd-link nd-context nd-show-for="authenticated" nd-confirm="logout_dialog" href="/websession/logout" class="border-end ps-2 pe-2">Logout</a>
+    <a id="id_my_account" nd-link nd-action="alert('My Account Page')" class="border-end ps-2 pe-2">My Account</a>
+    <a id="id_login" nd-link href="/websession/login" nd-target="#forms" class="border-end ps-2 pe-2">Login</a>
+    <a id="id_logout" nd-link nd-confirm="logout_dialog" href="/websession/logout" class="border-end ps-2 pe-2">Logout</a>
 </div>
-<div id="forms" nd-context nd-hide-for="authenticated" nd-remove-for="authenticated">
+<div id="forms">
     <!-- Form will be updated by SSE -->
 </div>
 
@@ -42,4 +42,18 @@
     <param name="confirm" value=""> <!-- Not relevant here ! -->
     <param name="accept" value="Yes">
     <param name="dismiss" value="No">
+</template>
+
+<!-- Context (::none::) -->
+<template nd-context="::none::">
+    <param name="show" nd-target="#id_login  #forms">
+    <param name="hide" nd-target="#id_logout #id_my_account">
+    <param name="remove" nd-target="">
+</template>
+
+<!-- Context (authenticated) -->
+<template nd-context="authenticated">
+    <param name="show" nd-target="#id_logout #id_my_account">
+    <param name="hide" nd-target="#id_login #forms">
+    <param name="remove" nd-target="#forms">
 </template>

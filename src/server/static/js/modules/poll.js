@@ -16,6 +16,8 @@
 const { POLL_DEFAULT_INTERVAL_MS } = require("../constants.js");
 const { Logger } = require("./logger.js");
 const { Action } = require("./action.js");
+const { Util } = require("./util.js");
+const { get_targets } = require("./util.js");
 
 exports.Poll = class Poll {
     static LOGGER = new Logger("Poll", true);
@@ -23,10 +25,10 @@ exports.Poll = class Poll {
     constructor(element) {
         this.logger = Poll.LOGGER;
         this.element = element;
-        this.uuid = nd.util.set_uuid(element); // Add a UUID dataset to this element. This is done to clear unused timers.
+        this.uuid = null;
         this.url = null;
         this.interval_ms = 0;
-        this.targets = null;
+        this.targets_selector = null;
         this.action = null;
         this.can_poll = false;
 
@@ -38,6 +40,11 @@ exports.Poll = class Poll {
             this.logger.error(`No 'nd-url' or 'nd-action' is defined on element`, element);
             return;
         }
+
+        // Add a UUID dataset to this element. This is done to clear unused timers.
+        this.uuid = crypto.randomUUID();
+        element.dataset.ndtimer = this.uuid;
+        this.logger.info(`Attributed an UUID to element`, element);
 
         // Use the href attribute first. Fallback to nd-url
         const href = element.getAttribute("href");
@@ -54,13 +61,10 @@ exports.Poll = class Poll {
         this.interval_ms = interval_ms;
 
         // Get the target(s)
-        const selector = element.getAttribute("nd-target");
-        this.targets = selector ? nd.util.get_targets(selector) : [element];
+        this.targets_selector = element.getAttribute("nd-target");
 
         // Process nd-action
-        this.action = new Action(element);
-        this.action.set_targets(this.targets);
-
+        this.action = has_action ? new Action(element) : null;
         this.can_poll = true;
     }
 
@@ -74,22 +78,26 @@ exports.Poll = class Poll {
             return;
         }
 
+        // Dynamically get the targets
+        const targets = Util.get_targets(this.targets_selector, this.element);
+        this.action ? this.action.set_targets(targets) : {};
+
         // Action before fetch
-        if (this.action.when == "before") this.action.excecute();
+        if (this.action && this.action.when == "before") this.action.excecute();
 
         // Fetch if an URL is present
         if (this.url) {
             this.logger.info(`Fetching url '${this.url}'...`);
             nd.fetcher.fetch_data(this.url).then((data) => {
-                this.targets.forEach((t) => {
+                targets.forEach((t) => {
                     if (data) {
-                        const fragment = nd.util.create_fragment(data);
-                        nd.util.insert_fragment(t, fragment, false, true);
+                        const fragment = Util.create_fragment(data);
+                        Util.insert_fragment(t, fragment, false, true);
                     } else {
                         this.logger.warn(`Fetching url '${this.url}' returned no data.`, this);
                     }
                     // Action after fetch when data is present
-                    if (this.action.when == "after") this.action.excecute(data);
+                    if (this.action && this.action.when == "after") this.action.excecute(data);
                 });
             });
         }

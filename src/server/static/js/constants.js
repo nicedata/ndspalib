@@ -27,6 +27,8 @@ exports.ND_EVENTS = {
     FETCH_BEFORE: "nd:fetch:before",
     FETCH_AFTER: "nd:fetch:after",
     FETCH_ERROR: "nd:fetch:error",
+    REFRESH_AFTER: "nd:refresh:after",
+    NAVIGATION: "nd:navigation",
     // Notifications
     ALERT: "nd:dialog:alert",
     TOAST: "nd:dialog:toast",
@@ -38,20 +40,22 @@ exports.ND_EVENTS = {
     DOWNLOAD: "nd:download",
     // Others
     REDIRECT: "nd:redirect",
-    ZONE: "nd:zone",
     CONTEXT: "nd:context",
     ENVIRONMENT: "nd:environ",
     TITLE: "nd:title",
     CHANGE: "nd:change",
     FORM_RESET: "nd:form:reset",
+    RESET: "nd:reset",
+    UPDATE: "nd:update",
+    ZONE: "nd:zone",
 };
+exports.NO_CONTEXT = "::none::";
 
 exports.DIALOG_CONTAINER = "nd-dialog-container";
 exports.NOTIFICATION_CONTAINER = "nd-notification-container";
 
 exports.TOAST_DELAY_MS = 3000;
 exports.POLL_DEFAULT_INTERVAL_MS = 10000;
-exports.noop = () => {}; // A function that does nothing !
 
 exports.STYLING = {
     BOOTSTRAP: {

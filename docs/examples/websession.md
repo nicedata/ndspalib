@@ -15,11 +15,11 @@ The HTML source code is this one :
     <a nd-link nd-action="alert('News Page')" class="border-end ps-2 pe-2">News</a>
     <a nd-link nd-action="alert('Contact Page')" class="border-end ps-2 pe-2">Contact</a>
     <!-- Context dependent items -->
-    <a nd-link nd-context nd-show-for="authenticated" nd-action="alert('My Account Page')" class="border-end ps-2 pe-2">My Account</a>
-    <a nd-link nd-context nd-hide-for="authenticated" href="/websession/login" nd-target="#forms" class="border-end ps-2 pe-2">Login</a>
-    <a nd-link nd-context nd-show-for="authenticated" nd-confirm="logout_dialog" href="/websession/logout" class="border-end ps-2 pe-2">Logout</a>
+    <a id="id_my_account" nd-link nd-action="alert('My Account Page')" class="border-end ps-2 pe-2">My Account</a>
+    <a id="id_login" nd-link href="/websession/login" nd-target="#forms" class="border-end ps-2 pe-2">Login</a>
+    <a id="id_logout" nd-link nd-confirm="logout_dialog" href="/websession/logout" class="border-end ps-2 pe-2">Logout</a>
 </div>
-<div id="forms" nd-context nd-hide-for="authenticated" nd-remove-for="authenticated">
+<div id="forms">
     <!-- Form will be updated by SSE -->
 </div>
 
@@ -32,14 +32,28 @@ The HTML source code is this one :
     <param name="accept" value="Yes">
     <param name="dismiss" value="No">
 </template>
+
+<!-- Context (::none::) -->
+<template nd-context="::none::">
+    <param name="show" nd-target="#id_login  #forms">
+    <param name="hide" nd-target="#id_logout #id_my_account">
+    <param name="remove" nd-target="">
+</template>
+
+<!-- Context (authenticated) -->
+<template nd-context="authenticated">
+    <param name="show" nd-target="#id_logout #id_my_account">
+    <param name="hide" nd-target="#id_login #forms">
+    <param name="remove" nd-target="#forms">
+</template>
 ```
 
 ## Initial state
 
-There is a navigation menu in which the common (non authenticated) user can see links to the 'Welcome', 'News' and 'Contact' pages.<br>Other links ('My Account', 'Login' and 'Logout') bear an `nd-context` attribute which affect their visibility :
+There is a navigation menu in which the common (non authenticated) user can see links to the 'Welcome', 'News' and 'Contact' pages.<br>Other links ('My Account', 'Login' and 'Logout') bear an `id` attribute which affect their visibility, according to the `nd-context` templates :
 
-- 'My account' and 'Logout' are visible only if the context has `authenticated`
-- 'Logout' is hidden if the context has `authenticated` (`nd-context="authenticated:hide"`)
+- 'My account' and 'Logout' are visible only if the context has `authenticated`. See `<template nd-context="authenticated">`.
+- 'Logout' is hidden if the context has `authenticated` (`nd-context="authenticated"`)
 
 When the user clicks on 'Welcome', 'News' or 'Contact', an alert is displayed to simulate a site navigation.
 
@@ -85,7 +99,7 @@ The server sent data is here :
       - the form is posted to `/websession/login`
       - the server returns a `context="authenticated"` context in its response
       - `ndspalib` handles the response :
-          - the forms container is cleared (due to `nd-context="authenticated:remove"`)
+          - the forms container is cleared
           - the 'Login' link is hidden
           - The 'My Account' and 'Logout' links become visible
 
@@ -120,7 +134,7 @@ def websession_endpoint(arg=""):
         if email in VALID_USERS:
             # Trigger a success alert and set the context to 'authenticated'
             app.alert("success", f"You are logged in ! Your email is <strong>{email}</strong>.")
-            app.context("authenticated", "set")
+            app.set_context("authenticated")
         else:
             # Trigger an alert and reset the form
             app.alert("danger", "Login failed !")
@@ -134,8 +148,7 @@ def websession_endpoint(arg=""):
             return render_template("/partials/login_form.html")
         if arg == "logout":
             app.alert("success", "You are logged out !")
-            app.context("authenticated", "reset")  # Remove 'authenticated' context
-
+            app.clear_context()  # Remove 'authenticated' context
     return ""
 ```
 
@@ -147,4 +160,4 @@ This simple example illustrates what can be done without having one line of user
 
 ------
 
-> Updated : 22.05.2026 - MM
+> Updated : 28.05.2026 - MM

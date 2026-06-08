@@ -7,10 +7,15 @@ Elements with an `[nd-poll]` attribute are reloaded from the server periodically
 | Attribute     | Effect / Purpose                                             |
 | ------------- | ------------------------------------------------------------ |
 | `nd-poll`     | The element is handled by the `ndspalib` library.<br />Elements with this attribute are periodically reloaded. |
-| `nd-interval` | Poll interval in milliseconds. Default to 10000 (10 seconds). |
-| `nd-url`      | The URL that will be fetched.                                |
-| `nd-target`   | The target(s) to be updated with endpoint sent data.<br />If not specified, the inner content is updated |
+| `nd-interval` | Poll interval in milliseconds. Defaults to 10000 (10 seconds). |
+| `nd-url`      | The URL from which data will be fetched.                     |
+| `nd-target`   | The target(s) to be updated with endpoint sent data.<br />If not specified, the inner content is updated. |
 | `nd-action`   | A reference to a JavaScript function (accessible in the `window` namespace) to be executed when the URL is fetched from the server. |
+
+**Notes** : 
+
+- at least one of `nd-url` or `nd-action` must be specified.
+- if `nd-target` is not specified, the element itself (innerHTML) is updated.
 
 ## Examples
 
@@ -32,5 +37,5 @@ Poll the `/poll` url every `10000` ms (10 seconds which is the **default** value
 <div nd-poll nd-url="/poll" class="mb-3 border p-1"></div>
 ```
 
-#### 
+> Updated : 01.06.2026 - MM
 

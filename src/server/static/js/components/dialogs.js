@@ -1,4 +1,5 @@
 const { Logger } = require("../modules/logger.js");
+const { Util } = require("../modules/util.js");
 const { TOAST_DELAY_MS, DIALOG_CONTAINER } = require("../constants.js");
 
 class BaseDialog {
@@ -119,7 +120,7 @@ exports.ConfirmDialog = class ConfirmDialog extends BaseDialog {
         const css_style = `width: 30%`;
 
         // Build buttons
-        const buttons = nd.util.compress(`
+        const buttons = Util.compress(`
             <button nd-dismiss class="btn btn-secondary" style="width: 7rem">
                 ${this.args.dismiss}
             </button>
@@ -127,7 +128,7 @@ exports.ConfirmDialog = class ConfirmDialog extends BaseDialog {
                 ${this.args.accept}
             </button>`);
 
-        this.html = nd.util.compress(`
+        this.html = Util.compress(`
             <div id="${this.id}" data-nduuid="${this.id}" class="${css_class}" role="document">
                 <div class="nd-modal-content" style="${css_style}">
                     <h5 class="nd-header">${this.args.title}</h5>
@@ -236,13 +237,13 @@ exports.OneButtonDialog = class OneButtonDialog extends BaseDialog {
         const css_class = `nd-modal`;
         const css_style = `width: 30%`;
 
-        const buttons = nd.util.compress(`
+        const buttons = Util.compress(`
             <button nd-accept class="btn btn-primary" style="width: 7rem">
                     ${this.args.accept}
             </button>`);
 
         // Set the HTML content of the dialog
-        this.html = nd.util.compress(`
+        this.html = Util.compress(`
                 <div nd-dialog id="${this.id}" data-nduuid="${this.id}" class="${css_class}" role="document">
                     <div class="nd-modal-content" style="${css_style}">
                         <h5 class="nd-header">${this.args.title}</h5>
@@ -318,7 +319,7 @@ exports.TwoButtonDialog = class TwoButtonDialog extends BaseDialog {
         const css_style = `width: 30%`;
 
         // Build buttons
-        const buttons = nd.util.compress(`
+        const buttons = Util.compress(`
             <button nd-accept class="btn btn-primary me-2" style="width: 7rem">
                 ${this.args.accept}
             </button>
@@ -327,7 +328,7 @@ exports.TwoButtonDialog = class TwoButtonDialog extends BaseDialog {
             </button>`);
 
         // Set the HTML content of the dialog
-        this.html = nd.util.compress(`
+        this.html = Util.compress(`
                 <div nd-dialog id="${this.id}" data-nduuid="${this.id}" class="${css_class}" role="document">
                     <div class="nd-modal-content" style="${css_style}">
                         <h5 class="nd-header">${this.args.title}</h5>
@@ -420,7 +421,7 @@ exports.ThreeButtonDialog = class ThreeButtonDialog extends BaseDialog {
         const css_style = `width: 30%`;
 
         // Build buttons HTML
-        const buttons = nd.util.compress(`
+        const buttons = Util.compress(`
             <button nd-accept class="btn btn-success me-2" style="width: 7rem">
                 ${this.args.accept}
             </button>
@@ -432,7 +433,7 @@ exports.ThreeButtonDialog = class ThreeButtonDialog extends BaseDialog {
             </button>`);
 
         // Set the HTML content of the dialog
-        this.html = nd.util.compress(`
+        this.html = Util.compress(`
                 <div nd-dialog id="${this.id}" data-nduuid="${this.id}" class="${css_class}" role="document">
                     <div class="nd-modal-content" style="${css_style}">
                         <h5 class="nd-header">${this.args.title}</h5>
@@ -518,12 +519,14 @@ exports.ThreeButtonDialog = class ThreeButtonDialog extends BaseDialog {
 };
 
 exports.CustomDialog = class CustomDialog extends BaseDialog {
+    static serializer = new XMLSerializer();
     constructor(args) {
         super("CustomDialog", args);
         this.args.type = "dialog";
 
         // Close event
-        this.close_event = `nd:close:${this.id}`;
+        // this.close_event = `nd:close:${this.id}`;
+        this.close_event = `nd:close:custom`;
 
         const css_class = `nd-modal`;
         const css_style = `width: ${this.args.width_pc}%`;
@@ -531,30 +534,43 @@ exports.CustomDialog = class CustomDialog extends BaseDialog {
         // Title if present
         const header = this.args.title ? `<h5 class="nd-header">${this.args.title}</h5>` : "";
 
-        this.html = nd.util.compress(`
+        this.html = `
             <div nd-dialog id="${this.id}" data-nduuid="${this.id}" class="${css_class}" role="document">
                 <div class="nd-modal-content" style="${css_style}">
                    <div>${header}</div>
-                    <div>${this.args.html}</div>
+                    ${this.args.fragment ? CustomDialog.serializer.serializeToString(this.args.fragment) : "No data ! Check your template ! Press ESC to exit."}
                 </div>
-            </div>`);
+            </div>`;
     }
 
     on_close_handler = (event) => {
         // Remove event listeners
         document.removeEventListener(this.close_event, this.on_close_handler);
+        document.removeEventListener("keydown", this.esc_key_handler);
 
         // Remove dialog from DOM tree
         this.dialog.remove();
+        // Postprocess tracked events
+        nd.tracker.postprocess();
     };
 
-    apply_handler = () => {};
+    esc_key_handler = (event) => {
+        if (event.key === "Escape") {
+            document.dispatchEvent(new CustomEvent(this.close_event));
+        }
+    };
 
     show() {
         // Inject the dialog into the DOM tree (returns a booleam)
         if (!this.inject()) return;
 
-        this.logger.info("Showing component");
+        this.logger.info("Showing component", this.dialog);
+
+        // Add an 'ESC' key handler if no closing elements are present
+        const closing_elements = this.dialog.querySelectorAll("[nd-accept], [nd-dismiss]");
+        if (closing_elements.length === 0) {
+            document.addEventListener("keydown", this.esc_key_handler);
+        }
 
         // Add a 'close' listener to perform cleanup
         document.addEventListener(this.close_event, this.on_close_handler);
@@ -574,7 +590,7 @@ exports.Alert = class Alert extends BaseDialog {
         const css_class = `nd-notification bg-${this.args.severity}-subtle`;
         const css_style = `display: inline-block; width: 40%`;
 
-        this.html = nd.util.compress(`
+        this.html = Util.compress(`
             <div nd-notification id="${this.id}" data-nduuid="${this.id}" class="${css_class}" style="${css_style}">
                 <div class="nd-content">
                     <span nd-close class="nd-close">&times;</span>
@@ -632,7 +648,7 @@ exports.Toast = class Toast extends BaseDialog {
         const css_class = "nd-toast";
         const css_style = `width: 30%`;
 
-        this.html = nd.util.compress(`
+        this.html = Util.compress(`
             <div nd-notification id="${this.id}" data-nduuid="${this.id}" class="${css_class}" style="${css_style}" role="alert">
                 <div class="nd-content">
                     <span nd-close class="nd-close">&times;</span>

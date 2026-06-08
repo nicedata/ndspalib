@@ -1,11 +1,12 @@
 const { ND_EVENTS } = require("../constants.js");
 const { Logger } = require("./logger.js");
 const { Link } = require("./link.js");
+const { Util } = require("./util.js");
 
 exports.Select = class Select {
     constructor(element) {
         this.logger = new Logger("Select");
-        this.selector = element;
+        this.select = element;
         this.id = element.id || null;
         this.targets = [];
         this.inform = [];
@@ -25,9 +26,10 @@ exports.Select = class Select {
         this.nd_selected = element.getAttribute("nd-selected");
 
         // Find target(s)
-        const nd_target = element.getAttribute("nd-target");
-        nd_target ? this.logger.info(`Target selection: '${nd_target}'`) : () => {};
-        document.querySelectorAll(nd_target).forEach((target) => {
+        let selector = element.getAttribute("nd-target");
+        let targets = Util.get_targets(selector);
+
+        targets.forEach((target) => {
             // Hide the target. It will be updated by the change events
             target.hidden = target.hasAttribute("nd-show-for") || target.hasAttribute("nd-hide-for");
             this.logger.info(`Found target '${target.outerHTML}'`);
@@ -35,9 +37,10 @@ exports.Select = class Select {
         });
 
         // Find targets to inform
-        const nd_inform = element.getAttribute("nd-inform");
-        nd_inform ? this.logger.info(`Inform selection: '${nd_inform}'`) : () => {};
-        document.querySelectorAll(nd_inform).forEach((target) => {
+        selector = element.getAttribute("nd-inform");
+        targets = Util.get_targets(selector);
+
+        targets.forEach((target) => {
             if (target.tagName !== "SELECT") {
                 this.logger.error(`The 'nd-inform' attribute may reference <select> elements only, not '${target.tagName}' elements.`, target);
             } else {
@@ -51,37 +54,41 @@ exports.Select = class Select {
         // 2.- For an remote 'change' event
         nd.tracker.add_listener(element, "change", this._update_targets); // For the local 'change' event
         nd.tracker.add_listener(element, ND_EVENTS.CHANGE, this._on_nd_inform);
+        nd.tracker.add_listener(element, ND_EVENTS.RESET, this._reset);
 
         // Get the options from the server if the 'nd-url' endpoint is specified
         const nd_options_url = element.getAttribute("nd-url");
         if (nd_options_url) {
             this.logger.info(`Getting select option from url '${nd_options_url}'.`);
             nd.fetcher.fetch_data(nd_options_url).then((data) => {
-                const fragment = nd.util.create_fragment(data);
-                nd.util.insert_fragment(element, fragment);
+                const fragment = Util.create_fragment(data);
+                Util.insert_fragment(element, fragment);
                 // Do a first time update
                 this._setup();
                 return;
             });
         }
-
         // Trigger the first "change" event
         this._setup();
     }
 
+    _reset = (event) => {
+        this.select.selectedIndex = 0;
+        this._update_targets();
+    };
+
     _setup = () => {
-        const nd_selected = this.selector.querySelector(`option[value="${this.nd_selected}"]`);
-        console.log("nd_selected", nd_selected);
+        const nd_selected = this.select.querySelector(`option[value="${this.nd_selected}"]`);
         // Set the selection to the first option
-        nd_selected ? (this.selector.value = nd_selected.value) : (this.selector.selectedIndex = 0);
+        nd_selected ? (this.select.value = nd_selected.value) : (this.select.selectedIndex = 0);
         // Initial update !
-        this.selector.dispatchEvent(new Event("change"));
+        this.select.dispatchEvent(new Event("change"));
     };
 
     _send_event = () => {
         if (!this.inform) return;
 
-        const option = this.selector.options[this.selector.selectedIndex];
+        const option = this.select.options[this.select.selectedIndex];
         const value = option.getAttribute("value") || null;
         const url = option.getAttribute("nd-url") || null;
 
@@ -95,10 +102,10 @@ exports.Select = class Select {
     _on_nd_inform = (event) => {
         const detail = event.detail;
         if (!detail.url) {
-            nd.util.clear_node(this.selector);
+            Util.clear_node(this.select);
             if (this.nd_default) {
-                const fragment = nd.util.create_fragment(this.nd_default);
-                nd.util.insert_fragment(this.selector, fragment, false, true);
+                const fragment = Util.create_fragment(this.nd_default);
+                Util.insert_fragment(this.select, fragment, false, true);
             }
             this._update_targets();
         } else {
@@ -106,10 +113,10 @@ exports.Select = class Select {
                 // Append the data to the first option if any
                 data = this.nd_default ? this.nd_default + data : data;
                 // Clear the <select../> content
-                nd.util.clear_node(this.selector);
+                Util.clear_node(this.select);
                 // Create and insert the new fragment
-                const fragment = nd.util.create_fragment(data);
-                nd.util.insert_fragment(this.selector, fragment, false, true);
+                const fragment = Util.create_fragment(data);
+                Util.insert_fragment(this.select, fragment, false, true);
                 // Update the targets !
                 this._update_targets();
             });
@@ -117,10 +124,10 @@ exports.Select = class Select {
     };
 
     _update_targets = () => {
-        if (this.selector.selectedIndex < 0) return;
+        if (this.select.selectedIndex < 0) return;
 
         // Get the value
-        const option = this.selector.options[this.selector.selectedIndex];
+        const option = this.select.options[this.select.selectedIndex];
         const value = option.getAttribute("value");
         const link = option.getAttribute("nd-url");
 
@@ -151,28 +158,29 @@ exports.Select = class Select {
                 target.innerHTML = value;
                 link ? Link.create_link(target, link) : Link.clear_link(target);
                 // Refresh the fragment
-                nd.util.refresh(target);
+                Util.refresh(target);
             }
 
             // If nd-sync is specified, set the element content from the nd-select source
             if (nd_sync) {
+                target.hidden != target.hidden;
                 if (has_nd_url && value) {
                     const url = `${nd_url}/${value}`;
                     nd.fetcher.fetch_data(url).then((data) => {
-                        const fragment = nd.util.create_fragment(data);
-                        nd.util.insert_fragment(target, fragment);
+                        const fragment = Util.create_fragment(data);
+                        Util.insert_fragment(target, fragment);
                     });
                 } else {
                     target.innerText = value ? value : "";
                 }
+                target.hidden != target.hidden;
             }
 
             // If nd-follow is specified, set the element content from the selected nd-select option
-            // TODO : to test again !
             if (nd_follow && link) {
                 nd.fetcher.fetch_data(link).then((data) => {
-                    const fragment = nd.util.create_fragment(data);
-                    nd.util.insert_fragment(target, fragment, false, true);
+                    const fragment = Util.create_fragment(data);
+                    Util.insert_fragment(target, fragment, false, true);
                 });
             }
 

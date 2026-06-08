@@ -2,6 +2,7 @@ const { ND_EVENTS, VERSION } = require("../constants.js");
 const { Download } = require("../constants.js");
 const { Logger } = require("./logger.js");
 const { Form } = require("./form.js");
+const { Util } = require("./util.js");
 
 exports.Fetcher = class Fetcher {
     static LOGGER = new Logger("Fetcher", true);
@@ -38,7 +39,6 @@ exports.Fetcher = class Fetcher {
                     this.logger.info(`Received server messages '${sse}'. Content: '${v}'.`);
                     break;
                 case "x-nd-url":
-                    console.log("X-ND-URL", v);
                     break;
             }
         });
@@ -127,6 +127,14 @@ exports.Fetcher = class Fetcher {
         return await this.execute_fetch(request);
     }
 
+    async post_form_data(formdata, url) {
+        const request = new Request(url, {
+            method: "post",
+            body: formdata,
+        });
+        return await this.execute_fetch(request);
+    }
+
     _redirect_to = async (url) => {
         if (!url.startsWith("/")) {
             this.logger.error(`Cannot navigate to '${url}'. Only relative URLs are allowed !`);
@@ -147,10 +155,11 @@ exports.Fetcher = class Fetcher {
         this.logger.info(`Fetching '${url}' in a 'get' request.`);
         const data = await this.execute_fetch(request);
         if (data) {
-            nd.util.clear_node(this.main_container);
-            const fragment = nd.util.create_fragment(data);
-            nd.util.insert_fragment(this.main_container, fragment, false, true);
+            Util.clear_node(this.main_container);
+            const fragment = Util.create_fragment(data);
+            Util.insert_fragment(this.main_container, fragment, false, true);
         }
+        document.dispatchEvent(new CustomEvent(ND_EVENTS.NAVIGATION, { detail: { url: url, data: data } }));
     };
 
     /**

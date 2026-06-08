@@ -54,7 +54,7 @@ exports.HandlerTracker = class HandlerTracker {
         weakref.deref().addEventListener(event, handler, use_capture);
         const tracked_item = new TrackedItem(weakref, element.dataset.ndtrack, event, handler, use_capture);
         this.tracked_handlers.push(tracked_item);
-        this.logger.info(`Tracking '${event}' handler on element '${element.tagName.toLowerCase()}' (${element.dataset.ndtrack}).`);
+        this.logger.info(`Tracking '${event}' handler on element '${element.tagName.toLowerCase()}' (${element.dataset.ndtrack}). Total handlers: ${this.tracked_handlers.length}.`);
     };
 
     process(fragment) {}
@@ -65,7 +65,8 @@ exports.HandlerTracker = class HandlerTracker {
      * It also logs the number of handlers removed and kept after the postprocessing.
      */
     postprocess() {
-        this.logger.info(`Postprocessing : ${this.tracked_handlers.length} handler(s) to check.`);
+        const tracker_count = this.tracked_handlers.length;
+        this.logger.info(`Postprocessing : ${tracker_count} handler(s) to check.`);
         if (this.tracked_handlers.length === 0) return;
 
         // We use slice() to create a copy of the tracked_handlers array because we will modify the original array while iterating.
@@ -82,8 +83,8 @@ exports.HandlerTracker = class HandlerTracker {
             // If it is not in memory, it means that it has been garbage collected and we don't need to do anything.
             const element = item.weakref.deref();
             if (element) {
-                this.logger.info(`Cleaning '${item.event}' handler on '${element.tagName.toLowerCase()}' (${uuid}).`);
                 element.removeEventListener(item.event, item.handler, item.use_capture);
+                this.logger.info(`Cleaned '${item.event}' handler on '${element.tagName.toLowerCase()}' (${uuid}).`);
             } else {
                 this.logger.info(`Element '${uuid}' already went to garbage (GC).`);
             }
@@ -93,7 +94,7 @@ exports.HandlerTracker = class HandlerTracker {
             this.tracked_handlers.splice(index, 1);
             deleted_count++;
         });
-        this.logger.info(`Postprocessing : ${deleted_count} handler(s) removed. ${this.tracked_handlers.length} handlers(s) kept.`);
+        this.logger.info(`Postprocessing : ${tracker_count} total handler(s), ${deleted_count} handler(s) removed. ${this.tracked_handlers.length} handlers(s) kept.`);
     }
 
     /**

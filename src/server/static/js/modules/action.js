@@ -7,6 +7,7 @@
  * <button nd-action="before::doSomething()" nd-url="/api/data" nd-target="#result">Click me</button>
  */
 const { Logger } = require("./logger.js");
+const { Util } = require("./util.js");
 
 // Allowed action modifiers
 const ACTION_MODIFIERS = ["before", "after"];
@@ -52,11 +53,13 @@ exports.Action = class Action {
         this.details.source = element;
 
         // URL to fetch data from
-        this.details.url = element.getAttribute("nd-url");
+        const href = element.getAttribute("href");
+        const nd_url = element.getAttribute("nd-url");
+        this.details.url = href ? href : nd_url ? nd_url : null;
 
         // Target elements to inform about the action
-        const targets = element.getAttribute("nd-target");
-        this.details.targets = targets ? document.querySelectorAll(targets) : [];
+        const selector = element.getAttribute("nd-target");
+        this.details.targets = Util.get_targets(selector);
 
         // Determine when to execute the action and extract the code
         if (action.includes("::")) {
